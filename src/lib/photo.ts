@@ -7,13 +7,15 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 let segnaposto = '';
 
 /** Segnaposto neutro: fondo bianco con righe grigie e la scritta al centro. */
-export function segnapostoImmagine(testo = 'Immagine del deceduto'): string {
-  if (testo === 'Immagine del deceduto' && segnaposto) return segnaposto;
+export function segnapostoImmagine(testo = 'Immagine'): string {
+  if (testo === 'Immagine' && segnaposto) return segnaposto;
   let righe = '';
+  // fondo bianco dietro la scritta, largo quanto il testo (Arial grassetto 28 px, circa 16 px a lettera)
+  const fondo = Math.min(600, Math.round(testo.length * 16.5 + 48));
   for (let y = 24; y < 480; y += 24) righe += `<line x1="0" y1="${y}" x2="640" y2="${y}" stroke="#E1E5EA" stroke-width="1.5"/>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480"><rect width="640" height="480" fill="#FFFFFF"/>${righe}<rect x="150" y="208" width="340" height="64" rx="10" fill="#FFFFFF"/><text x="320" y="249" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#8A94A0">${esc(testo)}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480"><rect width="640" height="480" fill="#FFFFFF"/>${righe}<rect x="${320 - fondo / 2}" y="208" width="${fondo}" height="64" rx="10" fill="#FFFFFF"/><text x="320" y="249" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#8A94A0">${esc(testo)}</text></svg>`;
   const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  if (testo === 'Immagine del deceduto') segnaposto = url;
+  if (testo === 'Immagine') segnaposto = url;
   return url;
 }
 
