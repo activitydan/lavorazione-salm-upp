@@ -1,5 +1,5 @@
 import {
-  BarChart3, ClipboardList, Download, LayoutDashboard, Map as MapIcon, Search, Settings, UserRound, Wrench,
+  BarChart3, ClipboardList, Download, LayoutDashboard, Search, Settings, UserRound, Wrench,
 } from 'lucide-react';
 import { setUi, useStore } from '../data/store';
 import { useDatiCimitero } from '../data/selectors';
@@ -7,9 +7,9 @@ import { href, useRotta, vai } from '../router';
 import { Logo } from './Logo';
 import { CampanellaAlert } from './Topbar';
 
+// La Mappa non è nel menu: si apre da "Apri la mappa" sulla Dashboard (e dalla ricerca o dalla legenda)
 const VOCI = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/mappa', label: 'Mappa', icon: MapIcon },
   { path: '/censimento', label: 'Censimento', icon: ClipboardList },
   { path: '/ricerca', label: 'Ricerca', icon: Search },
   { path: '/anagrafe', label: 'Anagrafe', icon: UserRound },
