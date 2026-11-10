@@ -55,6 +55,9 @@
 .report-grid { display: flex; flex-direction: column; gap: 16px; }
 .report-2col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 @media (max-width: 1100px) { .report-2col { grid-template-columns: 1fr; } }
+/* mappa del censimento: riempie tutta la scheda, alta quanto il grafico accanto (almeno 260 px) */
+.cens-mappa { position: relative; overflow: hidden; min-height: 260px; align-self: stretch; }
+.cens-mappa .cmap { position: absolute; inset: 0; min-height: 0; }
 
 /* ---------- esportazioni ---------- */
 .export-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }

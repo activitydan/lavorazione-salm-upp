@@ -88,7 +88,7 @@ function Avanzamento() {
           <h3>Schede censite al giorno · ultime 6 settimane</h3>
           <div className="mt-16"><Barre dati={giorni} altezza={120} colore="#79AA4F" /></div>
         </section>
-        <section className="card" style={{ position: 'relative', overflow: 'hidden', minHeight: 260 }}>
+        <section className="card cens-mappa">
           <CemeteryMap cimitero={cim} schede={schede} strutture={strutture} quadranti={quadranti} mostraQuadranti viali={viali} aree={aree} stile="satellite" compatta mostraPartenza segueVolo={false} onSelect={(id) => seleziona(id)} />
         </section>
       </div>
