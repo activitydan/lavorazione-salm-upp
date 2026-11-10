@@ -5,7 +5,6 @@ import { descrizioneScheda, testoRicerca, useAlert, useCimitero, useDatiCimitero
 import type { StileMappa } from '../data/types';
 import { dataBreve, normalizza, numero } from '../lib/format';
 import { centroide } from '../lib/geo';
-import { fotoUrl } from '../lib/photo';
 import { useRotta, vai } from '../router';
 import { Seg, StatoBadge } from './ui';
 
@@ -62,7 +61,6 @@ function SelettoreCimitero() {
 function RicercaGlobale() {
   const schede = useSchedeCimitero();
   const { viali, quadranti } = useDatiCimitero();
-  const foto = useStore((s) => s.foto);
   const rotta = useRotta();
   const [q, setQ] = useState('');
   const [aperto, setAperto] = useState(false);
@@ -162,7 +160,6 @@ function RicercaGlobale() {
               </button>
             ) : (
               <button key={r.s.id} className={`popover__item ${i === att ? 'is-active' : ''}`} onMouseEnter={() => setAtt(i)} onClick={() => scegli(i)}>
-                <img className="list-item__thumb" src={fotoUrl(r.s, foto)} alt="" />
                 <span className="grow" style={{ minWidth: 0 }}>
                   <b className="ellipsis" style={{ display: 'block' }}>{descrizioneScheda(r.s)}</b>
                   <span className="tiny muted">
