@@ -37,8 +37,16 @@ Il servizio che tiene accesa una lampada su una postazione, a carico di chi lo r
 _Avoid_: votiva (da sola), lampade
 
 **Operazione cimiteriale**:
-Un intervento su una sepoltura: inumazione, tumulazione, esumazione o estumulazione.
+Un intervento che mette o sposta la salma, i resti o le ceneri di un defunto: inumazione, tumulazione, esumazione, estumulazione o traslazione. Esumazione ed estumulazione sono ordinarie (a fine turno o a fine concessione) oppure straordinarie (prima, su richiesta o per ordine del giudice).
 _Avoid_: lavorazione, intervento (che indica una manutenzione)
+
+**Traslazione**:
+L'operazione cimiteriale che sposta un defunto da una postazione a un'altra, anche da o verso un altro cimitero.
+_Avoid_: trasferimento, spostamento
+
+**Pratica**:
+Il fascicolo di una sola operazione cimiteriale su un solo defunto, dalla richiesta o dall'avvio d'ufficio fino all'esecuzione.
+_Avoid_: istanza, richiesta, procedimento
 
 ## Ruoli
 
