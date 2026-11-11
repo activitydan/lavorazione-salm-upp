@@ -44,3 +44,11 @@ Risolto il 2026-11-12.
 - **Fuori dalla demo** perché regole del solo Comune di Ragusa: il limite di una concessione per persona e il termine di 12 mesi per il subentro.
 - **Rimandati**: canone e pagamenti al ticket "Pagamenti simulati", avvisi al ticket "Avvisi di scadenza inviati da DAT".
 
+### Aggiornamento del 2026-11-12
+
+Dal ticket [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.md). Questi punti valgono al posto di quelli sopra:
+
+- Le durate per tipo di concessione e la durata del rinnovo non stanno più in Impostazioni ma nella nuova voce **"Amministrazione"**, sempre solo per l'Amministratore.
+- Anche il **turno** della fossa in campo comune (10 anni nella demo) sta in Amministrazione. Le fosse a fine turno e le postazioni con la concessione chiusa ma ancora occupate entrano nello scadenzario unico di "Scadenze e pagamenti", da cui si aprono le pratiche d'ufficio.
+- La pratica non mostra la concessione. Quando una pratica è eseguita, CimiTera aggiorna da sola i posti occupati.
+

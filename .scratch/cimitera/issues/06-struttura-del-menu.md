@@ -57,3 +57,15 @@ Risolto il 2026-11-12, sul prototipo (variante A come base, con la voce unica di
 - **Censimento e Manutenzioni** restano due voci separate.
 - **Nome provvisorio**: "Pratiche e operazioni" resta finché il ticket "Modello di pratiche e operazioni" non definisce la pratica.
 - **Prototipo**: ramo `prototipo/struttura-del-menu`, da non unire a `main`.
+
+### Aggiornamento del 2026-11-12
+
+Dal ticket [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.md). Questi punti valgono al posto di quelli sopra:
+
+- "Pratiche e operazioni" si chiama **"Operazioni cimiteriali"**; dentro ci sono pratiche, agenda e registro.
+- Nasce la voce **"Amministrazione"**, solo per l'Amministratore, sotto "Configurazione" e sopra Impostazioni: operatori (aggiungere, togliere, vedere alert e cose da fare di ognuno), agenzie funebri, durate delle concessioni, turno del campo comune, tariffe delle operazioni.
+- La gestione degli operatori passa quindi dalle Impostazioni ad Amministrazione. Le Impostazioni restano per i campi della scheda (flag, tendine, sezioni) e per elenchi come categorie di manutenzione e squadre.
+- Menu dell'Amministratore sul computer: Dashboard, Ricerca, Censimento, Manutenzioni, Concessioni, Illuminazione votiva, Operazioni cimiteriali, Scadenze e pagamenti; sotto "Configurazione", Amministrazione e Impostazioni. L'Operatore ha le stesse voci senza Amministrazione e Impostazioni.
+- In "Scadenze e pagamenti" entrano anche le esumazioni e le estumulazioni dovute.
+- La campanella degli alert è personale in tutta l'app: nessuno riceve alert generali, neanche nella Dashboard.
+- Il prototipo sul ramo `prototipo/struttura-del-menu` mostra ancora il menu di prima.
