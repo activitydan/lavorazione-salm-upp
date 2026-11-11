@@ -32,3 +32,11 @@ Oggi Ricerca ha: in alto "Vedi sulla mappa" ed "Excel"; filtri a sinistra; sopra
 6. **Telefono.** Proposta: la tabella diventa un elenco a card con foto, nome del defunto, ID e viale, stato; si tocca per aprire la scheda. Niente selezione né Esporta (sul telefono solo consultazione). I filtri si aprono dal pulsante "Filtri", come oggi.
 7. **Righe per pagina.** Proposta: 50 come oggi, anche in "Defunti" (oggi 60) e sul telefono.
 8. **Defunto nel glossario.** Proposta: "La persona sepolta in una postazione; una postazione può averne più di uno." Da evitare: deceduto, estinto.
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e otto le proposte.
+
+### 2026-11-12 · secondo giro, in attesa della risposta di Dan
+
+9. **Concessioni dentro Ricerca.** Oggi Ricerca ha il filtro "Concessione" (in scadenza, scadute, senza) e il filtro "Nominativo" trova anche il nome del concessionario. Proposta: restano entrambi, perché si combinano con gli altri filtri e con la mappa (per esempio i loculi senza concessione di un viale); l'elenco delle concessioni e dei concessionari sta in Concessioni.
