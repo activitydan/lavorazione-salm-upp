@@ -1,7 +1,8 @@
 # Modello della concessione
 
 Type: grilling
-Status: open
+Status: claimed
+Assignee: Dan
 Blocked by: 01
 
 ## Question
