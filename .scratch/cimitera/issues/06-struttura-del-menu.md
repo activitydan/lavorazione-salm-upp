@@ -1,7 +1,7 @@
 # Struttura del menu
 
 Type: prototype
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 04, 05
 
@@ -36,3 +36,24 @@ Da decidere su un prototipo navigabile:
 7. **Menu del telefono.** Proposta: uguale per Operatore e Amministratore: Mappa, Ricerca, Nuovo rilievo, Manutenzioni, Verifiche. Il logo porta alla Mappa.
 
 Con queste proposte il menu dell'Amministratore sul computer è: Dashboard, Ricerca, Censimento, Manutenzioni, Concessioni, Illuminazione votiva, Pratiche e operazioni, Scadenze e pagamenti, Impostazioni. L'Operatore ha le stesse voci senza Impostazioni. Il nome "Pratiche e operazioni" resta provvisorio fino al ticket "Modello di pratiche e operazioni".
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e sette le proposte.
+
+## Answer
+
+Risolto il 2026-11-12, sul prototipo (variante A come base, con la voce unica di C e la fine di Report come in B).
+
+- **Menu dell'Amministratore sul computer**, in quest'ordine: Dashboard, Ricerca, Censimento, Manutenzioni, Concessioni, Illuminazione votiva, Pratiche e operazioni, Scadenze e pagamenti; sotto l'intestazione "Configurazione", Impostazioni. Lista unica, nessun'altra intestazione.
+- **Menu dell'Operatore sul computer**: le stesse voci senza Impostazioni.
+- **Menu sul telefono** (Operatore e Amministratore): Mappa, Ricerca, Nuovo rilievo, Manutenzioni, Verifiche. Il logo porta alla Mappa.
+- **Spariscono** Anagrafe, Esportazioni e Report:
+  - Anagrafe › Defunti entra in Ricerca; Anagrafe › Concessionari entra in Concessioni;
+  - le esportazioni stanno accanto ai dati che esportano; in Ricerca c'è un solo pulsante Esporta;
+  - Report › Postazioni libere diventa un filtro pronto in Ricerca; Report › Statistiche va in Censimento; Scadenze, Lampade votive e Pagamenti passano alle voci nuove.
+- **Scadenze e pagamenti** è una voce sola per tutto il giro scadenza → avviso tramite DAT → pagamento → sollecito, per concessioni e illuminazione votiva insieme.
+- **Operatori**: aggiungerli e toglierli si fa in Impostazioni, solo l'Amministratore. In Censimento resta l'elenco in sola lettura, per assegnare le verifiche.
+- **Censimento e Manutenzioni** restano due voci separate.
+- **Nome provvisorio**: "Pratiche e operazioni" resta finché il ticket "Modello di pratiche e operazioni" non definisce la pratica.
+- **Prototipo**: ramo `prototipo/struttura-del-menu`, da non unire a `main`.
