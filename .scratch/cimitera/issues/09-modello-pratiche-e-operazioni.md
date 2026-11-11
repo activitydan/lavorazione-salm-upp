@@ -48,3 +48,16 @@ Sì a 1, 2 e 4. Sulla 3: sì solo al defunto e ai due modi in cui nasce la prati
 ### 2026-11-12 · risposte di Dan
 
 Sulla 10: scelgo io (resta la proposta). Sì a 11, 14, 17, 18, 19 e 20. Sulla 12: B. Sulla 13: sì, ma l'Amministratore ha nella sua area un posto dove vede gli alert degli operatori e quello che devono fare. Sulla 15: A. Sulla 16: A.
+
+### 2026-11-12 · terzo giro di domande
+
+21. Esito di esumazione ed estumulazione: se la salma è mineralizzata e dove vanno i resti (ossario comune, cinerario comune, di nuovo in campo comune, fuori Comune, un'altra postazione, che riceve i resti senza una seconda pratica).
+22. L'Amministratore vede alert e cose da fare di ogni operatore nelle Impostazioni, sezione Operatori; il menu non cambia.
+23. Operatori assegnati quando si programma: uno o più, almeno uno; si cambiano fino all'esecuzione e chi viene aggiunto o tolto riceve l'alert.
+24. Dopo un'esumazione il defunto resta trovabile in Ricerca, con il posto dove si trova ora e il collegamento alla pratica; il Cittadino vede il posto ma non la posizione sulla mappa.
+25. Dallo scadenzario si scelgono più righe e si aprono insieme le pratiche d'ufficio, una per defunto.
+26. Dati finti: circa 40 pratiche di tutti i tipi e stati, agenda della settimana piena, qualche annullata con motivo, un anno di registro, alcune fosse a fine turno.
+
+### 2026-11-12 · risposte di Dan
+
+Sulla 21: solo dove vanno i resti, senza la mineralizzazione. Sulla 22: no, l'Amministratore ha una voce nuova del menu dove gestisce le persone e le cose importanti; le Impostazioni restano per flag, tendine e simili. Sulla 24: sì, il Cittadino riceve le indicazioni ma non la posizione sulla mappa. Sì a 23, 25 e 26.
