@@ -9,6 +9,7 @@ import { setUi, useStore } from './data/store';
 import { useRotta } from './router';
 import { Dashboard } from './pages/Dashboard';
 import { MappaPage } from './pages/MappaPage';
+import { BarraSpazi } from './components/prototipo-spazi/PrototipoSpazi';
 
 const RicercaPage = lazy(() => import('./pages/RicercaPage').then((m) => ({ default: m.RicercaPage })));
 const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ default: m.SchedaPage })));
@@ -104,6 +105,7 @@ export function App() {
       <Modali />
       <GrigliaParete />
       <Toasts />
+      <BarraSpazi />
     </div>
   );
 }

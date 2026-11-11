@@ -1,0 +1,94 @@
+/* PROTOTIPO, da buttare. Ticket "Regole degli spazi su una pagina campione" della mappa CimiTera.
+   Tre varianti di spaziatura su tutte le pagine tranne la home (che è lo standard), scelte con ?spazi=A|B|C|oggi.
+   Pagina campione: Censimento › Avanzamento. Nessun colore o carattere cambia: solo spazi. */
+
+html[data-spazi="A"] {
+  /* A · Come la home: i numeri della home portati su tutte le pagine */
+  --ps-sopra: 20px; --ps-lati: 38px; --ps-sotto: 24px;
+  --ps-titolo-schede: 12px; --ps-schede-contenuto: 16px;
+  --ps-riquadri: 16px; --ps-interno: 16px; --ps-testa-y: 14px;
+  --ps-riga-y: 10px; --ps-colonne: 12px; --ps-sezione: 8px;
+  --ps-lati-tel: 16px;
+}
+html[data-spazi="B"] {
+  /* B · Compatta: più dati in una schermata, titolo e schede sulla stessa riga */
+  --ps-sopra: 16px; --ps-lati: 24px; --ps-sotto: 16px;
+  --ps-titolo-schede: 0px; --ps-schede-contenuto: 12px;
+  --ps-riquadri: 12px; --ps-interno: 12px; --ps-testa-y: 10px;
+  --ps-riga-y: 6px; --ps-colonne: 8px; --ps-sezione: 8px;
+  --ps-lati-tel: 12px;
+}
+html[data-spazi="C"] {
+  /* C · Ariosa: più aria tra i blocchi e nelle righe */
+  --ps-sopra: 24px; --ps-lati: 40px; --ps-sotto: 40px;
+  --ps-titolo-schede: 16px; --ps-schede-contenuto: 24px;
+  --ps-riquadri: 24px; --ps-interno: 20px; --ps-testa-y: 16px;
+  --ps-riga-y: 14px; --ps-colonne: 16px; --ps-sezione: 12px;
+  --ps-lati-tel: 20px;
+}
+
+/* ---- margini di pagina: tutta la larghezza, come la home ---- */
+html[data-spazi] .page:not(.page--home) {
+  max-width: none;
+  margin: 0;
+  padding: var(--ps-sopra) var(--ps-lati) var(--ps-sotto);
+}
+@media (max-width: 760px) {
+  html[data-spazi] .page:not(.page--home) { padding: var(--ps-sopra) var(--ps-lati-tel) var(--ps-sotto); }
+}
+
+/* ---- intestazione: solo il titolo, niente frase descrittiva ---- */
+html[data-spazi] .page:not(.page--home) .page-head { margin-bottom: var(--ps-titolo-schede); align-items: center; }
+html[data-spazi] .page:not(.page--home) .page-head:not(:has(+ .tabs)) { margin-bottom: var(--ps-schede-contenuto); }
+html[data-spazi] .page:not(.page--home) .page-head__title p { display: none; }
+html[data-spazi] .page:not(.page--home) .tabs { margin-bottom: var(--ps-schede-contenuto); scrollbar-width: none; }
+
+/* B: titolo, schede e pulsanti su una riga sola (solo su computer) */
+@media (min-width: 761px) {
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-content: start;
+  }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) > * { grid-column: 1 / -1; }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) > .page-head { display: contents; }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) .page-head__title,
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) .page-head__actions {
+    grid-row: 1; display: flex; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: var(--ps-schede-contenuto);
+  }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) .page-head__title { grid-column: 1; padding-right: 24px; }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) .page-head__actions { grid-column: 3; padding-left: 16px; }
+  html[data-spazi="B"] .page:not(.page--home):has(> .page-head + .tabs) > .tabs { grid-column: 2; grid-row: 1; scrollbar-width: none; }
+}
+
+/* ---- distanza tra i riquadri: un solo valore ovunque ---- */
+html[data-spazi] .page:not(.page--home) :is(
+  .col.gap-16, .kpi-grid, .report-grid, .report-2col, .op-grid, .str-grid, .manut__grid, .anagrafe-stat,
+  .export-grid, .quad, .cal-wrap, .ricerca, .pro, .elenchi-grid, .scheda-estesa, .scheda-estesa__side
+) { gap: var(--ps-riquadri); }
+
+/* riquadri affiancati: stessa altezza, così i bordi si allineano e non resta un buco sotto il più basso */
+html[data-spazi] .page:not(.page--home) .report-2col { align-items: stretch; }
+
+/* titoli di sezione fuori dai riquadri (es. "Operatori sul campo"): sopra basta la distanza tra i riquadri */
+html[data-spazi] .page:not(.page--home) .section-title { margin: 0 0 var(--ps-sezione); }
+
+/* ---- margini interni dei riquadri ---- */
+html[data-spazi] .page:not(.page--home) :is(.card--pad, .kpi-card, .export-card, .str-card) { padding: var(--ps-interno); }
+html[data-spazi] .page:not(.page--home) .card__head { padding: var(--ps-testa-y) var(--ps-interno); }
+html[data-spazi] .page:not(.page--home) .card__body { padding: var(--ps-interno); }
+html[data-spazi] .page:not(.page--home) .card__foot { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+html[data-spazi] .page:not(.page--home) .pager { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+
+/* ---- righe delle tabelle: prima e ultima colonna allineate al margine interno del riquadro ---- */
+html[data-spazi] .page:not(.page--home) .table :is(th, td) { padding: var(--ps-riga-y) var(--ps-colonne); }
+html[data-spazi] .page:not(.page--home) .table :is(th, td):first-child { padding-left: var(--ps-interno); }
+html[data-spazi] .page:not(.page--home) .table :is(th, td):last-child { padding-right: var(--ps-interno); }
+
+/* ---- finestre e pannello laterale della scheda: stesse regole dei riquadri (secondo giro) ---- */
+html[data-spazi] .modal__head { padding: var(--ps-testa-y) var(--ps-interno); }
+html[data-spazi] .modal__body { padding: var(--ps-interno); }
+html[data-spazi] .modal__foot { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+html[data-spazi] .drawer__head { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+html[data-spazi] .drawer__body { padding: var(--ps-interno); }
+html[data-spazi] .grid-form { gap: var(--ps-riquadri); }
