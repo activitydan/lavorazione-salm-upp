@@ -27,18 +27,18 @@ Un piano approvato da Dan per la versione CimiTera della demo, diviso in fasi da
 <!-- una riga per ticket chiuso: nome del ticket con link, poi il succo della risposta -->
 
 - [Inventario delle pagine e proposte di semplificazione](issues/04-inventario-delle-pagine.md): nove doppioni, sette frasi descrittive da togliere, cornice delle pagine diversa dalla home, cinque elenchi troppo lunghi. Dettaglio in [inventario-pagine.md](inventario-pagine.md).
+- [Ruoli e versioni dell'app](issues/05-ruoli-e-versioni.md): Cittadino (pagina pubblica per telefono, solo ricerca), Operatore (tutto tranne operatori e Impostazioni), Amministratore (tutto); ingresso "Entra come" senza password; sul telefono solo campo e consultazione, gestione e statistiche solo dal computer.
 
 ## Not yet specified
 
 - Portale per le agenzie funebri: se entra in questa versione e in che forma. Dipende dai ruoli e dal modello delle pratiche.
-- Uso senza rete: cosa deve funzionare sul campo quando manca il segnale. Dipende dalla versione per telefono.
-- Semplificazione pagina per pagina: cosa togliere e unire in ogni pagina. Diventa ticket dopo l'inventario, il menu e le regole degli spazi. Le Impostazioni vanno riviste più delle altre, nell'aspetto e nel contenuto (indicazione di Dan).
+- Semplificazione pagina per pagina: cosa togliere e unire in ogni pagina. Sulla lapide non c'è un QR: rivedere "Etichette QR" e la pagina pubblica del QR. Diventa ticket dopo l'inventario, il menu e le regole degli spazi. Le Impostazioni vanno riviste più delle altre, nell'aspetto e nel contenuto (indicazione di Dan).
 - Voce "Collegamenti" con i sistemi esterni previsti (ANPR, protocollo, contabilità): se serve e dove sta. Si vede dopo il menu.
 - Divisione finale in fasi e contenuto di ogni fase: quando i modelli sono decisi.
 
 ## Out of scope
 
-- Server, accessi veri e dati reali.
+- Server, account veri con password e dati reali (arriveranno con il backend, dopo questa mappa).
 - Collegamenti reali: pagoPA, ANPR, protocollo, contabilità (Halley, Maggioli), conservazione a norma, recupero crediti, invio reale tramite DAT.
 - Restyling: colori e caratteri nuovi.
 - Totem all'ingresso e app pubblica separata.

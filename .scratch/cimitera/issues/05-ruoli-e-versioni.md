@@ -1,7 +1,7 @@
 # Ruoli e versioni dell'app
 
 Type: grilling
-Status: claimed
+Status: resolved
 
 ## Question
 
@@ -40,4 +40,24 @@ Il contenuto della versione per telefono di ogni ruolo si decide nel giro succes
 6. **Defunti nascosti al pubblico.** Proposta: ogni scheda ha un flag "Visibile al pubblico", attivo di norma, che l'Operatore può spegnere se la famiglia lo chiede.
 7. **Chi è l'Operatore nella demo.** Proposta: dopo "Entra come Operatore" si sceglie un nome dall'elenco degli operatori; quel nome firma i rilievi e vede le proprie verifiche. L'Amministratore entra come "Ufficio Cimiteri".
 8. **Versione per telefono di Operatore e Amministratore.** Proposta: sul telefono ci sono il lavoro sul campo e la consultazione (Nuovo rilievo, Ricerca, Mappa, Scheda, segnalazione di manutenzione, verifiche). Le pagine di gestione (concessioni, illuminazione votiva, pratiche, pagamenti, report, impostazioni) si usano dal computer.
+
+### 2026-11-12 · risposte di Dan al secondo giro
+
+5. Sì, ma sulla lapide non c'è nessun QR: la pagina pubblica si raggiunge solo dal suo indirizzo.
+6. Sì.
+7. Sì, per ora. Account veri e backend arriveranno più avanti.
+8. Sì. Anche tutte le statistiche restano solo sul computer: sul telefono si censisce e si verifica.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Ruoli**: Cittadino, Operatore, Amministratore (definiti nel glossario).
+- **Cittadino**: una pagina pubblica senza menu, pensata per il telefono, raggiungibile da un suo indirizzo. Contiene il logo e la ricerca per nome e cognome. Con più risultati mostra un elenco con nome, anni e viale. Il risultato mostra la postazione sulla mappa, le indicazioni per arrivarci, la foto della lapide e le date. Non mostra concessionario, pagamenti, manutenzioni, e non permette di sfogliare elenchi.
+- **Visibilità**: ogni scheda ha il flag "Visibile al pubblico", attivo di norma, che l'Operatore può spegnere su richiesta della famiglia.
+- **Operatore**: può fare tutto, tranne gestire gli operatori e le Impostazioni.
+- **Amministratore**: può fare tutto.
+- **Ingresso nella demo**: schermata "Entra come", senza password. L'Operatore sceglie il proprio nome dall'elenco degli operatori: quel nome firma i rilievi e vede le proprie verifiche. L'Amministratore entra come "Ufficio Cimiteri". Il ruolo si cambia dal riquadro dell'utente in fondo al menu. Account veri e backend restano fuori da questa mappa.
+- **Telefono** (Operatore e Amministratore): Nuovo rilievo, Ricerca, Mappa, Scheda, segnalazione di manutenzione, verifiche. **Solo computer**: concessioni, illuminazione votiva, pratiche, pagamenti, report, impostazioni e tutte le statistiche.
+- **Conseguenza**: sulla lapide non c'è un QR. Le "Etichette QR" e la pagina pubblica del QR di oggi vanno riviste nella semplificazione delle pagine.
 
