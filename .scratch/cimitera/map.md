@@ -29,10 +29,11 @@ Un piano approvato da Dan per la versione CimiTera della demo, diviso in fasi da
 - [Inventario delle pagine e proposte di semplificazione](issues/04-inventario-delle-pagine.md): nove doppioni, sette frasi descrittive da togliere, cornice delle pagine diversa dalla home, cinque elenchi troppo lunghi. Dettaglio in [inventario-pagine.md](inventario-pagine.md).
 - [Ruoli e versioni dell'app](issues/05-ruoli-e-versioni.md): Cittadino (pagina pubblica per telefono, solo ricerca), Operatore (tutto tranne operatori e Impostazioni), Amministratore (tutto); ingresso "Entra come" senza password; sul telefono solo campo e consultazione, gestione e statistiche solo dal computer.
 - [Come funziona il servizio di illuminazione votiva](issues/02-illuminazione-votiva.md): a Ragusa la gestisce il Comune (allaccio 39 €, canone 24 € l'anno, bollettino postale); l'utenza è per postazione e defunto, chi la chiede non è per forza il concessionario; morosità con sollecito, diffida e distacco. [Documento](https://github.com/activitydan/lavorazione-salm-upp/blob/research/illuminazione-votiva/docs/research/illuminazione-votiva.md).
+- [Cosa offrono i concorrenti e cosa fa DAT](issues/03-concorrenti-e-servizi-dat.md): Deda Next ha già pagoPA e portale per le imprese funebri; nessun concorrente gestisce i morosi; DAT è l'unico con recapito fisico e messi, ma non con la notifica digitale; avviso pagoPA e stati documentati. [Documento](https://github.com/activitydan/lavorazione-salm-upp/blob/research/concorrenti-e-servizi-dat/docs/research/concorrenti-e-servizi-dat.md).
 
 ## Not yet specified
 
-- Portale per le agenzie funebri: se entra in questa versione e in che forma. Dipende dai ruoli e dal modello delle pratiche.
+- Portale per le agenzie funebri: se entra in questa versione e in che forma. Dipende dai ruoli e dal modello delle pratiche. Riferimento: il portale di Deda Next (scelta della sepoltura in mappa, avviso pagoPA, prenotazione, autorizzazione del Comune).
 - Semplificazione pagina per pagina: cosa togliere e unire in ogni pagina. Sulla lapide non c'è un QR: rivedere "Etichette QR" e la pagina pubblica del QR. Diventa ticket dopo l'inventario, il menu e le regole degli spazi. Le Impostazioni vanno riviste più delle altre, nell'aspetto e nel contenuto (indicazione di Dan).
 - Voce "Collegamenti" con i sistemi esterni previsti (ANPR, protocollo, contabilità): se serve e dove sta. Si vede dopo il menu.
 - Divisione finale in fasi e contenuto di ogni fase: quando i modelli sono decisi.

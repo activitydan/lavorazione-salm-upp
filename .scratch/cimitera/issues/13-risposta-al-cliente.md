@@ -9,3 +9,6 @@ Blocked by: 05, 07, 08, 09, 10, 11
 Quale testo mandiamo al cliente?
 
 Da decidere: i tre elenchi (cosa facciamo subito, cosa mostriamo come simulazione, cosa richiede accordi esterni) e il tono della risposta, alla luce delle decisioni prese nei ticket precedenti.
+
+Da includere: la precisazione sulla frase "nessun concorrente fa recapito e notifica" (vale per recapito fisico e messi, non per la notifica digitale) e l'avviso che la home di hyagroup.it sembra manomessa (ricerca "Cosa offrono i concorrenti e cosa fa DAT").
+
