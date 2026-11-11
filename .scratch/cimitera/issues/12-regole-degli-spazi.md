@@ -1,7 +1,7 @@
 # Regole degli spazi su una pagina campione
 
 Type: prototype
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 04
 
@@ -44,3 +44,25 @@ Il prototipo ora applica le regole anche alle finestre e al pannello laterale de
 10. **Sottotitoli nelle finestre.** Proposta: restano solo quando dicono una conseguenza che non si vede ("Il poligono disegnato contiene 12 schede già censite" resta; "Compare subito nella scheda, nel rilievo sul campo, nei filtri e nelle esportazioni" va via).
 11. **La home.** Proposta: resta com'è, come il frame Figma, anche se fino a 1475 px di larghezza ha a destra un margine più largo (73 px) delle altre pagine (38).
 12. **Semplificazione pagina per pagina.** Proposta: la nebbia diventa cinque ticket di domande, uno per gruppo di pagine: Ricerca; Censimento e Nuovo rilievo; Manutenzioni; Impostazioni; Dashboard, Mappa, Scheda e pagina del QR. Le pagine nuove (Concessioni, Illuminazione votiva, Operazioni cimiteriali, Scadenze e pagamenti, Amministrazione) prendono forma dai loro ticket di modello e seguono queste regole.
+
+### 2026-11-12 · risposte di Dan al secondo giro
+
+Sì a tutte e quattro le proposte.
+
+## Answer
+
+Risolto il 2026-11-12 sul prototipo, variante A "Come la home". Le regole valgono per tutte le pagine tranne la home.
+
+- **Margini di pagina**: 20 px sopra, 38 ai lati (allineati alla barra in alto), 24 sotto. La pagina è a tutta larghezza anche sugli schermi grandi: sparisce il limite di 1640 px. Sul telefono 16 px ai lati.
+- **Intestazione**: solo il titolo, senza frase descrittiva. Titolo e pulsanti sulla prima riga, linguette sotto. 12 px tra titolo e linguette, 16 tra linguette e contenuto; 16 tra titolo e contenuto se la pagina non ha linguette.
+- **Distanza tra i riquadri**: 16 px ovunque (indicatori, colonne, griglie di card). Un titolo fuori dai riquadri, come "Operatori sul campo", ha 16 px sopra e 8 sotto.
+- **Margini interni**: 16 px in tutti i riquadri e negli indicatori. Testata del riquadro 14 px sopra e sotto, 16 ai lati; piede 12 e 16.
+- **Righe delle tabelle**: 10 px sopra e sotto (righe di circa 44 px) e 12 px ai lati di ogni cella, come oggi; la prima e l'ultima colonna stanno a 16 px dal bordo, allineate al titolo del riquadro.
+- **Riquadri affiancati**: alti uguali, così non resta un buco sotto il più basso.
+- **Scala delle distanze**: tutte le altre distanze solo 4, 8, 12, 16 e 24 px. Fanno eccezione i margini di pagina (20 e 38), presi dalla home.
+- **Finestre e pannello laterale della scheda**: stesse regole dei riquadri: 16 px dentro, testata 14 e 16, piede 12 e 16; 16 px tra i campi dei moduli.
+- **Sottotitoli nelle finestre**: restano solo quando dicono una conseguenza che non si vede.
+- **Home**: resta com'è, come il frame Figma 104:36 (fino a 1475 px di larghezza ha 73 px a destra).
+- **Parole**: nei ticket le "schede" in alto nelle pagine si chiamano linguette, per non confonderle con la Scheda del glossario.
+- **Semplificazione pagina per pagina**: diventa cinque ticket di domande: [Ricerca](15-semplificazione-ricerca.md), [Censimento e Nuovo rilievo](16-semplificazione-censimento-e-rilievo.md), [Manutenzioni](17-semplificazione-manutenzioni.md), [Impostazioni e Amministrazione](18-semplificazione-impostazioni.md), [Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md). Le pagine nuove prendono forma dai loro ticket di modello e seguono queste regole.
+- **Prototipo**: ramo `prototipo/regole-degli-spazi`, da non unire a `main`.
