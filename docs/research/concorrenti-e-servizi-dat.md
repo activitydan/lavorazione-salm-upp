@@ -1,9 +1,18 @@
 # Concorrenti, avviso pagoPA e servizi di DAT
 
 Ricerca per il ticket `03-concorrenti-e-servizi-dat` della mappa CimiTera. Pagine lette l'11/11/2026.
-Stato: in corso (il file viene aggiornato sezione per sezione).
 
 Legenda: **[dichiarato]** = lo scrive il fornitore o l'ente sul proprio sito; **[dedotto]** = lo deduco io dalle fonti.
+
+## 1. Sintesi
+
+- **Deda Next** (modulo "CiviliaNext Gestione Cimiteriale") è il concorrente più completo: concessioni con scadenze, illuminazione votiva, mappa, avviso pagoPA per ogni cittadino con riconciliazione, e un vero portale per le imprese funebri (scelgono la sepoltura in mappa, emettono l'avviso pagoPA, prenotano i servizi). Conferma quanto dice il cliente.
+- **APKappa** (Gruppo Maggioli) copre concessioni, movimenti delle salme e bollettazione dell'illuminazione votiva con la suite hyperSIC e con un servizio in outsourcing (APKSERVICE). Gli avvisi pagoPA ci sono solo se il Comune usa anche il loro intermediario pagoPA. Nessun portale per le agenzie trovato.
+- **Systemtec** (CimiteroSmart) ha totem da esterno con ricerca del defunto e necrologi, scadenzario delle concessioni a 6 mesi e mappa a colori. Non trovato pagoPA.
+- **Roseto** è Roseto degli Abruzzi: usa l'app Aldilapp (STUP1 srl) per cercare il defunto, lasciare un ricordo, ordinare fiori e pulizia della lapide.
+- **Morosi**: nessuno dei quattro dichiara una funzione di solleciti o morosi. Deda Next ha solo l'elenco dei dovuti non pagati.
+- **Avviso pagoPA**: modello A4 obbligatorio, con codice avviso di 18 cifre, codice fiscale dell'ente, importo, scadenza, CBILL e codice QR (`PAGOPA|002|avviso|CF ente|importo in centesimi`). Una posizione debitoria passa per gli stati DRAFT, PUBLISHED, VALID, PARTIALLY_PAID, PAID, più EXPIRED/UNPAYABLE (scaduta) e INVALID (annullata).
+- **DAT** fa stampa, imbustamento, spedizione, raccomandate con ricevuta scansionata, notifica di atti con messi, esternalizzazione dell'ufficio messi e conservazione a norma come outsourcer di **Ifin Sistemi**. Non cita **Zucchetti** né **SEND**. Il cliente ha ragione su un punto: i concorrenti software mandano avvisi digitali (e-mail, app IO, SEND), ma nessuno dichiara recapito fisico e notifica con messi.
 
 ## 2. Concorrenti
 
@@ -113,6 +122,24 @@ Fonti: https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/in
 - **Bollettino Postale PA**: si aggiunge solo se l'ente incassa su un conto corrente postale. Contiene numero e intestatario del conto, un Data Matrix di 25×25 mm e l'autorizzazione di Poste alla stampa in proprio. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/bollettino-postale-pa
 - **Rate**: il testo "Puoi pagare per intero oppure in N rate" compare solo con 2 o più rate; ogni rata ha il proprio importo, la propria data, il proprio codice avviso e il proprio codice QR. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/importo-e-scadenza
 
+### Gli stati di una posizione debitoria
+
+Fonte: Gestione Posizioni Debitorie (GPD), API V3 — https://developer.pagopa.it/pago-pa/guides/sanp/appendici/posizioni-debitorie/stati-della-posizione-debitoria-v3 e, per INVALID, https://developer.pagopa.it/pago-pa/guides/sanp/appendici/posizioni-debitorie/operazioni-disponibili
+
+| Stato | Significato | Come ci si arriva |
+|---|---|---|
+| DRAFT | Bozza, non ancora pagabile | Creazione con `toPublish=false` |
+| PUBLISHED | Pubblicata, in attesa della data di validità | Pubblicazione di una bozza, o creazione con date di validità future |
+| VALID | Pagabile | Creazione senza data di validità, oppure in automatico quando arriva la data di validità |
+| PARTIALLY_PAID | Pagata in parte (rateizzata) | Pagamento di una parte delle rate; si pagano solo le rate rimaste |
+| PAID | Pagata per intero | Pagamento di tutte le rate dell'opzione scelta |
+| EXPIRED / UNPAYABLE | Scaduta, non più pagabile | In automatico dopo l'ultima scadenza, solo se l'ente ha attivato `switchToExpired`; torna VALID se l'ente mette una nuova scadenza |
+| INVALID | Annullata (cancellazione logica) | Invalidazione dell'ente, possibile solo da PUBLISHED o VALID |
+
+- PARTIALLY_PAID e PAID non si possono più modificare; una posizione pagata non si può cancellare. — stesse pagine
+- Senza `switchToExpired` una posizione resta VALID, cioè pagabile, anche dopo la scadenza. **[dedotto]** dalla stessa pagina.
+- La pagina usa sia "EXPIRED" sia "UNPAYABLE" per lo stato di scaduta: il nome esatto va verificato.
+
 ## 4. Servizi di DAT
 
 Fonte principale: il sito datnotifiche.it.
@@ -147,6 +174,63 @@ Fonte: https://datnotifiche.it/servizi-digitali/ **[dichiarato]**
 
 - Consulenza: compliance privacy, supporto agli uffici finanziari, supporto alle misure PNRR. **[dichiarato]** — https://datnotifiche.it/servizi-di-consulenza/
 - Censimento sul territorio: rilevazione georeferenziata per il Canone Unico Patrimoniale, con schede "cespite" e file CSV. La pagina non parla di censimento cimiteriale. **[dichiarato]** — https://datnotifiche.it/servizi-di-censimento-sul-territorio/
+
+### HYA Group
+
+- Hya s.r.l. ha sede in Via Mazzini 150, Agrigento, accanto a DAT (152). Offre servizi postali, stampa massiva a dati variabili, archiviazione digitale (piattaforma web per consultare i PDF dei documenti prodotti per i clienti), censimento dei cespiti per il Canone Unico Patrimoniale e letture dei contatori dell'acqua. **[dichiarato]** — https://www.hyagroup.it/
+- La pagina "Partner" mostra solo loghi; i nomi dei file indicano tra gli altri GLS e SDA (corrieri). **[dedotto]** dai nomi dei file — https://www.hyagroup.it/partner-3/
+- Sulla home di hyagroup.it compaiono frasi pubblicitarie di casinò online fuori contesto: probabilmente il sito è stato manomesso. Da segnalare al cliente. **[dedotto]**
+
+### Recapito e notifica: cosa fa DAT e cosa fanno i concorrenti
+
+| | DAT | Concorrenti software |
+|---|---|---|
+| Stampa, imbustamento, spedizione | Sì | Non trovato |
+| Raccomandata con ricevuta scansionata | Sì | Non trovato |
+| Notifica con messi | Sì (anche messi straordinari, ufficio messi in outsourcing) | APKappa: la suite ha un'area "servizi messi notificatori", cioè il software per l'ufficio messi del Comune |
+| Notifica digitale | PEC come canale di inoltro | Deda Next: e-mail, SMS, app IO, posta, SEND; APKappa: SEND e PEC nella suite |
+| Conservazione a norma | Sì, come outsourcer di Ifin Sistemi | APKappa: "Conservazione digitale a norma" tra le integrazioni |
+
+**[dedotto]**: la frase del cliente "nessun concorrente software fa anche recapito e notifica" regge solo per il recapito fisico e la notifica con i messi. Sulla notifica digitale (app IO, SEND) i concorrenti sono già integrati.
+
+## 5. Cosa significa per CimiTera
+
+Sono proposte, non decisioni. Restano dentro i confini della mappa: dati finti, niente collegamenti reali.
+
+### Per simulare i pagamenti in modo credibile
+
+- **Avviso pagoPA finto ma fedele al modello**: un PDF A4 con i moduli nell'ordine ufficiale (intestazione, ente, destinatario, importo e scadenza, dove pagare, dati per il pagamento), codice avviso di 18 cifre a gruppi di 4, codice fiscale del Comune, CBILL, codice QR generato con la stringa `PAGOPA|002|...`. L'oggetto deve essere chiaro, per esempio "Rinnovo concessione loculo 12 – Cimitero di ...", oppure "Canone illuminazione votiva 2027".
+- **Stati semplificati per l'operatore**: "Da pagare" (VALID), "Pagata in parte" (PARTIALLY_PAID), "Pagata" (PAID), "Scaduta" (EXPIRED), "Annullata" (INVALID). La bozza può restare interna. Nella demo un pulsante "Simula pagamento" porta l'avviso a "Pagata" e registra la data.
+- **Un avviso per concessionario** che raccoglie più voci (come il "flusso unico con accorpamento per richiedente" di Deda Next e il "multi-dovuto" di CiviliaNext): un unico avviso per l'illuminazione votiva di più postazioni dello stesso concessionario.
+- **Morosi**: un elenco di chi ha avvisi scaduti e non pagati, con importo, giorni di ritardo e postazione. Nessun concorrente dichiara questa funzione: qui CimiTera può distinguersi.
+
+### Per simulare gli avvisi di scadenza "inviati da DAT"
+
+- **Lotto di invio**: l'operatore sceglie le concessioni o le illuminazioni votive in scadenza (per esempio nei prossimi 6 mesi, come fa CimiteroSmart), crea un lotto e lo "invia a DAT".
+- **Canale per ogni concessionario**: posta ordinaria, raccomandata, notifica con messo, PEC. Sono i canali che DAT dichiara.
+- **Esiti simulati per ogni invio**: "In lavorazione", "Spedito", "Consegnato", "Notificato", "Irreperibile", con data e, per la raccomandata, la ricevuta scansionata finta. Riprende la "rendicontazione del 100% del lotto" e gli "esiti digitali importabili" che DAT promette.
+- **Collegamento avviso ↔ pagamento**: l'avviso di scadenza contiene l'avviso pagoPA. Così si vede tutto il percorso: scadenza, invio DAT, esito della consegna, pagamento oppure moroso.
+
+### Dove CimiTera può distinguersi
+
+1. **Ciclo completo in un'unica schermata**: scadenza della concessione → invio tramite DAT → esito della consegna → pagamento → moroso. Nessun concorrente lo mostra intero, perché nessuno fa il recapito fisico.
+2. **Gestione dei morosi** con solleciti e passaggio alla notifica formale con messo (servizio "Notificare per riscuotere" di DAT).
+3. **Conservazione a norma** come voce visibile (per esempio un'etichetta "Inviato in conservazione" sui documenti), tramite Ifin Sistemi.
+4. **Da non inseguire ora**: il portale per le agenzie funebri (Deda Next è avanti) e totem o app pubblica (Systemtec, Aldilapp). Sono già nel "Not yet specified" e nell'"Out of scope" della mappa.
+
+## 6. Non trovato o incerto
+
+- **Zucchetti**: il sito di DAT non lo nomina. L'unico partner per la conservazione citato è Ifin Sistemi. Da chiedere al cliente quale rapporto c'è con Zucchetti.
+- **Partner per la riscossione**: nessuno nominato. DAT offre "Notificare per riscuotere" in proprio.
+- **SEND**: DAT non dice di usare la piattaforma notifiche digitali SEND.
+- **Licenze di DAT**: la pagina dei servizi postali cita una "Licenza Speciale n. 24/2023 di tipo B" limitata alla Sicilia; la home cita la licenza A1 nazionale LISP/34/2024. Non è chiaro quale sia in vigore per quale servizio.
+- **Legame tra DAT e HYA**: stessa via, mail e PEC con dominio hyagroup; la struttura societaria non è spiegata.
+- **APKappa**: nessuna pagina di prodotto attuale sul modulo cimiteriale. La scheda di APKSERVICE è del 2019. Non trovati portale per le agenzie, morosi, ricerca del defunto.
+- **Deda Next**: non trovati solleciti e morosi, né la ricerca del defunto per il cittadino.
+- **Systemtec**: non trovati pagoPA, morosi, ricerca online fuori dal totem.
+- **Aldilapp a Roseto**: la pagina del Comune non dava il testo completo del comunicato (né la data). Non verificato se il servizio è ancora attivo.
+- **Stato "scaduta" in pagoPA**: la documentazione usa sia EXPIRED sia UNPAYABLE.
+- **Brochure di APKappa (2024)**: letta solo come testo estratto dal PDF; l'impaginazione a colonne rende incerto l'ordine delle voci.
 
 ## 7. Fonti
 
@@ -187,3 +271,7 @@ Fonte: https://datnotifiche.it/servizi-digitali/ **[dichiarato]**
 - https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/rata-unica
 - https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/bollettino-postale-pa
 - https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/codice-qr
+- https://developer.pagopa.it/pago-pa/guides/sanp/appendici/posizioni-debitorie/stati-della-posizione-debitoria-v3
+- https://developer.pagopa.it/pago-pa/guides/sanp/appendici/posizioni-debitorie/operazioni-disponibili
+- https://www.hyagroup.it/
+- https://www.hyagroup.it/partner-3/
