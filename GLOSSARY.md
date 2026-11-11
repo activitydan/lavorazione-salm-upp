@@ -23,3 +23,18 @@ _Avoid_: votiva (da sola), lampade
 **Operazione cimiteriale**:
 Un intervento su una sepoltura: inumazione, tumulazione, esumazione o estumulazione.
 _Avoid_: lavorazione, intervento (che indica una manutenzione)
+
+## Ruoli
+
+**Cittadino**:
+Chi cerca dove si trova un defunto, senza accesso ai dati riservati.
+_Avoid_: utente, visitatore
+
+**Operatore**:
+Chi lavora in CimiTera per conto del Comune, sul campo o in ufficio.
+_Avoid_: funzionario, rilevatore
+
+**Amministratore**:
+L'operatore che gestisce anche gli altri operatori e le impostazioni.
+_Avoid_: admin, superutente
+

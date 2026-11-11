@@ -32,7 +32,7 @@ Un piano approvato da Dan per la versione CimiTera della demo, diviso in fasi da
 
 - Portale per le agenzie funebri: se entra in questa versione e in che forma. Dipende dai ruoli e dal modello delle pratiche.
 - Uso senza rete: cosa deve funzionare sul campo quando manca il segnale. Dipende dalla versione per telefono.
-- Semplificazione pagina per pagina: cosa togliere e unire in ogni pagina. Diventa ticket dopo l'inventario, il menu e le regole degli spazi.
+- Semplificazione pagina per pagina: cosa togliere e unire in ogni pagina. Diventa ticket dopo l'inventario, il menu e le regole degli spazi. Le Impostazioni vanno riviste più delle altre, nell'aspetto e nel contenuto (indicazione di Dan).
 - Voce "Collegamenti" con i sistemi esterni previsti (ANPR, protocollo, contabilità): se serve e dove sta. Si vede dopo il menu.
 - Divisione finale in fasi e contenuto di ogni fase: quando i modelli sono decisi.
 

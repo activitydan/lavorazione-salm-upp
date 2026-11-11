@@ -27,3 +27,17 @@ Da decidere:
 
 Il contenuto della versione per telefono di ogni ruolo si decide nel giro successivo, perché dipende dalla risposta 4.
 
+### 2026-11-11 · risposte di Dan al primo giro
+
+1. Sì: i ruoli sono Cittadino, Operatore e Amministratore.
+2. Sì, e la parte del Cittadino va pensata prima di tutto per il telefono.
+3. Sì: per ora senza password. Gli accessi veri arriveranno con il backend, più avanti.
+4. Corretto da Dan: l'Operatore può fare tutto, tranne gestire gli operatori e le Impostazioni. L'Amministratore può fare tutto. Le Impostazioni di oggi vanno riviste, nell'aspetto e nel contenuto.
+
+### 2026-11-11 · secondo giro di domande, in attesa delle risposte di Dan
+
+5. **Ingresso del Cittadino.** Proposta: una pagina pubblica senza menu, con logo e casella di ricerca, raggiungibile con un suo indirizzo e dal QR sulla lapide. Con più risultati mostra un elenco con nome, anni e viale.
+6. **Defunti nascosti al pubblico.** Proposta: ogni scheda ha un flag "Visibile al pubblico", attivo di norma, che l'Operatore può spegnere se la famiglia lo chiede.
+7. **Chi è l'Operatore nella demo.** Proposta: dopo "Entra come Operatore" si sceglie un nome dall'elenco degli operatori; quel nome firma i rilievi e vede le proprie verifiche. L'Amministratore entra come "Ufficio Cimiteri".
+8. **Versione per telefono di Operatore e Amministratore.** Proposta: sul telefono ci sono il lavoro sul campo e la consultazione (Nuovo rilievo, Ricerca, Mappa, Scheda, segnalazione di manutenzione, verifiche). Le pagine di gestione (concessioni, illuminazione votiva, pratiche, pagamenti, report, impostazioni) si usano dal computer.
+
