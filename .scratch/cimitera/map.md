@@ -26,6 +26,8 @@ Un piano approvato da Dan per la versione CimiTera della demo, diviso in fasi da
 
 <!-- una riga per ticket chiuso: nome del ticket con link, poi il succo della risposta -->
 
+- [Inventario delle pagine e proposte di semplificazione](issues/04-inventario-delle-pagine.md): nove doppioni, sette frasi descrittive da togliere, cornice delle pagine diversa dalla home, cinque elenchi troppo lunghi. Dettaglio in [inventario-pagine.md](inventario-pagine.md).
+
 ## Not yet specified
 
 - Portale per le agenzie funebri: se entra in questa versione e in che forma. Dipende dai ruoli e dal modello delle pratiche.
