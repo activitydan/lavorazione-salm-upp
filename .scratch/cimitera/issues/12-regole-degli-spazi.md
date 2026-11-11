@@ -31,3 +31,16 @@ Da decidere su una pagina campione rifatta: margini di pagina, distanza tra i ri
 6. **Riquadri affiancati.** Proposta: alti uguali, così non resta un buco sotto il più basso (in Avanzamento il grafico si allunga fino all'altezza della mappa).
 7. **Scala delle distanze.** Proposta: tutte le altre distanze solo tra 4, 8, 12, 16 e 24 px.
 8. **Parola per le linguette.** Le "schede" in alto si confondono con la Scheda del glossario. Proposta: nei ticket si chiamano "linguette".
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e otto le proposte.
+
+### 2026-11-12 · secondo giro di domande, in attesa delle risposte di Dan
+
+Il prototipo ora applica le regole anche alle finestre e al pannello laterale della scheda (per esempio "Assegna verifica" in Censimento).
+
+9. **Finestre e pannello laterale.** Proposta: stesse regole dei riquadri: 16 px dentro (oggi 18–20), testata 14 sopra e sotto e 16 ai lati, piede 12 e 16; 16 px tra i campi dei moduli (oggi 14).
+10. **Sottotitoli nelle finestre.** Proposta: restano solo quando dicono una conseguenza che non si vede ("Il poligono disegnato contiene 12 schede già censite" resta; "Compare subito nella scheda, nel rilievo sul campo, nei filtri e nelle esportazioni" va via).
+11. **La home.** Proposta: resta com'è, come il frame Figma, anche se fino a 1475 px di larghezza ha a destra un margine più largo (73 px) delle altre pagine (38).
+12. **Semplificazione pagina per pagina.** Proposta: la nebbia diventa cinque ticket di domande, uno per gruppo di pagine: Ricerca; Censimento e Nuovo rilievo; Manutenzioni; Impostazioni; Dashboard, Mappa, Scheda e pagina del QR. Le pagine nuove (Concessioni, Illuminazione votiva, Operazioni cimiteriali, Scadenze e pagamenti, Amministrazione) prendono forma dai loro ticket di modello e seguono queste regole.
