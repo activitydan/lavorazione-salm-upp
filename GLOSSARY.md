@@ -48,6 +48,18 @@ _Avoid_: trasferimento, spostamento
 Il fascicolo di una sola operazione cimiteriale su un solo defunto, dalla richiesta o dall'avvio d'ufficio fino all'esecuzione.
 _Avoid_: istanza, richiesta, procedimento
 
+**Richiedente**:
+Chi chiede al Comune una pratica o un servizio; non è per forza il concessionario.
+_Avoid_: istante, intestatario
+
+**Agenzia funebre**:
+L'impresa che cura il funerale e segue le pratiche per conto della famiglia.
+_Avoid_: impresa funebre, pompe funebri, onoranze funebri
+
+**Turno**:
+Il periodo dopo il quale una fossa in campo comune si libera con l'esumazione ordinaria.
+_Avoid_: rotazione (da sola), scadenza (che riguarda le concessioni)
+
 ## Ruoli
 
 **Cittadino**:

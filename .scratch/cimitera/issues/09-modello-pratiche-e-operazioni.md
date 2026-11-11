@@ -30,3 +30,21 @@ Dalla ricerca "Regole delle concessioni e delle operazioni cimiteriali": tra le 
 ### 2026-11-12 · risposte di Dan
 
 Sì a 1, 2 e 4. Sulla 3: sì solo al defunto e ai due modi in cui nasce la pratica (su richiesta o d'ufficio); no a postazioni di partenza e arrivo con "fuori Comune" e alla concessione presa dalla postazione. Sulla 5: solo l'attestazione di pagamento. No a 6, 7 e 9. Sulla 8: sì, e in più ogni operatore riceve gli alert solo delle proprie operazioni e di ciò che gli è assegnato; nessuno riceve gli alert generali.
+
+### 2026-11-12 · secondo giro di domande
+
+10. Postazione: una sola per pratica, quella dell'operazione; due (partenza e arrivo) solo per la traslazione; niente "fuori Comune"; la concessione non compare nella pratica.
+11. Stati: aperta, programmata, eseguita, più annullata. Il pagamento si vede sulla pratica ma non è uno stato.
+12. Controlli: A) nessuno; B) solo avvisi, mai blocchi, con un solo avviso per l'esumazione straordinaria programmata tra maggio e settembre (divieto nazionale); C) i controlli del primo giro con valori fissi.
+13. La campanella diventa personale in tutta l'app (pratiche, manutenzioni, verifiche); gli alert generali spariscono da campanella e Dashboard, anche per l'Amministratore.
+14. Alert delle pratiche a chi l'ha aperta e agli operatori assegnati: operazione di oggi o di domani, nuova assegnazione, operazione spostata o annullata. Campanella anche sul telefono.
+15. Scadenzario delle esumazioni: A) nello scadenzario unico di "Scadenze e pagamenti"; B) nella voce delle pratiche con il nome "Scadenzario"; C) nessuna lista. Turno del campo comune nelle Impostazioni.
+16. Nome della voce: A) "Operazioni cimiteriali"; B) "Pratiche"; C) resta "Pratiche e operazioni".
+17. Tariffa per tipo di operazione nelle Impostazioni, importi inventati; la pratica mostra importo e attestazione di pagamento; le pratiche d'ufficio non hanno tariffa.
+18. Campo facoltativo "agenzia funebre" scelto da un elenco nelle Impostazioni; il portale per le agenzie non entra in questa versione e va nella risposta al cliente come passo successivo.
+19. Le pratiche eseguite formano il registro delle operazioni, filtrabile per anno e cimitero, stampabile in PDF.
+20. Parole: "agenzia funebre" e "richiedente", la stessa parola anche per chi chiede l'illuminazione votiva.
+
+### 2026-11-12 · risposte di Dan
+
+Sulla 10: scelgo io (resta la proposta). Sì a 11, 14, 17, 18, 19 e 20. Sulla 12: B. Sulla 13: sì, ma l'Amministratore ha nella sua area un posto dove vede gli alert degli operatori e quello che devono fare. Sulla 15: A. Sulla 16: A.
