@@ -1,7 +1,7 @@
 # Modello di pratiche e operazioni
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 01
 
@@ -61,3 +61,33 @@ Sulla 10: scelgo io (resta la proposta). Sì a 11, 14, 17, 18, 19 e 20. Sulla 12
 ### 2026-11-12 · risposte di Dan
 
 Sulla 21: solo dove vanno i resti, senza la mineralizzazione. Sulla 22: no, l'Amministratore ha una voce nuova del menu dove gestisce le persone e le cose importanti; le Impostazioni restano per flag, tendine e simili. Sulla 24: sì, il Cittadino riceve le indicazioni ma non la posizione sulla mappa. Sì a 23, 25 e 26.
+
+### 2026-11-12 · quarto giro di domande
+
+27. La voce nuova si chiama "Amministrazione", solo per l'Amministratore, sotto "Configurazione" e sopra Impostazioni; il menu dell'Operatore non cambia.
+28. In Amministrazione: operatori (aggiungere, togliere, vedere alert e cose da fare di ognuno), agenzie funebri, durate delle concessioni e turno del campo comune, tariffe delle operazioni. Nelle Impostazioni: campi della scheda (flag, tendine, sezioni) ed elenchi come categorie di manutenzione e squadre.
+
+### 2026-11-12 · risposte di Dan
+
+Sì a 27 e 28.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Pratica**: il fascicolo di una sola operazione cimiteriale su un solo defunto, dalla richiesta all'esecuzione. Nasce su richiesta, con il **richiedente** (nome, codice fiscale, recapiti, legame con il defunto), oppure d'ufficio, senza richiedente. Le azioni sulla concessione (rinnovo, subentro, rinuncia, decadenza) restano nello storico della concessione e non sono pratiche.
+- **Operazioni**: inumazione, tumulazione, esumazione, estumulazione, traslazione. Esumazione ed estumulazione sono ordinarie o straordinarie. La **traslazione** sposta un defunto da una postazione a un'altra, anche di un altro cimitero. Ogni pratica dice cosa si sposta: salma, resti o ceneri (un'urna messa in un loculo già occupato è una tumulazione di ceneri). Fuori dalla demo: deposito provvisorio e cremazione come operazione a sé.
+- **Defunto e postazione**: un solo defunto per pratica. Per inumazione e tumulazione i suoi dati si scrivono nella pratica; per le altre operazioni si sceglie tra i defunti della scheda. Una sola postazione, quella dove si fa l'operazione; la traslazione ne ha due, partenza e arrivo. Niente "fuori Comune" come postazione. La concessione non compare nella pratica.
+- **Documenti**: solo l'attestazione di pagamento (pagata sì/no, data, numero). Nessuna checklist delle autorizzazioni, nessun file caricato.
+- **Stati**: aperta → programmata (ha data, ora e almeno un operatore assegnato) → eseguita; oppure annullata, con il motivo. Il pagamento non è uno stato.
+- **Esecuzione**: quando la pratica è eseguita, CimiTera aggiorna da sola le schede (aggiunge o toglie il defunto, posti occupati, stato libero/occupato). Per esumazione ed estumulazione l'esito è solo dove vanno i resti: ossario comune, cinerario comune, di nuovo in campo comune, fuori Comune, oppure un'altra postazione, che riceve i resti senza una seconda pratica. Ogni scheda mostra l'elenco delle sue pratiche.
+- **Defunto dopo l'operazione**: resta trovabile in Ricerca, con il posto dove si trova ora e il collegamento alla pratica. Il Cittadino riceve le indicazioni, ma non la posizione sulla mappa.
+- **Controlli**: nessun blocco. Un solo avviso sulla pratica: esumazione straordinaria programmata tra maggio e settembre (divieto nazionale, DPR 285/1990 art. 84).
+- **Agenda**: una sola per tutte le operazioni programmate, funerali compresi, per settimana e per giorno, con filtri per cimitero e tipo. Ogni voce ha ora, tipo, defunto, postazione, agenzia funebre e operatori assegnati. Avviso se la stessa postazione o lo stesso operatore hanno due operazioni alla stessa ora. Gli operatori si assegnano quando si programma, uno o più, e si cambiano fino all'esecuzione. Solo computer.
+- **Registro delle operazioni**: le pratiche eseguite, filtrabili per anno e cimitero, stampabili in PDF (il registro chiesto dal DPR 285/1990 art. 52).
+- **Scadenzario**: le esumazioni e le estumulazioni dovute (fosse a fine **turno**, postazioni con la concessione chiusa ma ancora occupate) entrano nello scadenzario unico di "Scadenze e pagamenti". Da una o più righe si aprono le pratiche d'ufficio, una per defunto.
+- **Alert**: la campanella diventa personale in tutta l'app. Ognuno riceve solo gli alert di ciò che ha aperto o che gli è assegnato (pratiche, manutenzioni, verifiche); gli alert generali spariscono dalla campanella e dalla Dashboard, anche per l'Amministratore. Per le pratiche: operazione di oggi o di domani, nuova assegnazione, operazione spostata o annullata. La campanella c'è anche sul telefono.
+- **Tariffe**: una per tipo di operazione; importi della demo inventati, perché quelli di Ragusa non si trovano. Le pratiche d'ufficio non hanno tariffa. Avviso pagoPA e stati del pagamento vanno al ticket "Pagamenti simulati".
+- **Agenzia funebre**: campo facoltativo della pratica, scelto da un elenco. Il portale per le agenzie non entra in questa versione: nella risposta al cliente è un passo successivo.
+- **Menu**: la voce "Pratiche e operazioni" si chiama **"Operazioni cimiteriali"**; dentro ci sono pratiche, agenda e registro, e il pulsante è "Nuova pratica". Nasce la voce **"Amministrazione"**, solo per l'Amministratore, sotto "Configurazione" e sopra Impostazioni: operatori (aggiungere, togliere, vedere alert e cose da fare di ognuno), agenzie funebri, durate delle concessioni e turno del campo comune, tariffe delle operazioni. Le Impostazioni restano per i campi della scheda (flag, tendine, sezioni) e per elenchi come categorie di manutenzione e squadre.
+- **Dati finti**: circa 40 pratiche di tutti i tipi e in tutti gli stati, agenda della settimana corrente piena, qualche pratica annullata con il motivo, un anno di registro, alcune fosse a fine turno nello scadenzario.

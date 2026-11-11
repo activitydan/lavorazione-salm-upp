@@ -71,6 +71,6 @@ Chi lavora in CimiTera per conto del Comune, sul campo o in ufficio.
 _Avoid_: funzionario, rilevatore
 
 **Amministratore**:
-L'operatore che gestisce anche gli altri operatori e le impostazioni.
+L'operatore che gestisce anche gli altri operatori, le regole del Comune e le impostazioni.
 _Avoid_: admin, superutente
 
