@@ -12,3 +12,4 @@ Da decidere: i tre elenchi (cosa facciamo subito, cosa mostriamo come simulazion
 
 Da includere: la precisazione sulla frase "nessun concorrente fa recapito e notifica" (vale per recapito fisico e messi, non per la notifica digitale) e l'avviso che la home di hyagroup.it sembra manomessa (ricerca "Cosa offrono i concorrenti e cosa fa DAT").
 
+Da includere: nel regolamento cimiteriale di Ragusa del 2023 alcuni rimandi interni sono sfasati di un articolo; mancano le tariffe vigenti e il contratto-tipo, da chiedere al cliente o al Comune.
