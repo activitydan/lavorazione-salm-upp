@@ -1,18 +1,126 @@
 # Concorrenti, avviso pagoPA e servizi di DAT
 
-Ricerca per il ticket `03-concorrenti-e-servizi-dat` della mappa CimiTera. Data: 2026-11-11.
+Ricerca per il ticket `03-concorrenti-e-servizi-dat` della mappa CimiTera. Pagine lette l'11/11/2026.
 Stato: in corso (il file viene aggiornato sezione per sezione).
 
-Legenda: **[dichiarato]** = lo scrive il fornitore sul proprio sito; **[dedotto]** = lo deduco io dalle fonti.
+Legenda: **[dichiarato]** = lo scrive il fornitore o l'ente sul proprio sito; **[dedotto]** = lo deduco io dalle fonti.
+
+## 2. Concorrenti
+
+### Deda Next — CiviliaNext Gestione Cimiteriale
+
+Il modulo cimiteriale di Deda Next fa parte della suite CiviliaNext, area "Demografia" (insieme ad Anagrafe, Elettorale, Stato Civile). **[dichiarato]** — https://www.civilianext.it/civilia-next/demografia-anpr
+
+Dalla pagina del modulo — https://www.civilianext.it/civilia-next/demografia-anpr/gestione-cimiteriale **[dichiarato]**:
+
+- **Mappa**: le sepolture sono mostrate su cartografia digitalizzata, con un WebGIS di consultazione.
+- **Entità cimiteriale**: è l'unità minima a cui si lega una pratica (cella, tomba, loculo...). Ha anagrafica e localizzazione, stato di assegnazione, stato di occupazione, anagrafica delle lampade votive, anagrafica delle concessioni, gestione economica.
+- **Concessioni**: tipologia, validità del contratto, scadenze, importi del canone. Lo stato di assegnazione tiene lo storico (prenotazione o concessione, intestatario, periodo di validità, situazione dei pagamenti e saldo).
+- **Occupazione**: storico di ingressi e uscite delle salme, con date, soggetti, esecutori e destinazioni.
+- **Lampade votive**: anagrafica con tipo di illuminazione e numero di lampade.
+- **Pagamenti**: oneri per concessione, trasporto, tumulazione, cremazione e altre prestazioni; stampa di un avviso pagoPA per ogni cittadino e riconciliazione dei pagamenti; flusso unico verso pagoPA con accorpamento per richiedente.
+- **Portale per le imprese funebri**: le imprese entrano con identità digitale dal portale del Comune, assegnano ai cittadini le entità disponibili scegliendole in mappa, emettono gli avvisi pagoPA e prenotano trasporto, funerale, tumulazione e altri servizi. Al Comune restano revisione e autorizzazione.
+- **Controllo**: reportistica sulle scadenze, fascicoli.
+
+Il modulo generale dei pagamenti di CiviliaNext — https://www.civilianext.it/civilia-next/servizi-online/pagamenti-online-pago-pa **[dichiarato]**:
+
+- gestisce "tutti i dovuti, pagati e non pagati", con filtri ed esportazione;
+- permette di modificare o eliminare i dovuti non pagati e di segnare come pagati quelli incassati in altro modo;
+- ha una funzione di riconciliazione sulle posizioni pagate, con ricerca per flusso di riversamento;
+- invia notifiche automatiche via e-mail, SMS, app IO e posta; è integrato con SEND.
+
+Non trovato sulle pagine lette: una funzione dedicata a solleciti e morosi, la ricerca del defunto per il cittadino.
+
+### APKappa — hyperSIC e APKSERVICE
+
+APKAPPA srl è una società del Gruppo Maggioli. **[dichiarato]** — https://www.apkappa.it/APKappa/media/apkappa/doc/SRV_cimitero_SH2019_IT_v3.pdf
+
+- **Suite hyperSIC Cloud**: la brochure elenca tra le aree coperte i "servizi cimiteriali amministrativi e contabili", i "servizi messi notificatori" e i "pagamenti elettronici con pagoPA". Tra le piattaforme collegate: ANPR, pagoPA, app IO, conservazione digitale a norma, PEC, SEND. **[dichiarato]** — https://apkappa.it/it-it/soluzioni/software-gestionale-per-comuni/hs_cloud_112024_a4.aspx (brochure 11/2024)
+- **APKSERVICE "Servizio di gestione banca dati cimitero, censimento e gestione servizi cimiteriali"** (scheda del 2019): servizio in outsourcing. Il team APKappa acquisisce i dati delle strutture dai documenti del Comune o dal sopralluogo, censisce le salme, collega i dati alla cartografia, inserisce e gestisce i contratti di concessione e i movimenti delle salme, gestisce la bollettazione delle lampade votive, emette gli avvisi di pagamento "anche eventualmente in formato pagoPA (solo se l'Ente utilizza il servizio di intermediazione APKser.pagoPA)", e rendiconta gli incassi delle lampade votive. **[dichiarato]** — https://www.apkappa.it/APKappa/media/apkappa/doc/SRV_cimitero_SH2019_IT_v3.pdf
+- Il sito pubblico di APKappa non ha una pagina di prodotto dedicata al modulo cimiteriale: la pagina della suite elenca solo le aree (Demografici, Segreteria, Contabilità, Tributi, Personale, Ufficio Tecnico, Frontoffice e Territorio). — https://apkappa.it/it-it/soluzioni/software-gestionale-per-comuni
+
+Non trovato: gestione dei morosi, portale per le agenzie funebri, ricerca del defunto per il cittadino.
+
+### Systemtec — CimiteroSmart
+
+Systemtec Srl (Villanuova sul Clisi, Brescia) vende CimiteroSmart, software "web based" per la gestione dei loculi, abbinabile a un totem touch screen. **[dichiarato]** — https://cimiterosmart.com/
+
+- **Concessioni**: assegnando un loculo a un defunto si genera il contratto di concessione, con data di inizio e di scadenza; si emette e si stampa la fattura o la si esporta verso il programma fiscale. Il software segnala i contratti "inattivi, scaduti, senza fattura o senza lampada votiva". In home c'è una tabella con i loculi in scadenza nei prossimi 6 mesi. **[dichiarato]** — https://cimiterosmart.com/software-cimitero-smart/
+- **Lampade votive**: elenco dei contraenti con data del contratto, scadenza e rinnovo automatico; generazione di contratto, fattura e bollettino postale; rinnovi massivi a inizio anno. **[dichiarato]** — https://cimiterosmart.com/software-cimitero-smart/
+- **Mappa**: cimitero diviso in zone, con i loculi colorati per stato: verde libero, giallo prenotato, rosso occupato. **[dichiarato]** — https://cimiterosmart.com/software-cimitero-smart/
+- **Totem**: il cittadino cerca la posizione del defunto nel cimitero; la schermata iniziale mostra gli ultimi necrologi; l'operatore comunale pubblica avvisi (orari, comunicazioni); in opzione, un modulo per le segnalazioni al Comune. Struttura da esterno, attiva 24 ore su 24. **[dichiarato]** — https://cimiterosmart.com/totem-multimediali/
+- **Richieste funerali**: le richieste di funerale arrivano a chi esegue le operazioni cimiteriali, con stati "Aperta / Presa in carico / Chiusa", e-mail automatiche, documenti allegati e autorizzazioni precompilate. A richiesta chiusa i dati passano nell'archivio e il loculo risulta occupato. **[dichiarato]** — https://cimiterosmart.com/richieste-funerali/
+
+Non trovato sulle pagine lette: pagoPA, morosi, ricerca del defunto online fuori dal totem.
+
+### Roseto degli Abruzzi — Aldilapp
+
+Il "Roseto" citato dal cliente è Roseto degli Abruzzi (Teramo). Il Comune ha avviato il censimento e la mappatura dei suoi cimiteri e ha adottato l'app Aldilapp. — https://www.comune.roseto.te.it/novita/comunicati/roseto-degli-abruzzi-digitalizza-i-suoi-cimiteri-al-via-il-censimento-e-la-mappatura-delle-sepolture/
+
+Aldilapp è prodotta da STUP1 srl Società Benefit (Milano). **[dichiarato]** — https://aldilapp.it/
+
+- Per il cittadino: ricerca del defunto per nome, cognome, data o anno di nascita e di morte; pensieri commemorativi; foto e biografia sul profilo del defunto; cero virtuale; invio di fiori e ordine della pulizia della lapide; notifiche sui profili seguiti. — https://aldilapp.it/app/
+- Per il Comune: contratto di adesione per pubblicare i dati cimiteriali, segnaletica nei cimiteri, una dashboard e la digitalizzazione dell'anagrafe cimiteriale. — https://aldilapp.it/aldilapp-applicazione-cimiteri
+- Store: https://apps.apple.com/it/app/apple-store/id1567407543 e https://play.google.com/store/apps/details?id=com.stup1.aldilapp
+
+### Tabella di confronto
+
+"Sì" = dichiarato sul sito del fornitore. "Non trovato" = non compare nelle pagine lette, non vuol dire che manchi.
+
+| | Deda Next (CiviliaNext) | APKappa (hyperSIC / APKSERVICE) | Systemtec (CimiteroSmart) | Aldilapp (Roseto) |
+|---|---|---|---|---|
+| Concessioni | Sì: tipologia, validità, scadenze, canone | Sì: contratti di concessione (servizio in outsourcing) | Sì: contratto, fattura, scadenzario a 6 mesi | Non trovato |
+| pagoPA | Sì: avviso per cittadino, riconciliazione | Sì, ma solo con l'intermediazione APKser.pagoPA | Non trovato (fattura e bollettino postale) | Non trovato |
+| Morosi | Non trovato (c'è l'elenco dei dovuti non pagati) | Non trovato | Non trovato (segnala i contratti senza fattura) | Non trovato |
+| Illuminazione votiva | Sì: anagrafica delle lampade | Sì: bollettazione e rendiconto incassi | Sì: contratti, rinnovi, bollettino | Non trovato |
+| Portale agenzie funebri | Sì: assegnazione in mappa, avvisi pagoPA, prenotazioni | Non trovato | In parte: modulo "Richieste funerali" | No |
+| Servizi al cittadino | Non trovato per i cimiteri | Non trovato per i cimiteri | Sì: totem con ricerca del defunto e necrologi | Sì: app con ricerca del defunto |
+| Recapito e notifica | Notifiche via e-mail, SMS, app IO, posta; SEND | Integrazione con SEND e PEC nella suite | Non trovato | No |
+
+## 3. Avviso pagoPA
+
+Fonte: documentazione ufficiale "L'avviso di pagamento pagoPA", versione 3.5.0 — https://docs.pagopa.it/avviso-pagamento/
+
+### Com'è fatto l'avviso analogico
+
+- È un foglio A4, stampabile anche fronte e retro. I modelli sono obbligatori per gli enti creditori. Esistono due modelli base (rata unica, rate multiple) e alcune varianti (senza scadenza, molte rate, altre lingue). — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche e https://docs.pagopa.it/avviso-pagamento/allegato-1/modelli-base
+- I moduli vanno messi in quest'ordine: 1) Intestazione, 2.1) Informazioni sull'Ente Creditore, 2.2) Informazioni sul Destinatario, 3.1) Importo e scadenza, 3.2) Dove pagare, 4) Dati per il pagamento. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche
+
+### I dati dell'avviso
+
+| Dato | Regola | Esempio della documentazione |
+|---|---|---|
+| Oggetto del pagamento | Massimo 90 caratteri, iniziale maiuscola, non tutto maiuscolo | TARI 2021 |
+| Logo dell'ente | 30×30 mm | — |
+| Codice fiscale dell'ente creditore | Massimo 16 caratteri (11 nel codice QR) | 01199250158 |
+| Nome dell'ente | Massimo 50 caratteri | Comune di Milano |
+| Settore dell'ente | Massimo 50 caratteri | Tributi locali |
+| Informazioni di contatto | Massimo 100 caratteri | Per informazioni www.comune.milano.it/TARI · tel. 02 0202 |
+| Codice fiscale del destinatario | Massimo 16 caratteri; si omette solo se non è noto | RSSMRA60D20F205R |
+| Nome e cognome del destinatario | Massimo 70 caratteri | Mario Rossi |
+| Indirizzo del destinatario | Massimo 140 caratteri | Vicolo Corto 12 20133 Milano MI |
+| Importo | Migliaia con il punto, decimali con la virgola | 150,00 |
+| Data di scadenza | Formato gg/mm/aaaa | 31/01/2022 |
+| Codice avviso | 18 cifre, scritte a gruppi di 4 separati da uno spazio | 0000 0000 0000 0000 00 |
+| Codice CBILL | Codice interbancario dell'ente (codice SIA), tutto maiuscolo | A0EDT |
+| Codice QR | 25×25 mm, monocromatico | vedi sotto |
+
+Fonti: https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/intestazione, .../informazioni-sullente-creditore, .../informazioni-sul-destinatario, .../importo-e-scadenza, .../dati-per-il-pagamento/rata-unica
+
+- **Codice avviso**: è la concatenazione di AUX digit, application code e codice IUV. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/codice-qr
+- **Codice QR**: contiene la stringa `PAGOPA|002|<codice avviso di 18 cifre>|<codice fiscale dell'ente di 11 cifre>|<importo in centesimi>`. Esempio della documentazione: `PAGOPA|002|000000000000000000|01199250158|0000015000`. — stessa pagina
+- **Testi fissi "Dove pagare"**: "PAGA CON L'APP IO oppure dal tuo Home Banking, con la tua app di pagamento o con gli altri canali abilitati." e "PAGA SUL TERRITORIO presso Banche e Sportelli ATM, negli Uffici Postali e Punti Postali, nei Bar, Edicole, Ricevitorie, Supermercati, Tabaccherie, e altri Esercenti Convenzionati." — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dove-pagare
+- **Bollettino Postale PA**: si aggiunge solo se l'ente incassa su un conto corrente postale. Contiene numero e intestatario del conto, un Data Matrix di 25×25 mm e l'autorizzazione di Poste alla stampa in proprio. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/bollettino-postale-pa
+- **Rate**: il testo "Puoi pagare per intero oppure in N rate" compare solo con 2 o più rate; ogni rata ha il proprio importo, la propria data, il proprio codice avviso e il proprio codice QR. — https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/importo-e-scadenza
 
 ## 4. Servizi di DAT
 
-Fonte principale: il sito datnotifiche.it, letto l'11/11/2026.
+Fonte principale: il sito datnotifiche.it.
 
 ### Chi è
 
 - DAT s.r.l., sede in Via Mazzini 152, Agrigento. "Una società giovane che nasce nel 2017". Il sito dice che oggi fa parte del "Gruppo HYA"; la natura del legame societario non è spiegata. **[dichiarato]** — https://datnotifiche.it/chi-siamo
-- Licenze postali dichiarate in home: Licenza Ministeriale Individuale n. 3713/2017, Autorizzazione Generale n. 7253/2024, Licenza Speciale Individuale A1-Italia n. LISP/34/2024. Certificazioni ISO 9001 e ISO/IEC 27001:2022. **[dichiarato]** — https://datnotifiche.it/
+- Licenze postali dichiarate in home: "Licenza Ministeriale Individuale n.37132017", "Autorizzazione Generale n. 7253/2024" e "Licenza Speciale Individuale A1-Italia n. LISP/34/2024" (notifica di atti e multe sul territorio nazionale). Certificazioni ISO 9001 e ISO/IEC 27001:2022. **[dichiarato]** — https://datnotifiche.it/
 - Le quattro aree di servizio del menu: servizi postali e di notifica, servizi digitali, servizi di consulenza, servizi di censimento sul territorio. **[dichiarato]** — https://datnotifiche.it/
 
 ### Servizi postali e di notifica
@@ -48,3 +156,34 @@ Fonte: https://datnotifiche.it/servizi-digitali/ **[dichiarato]**
 - https://datnotifiche.it/servizi-digitali/
 - https://datnotifiche.it/servizi-di-consulenza/
 - https://datnotifiche.it/servizi-di-censimento-sul-territorio/
+- https://www.dedanext.it/
+- https://www.dedanext.it/next-software-cloud-servizi-digitalizzazione-pa/
+- https://www.civilianext.it/civilia-next
+- https://www.civilianext.it/civilia-next/demografia-anpr
+- https://www.civilianext.it/civilia-next/demografia-anpr/gestione-cimiteriale
+- https://www.civilianext.it/civilia-next/servizi-online
+- https://www.civilianext.it/civilia-next/servizi-online/pagamenti-online-pago-pa
+- https://www.apkappa.it/
+- https://apkappa.it/it-it/soluzioni/software-gestionale-per-comuni
+- https://apkappa.it/it-it/soluzioni/software-gestionale-per-comuni/hs_cloud_112024_a4.aspx
+- https://www.apkappa.it/APKappa/media/apkappa/doc/SRV_cimitero_SH2019_IT_v3.pdf
+- https://cimiterosmart.com/
+- https://cimiterosmart.com/software-cimitero-smart/
+- https://cimiterosmart.com/totem-multimediali/
+- https://cimiterosmart.com/richieste-funerali/
+- https://www.comune.roseto.te.it/novita/comunicati/roseto-degli-abruzzi-digitalizza-i-suoi-cimiteri-al-via-il-censimento-e-la-mappatura-delle-sepolture/
+- https://aldilapp.it/
+- https://aldilapp.it/app/
+- https://aldilapp.it/aldilapp-applicazione-cimiteri
+- https://docs.pagopa.it/avviso-pagamento/
+- https://docs.pagopa.it/avviso-pagamento/allegato-1/modelli-base
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/intestazione
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/informazioni-sullente-creditore
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/informazioni-sul-destinatario
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/importo-e-scadenza
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dove-pagare
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/rata-unica
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/bollettino-postale-pa
+- https://docs.pagopa.it/avviso-pagamento/allegato-2/specifiche-tecniche/dati-per-il-pagamento/codice-qr
