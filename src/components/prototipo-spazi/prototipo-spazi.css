@@ -84,3 +84,11 @@ html[data-spazi] .page:not(.page--home) .pager { padding: calc(var(--ps-testa-y)
 html[data-spazi] .page:not(.page--home) .table :is(th, td) { padding: var(--ps-riga-y) var(--ps-colonne); }
 html[data-spazi] .page:not(.page--home) .table :is(th, td):first-child { padding-left: var(--ps-interno); }
 html[data-spazi] .page:not(.page--home) .table :is(th, td):last-child { padding-right: var(--ps-interno); }
+
+/* ---- finestre e pannello laterale della scheda: stesse regole dei riquadri (secondo giro) ---- */
+html[data-spazi] .modal__head { padding: var(--ps-testa-y) var(--ps-interno); }
+html[data-spazi] .modal__body { padding: var(--ps-interno); }
+html[data-spazi] .modal__foot { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+html[data-spazi] .drawer__head { padding: calc(var(--ps-testa-y) - 2px) var(--ps-interno); }
+html[data-spazi] .drawer__body { padding: var(--ps-interno); }
+html[data-spazi] .grid-form { gap: var(--ps-riquadri); }
