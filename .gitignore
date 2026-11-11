@@ -6,3 +6,5 @@ dist
 .claude/
 # strumenti di esportazione verso Figma e schermate generate (locali, non servono alla demo)
 figma/
+# grafo di graphify (generato in locale, si rigenera)
+graphify-out/
