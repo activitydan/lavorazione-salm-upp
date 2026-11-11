@@ -6,6 +6,7 @@ import { useDatiCimitero } from '../data/selectors';
 import { href, useRotta, vai } from '../router';
 import { Logo } from './Logo';
 import { CampanellaAlert } from './Topbar';
+import { SidebarPrototipo, usePrototipoMenu } from './prototipo-menu/PrototipoMenu';
 
 // La Mappa non è nel menu: si apre da "Apri la mappa" sulla Dashboard (e dalla ricerca o dalla legenda)
 const VOCI = [
@@ -18,7 +19,12 @@ const VOCI = [
   { path: '/esportazioni', label: 'Esportazioni', icon: Download },
 ];
 
+// PROTOTIPO "Struttura del menu": con ?menu=A|B|C il menu lo disegna il prototipo
 export function Sidebar() {
+  return usePrototipoMenu() ? <SidebarPrototipo /> : <SidebarOggi />;
+}
+
+function SidebarOggi() {
   const rotta = useRotta();
   const aperta = useStore((s) => s.ui.menuMobile);
   const { manutenzioni } = useDatiCimitero();

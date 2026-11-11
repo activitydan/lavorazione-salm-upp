@@ -9,6 +9,7 @@ import { setUi, useStore } from './data/store';
 import { useRotta } from './router';
 import { Dashboard } from './pages/Dashboard';
 import { MappaPage } from './pages/MappaPage';
+import { BarraPrototipo, NotaPrototipo, PaginaPrototipo } from './components/prototipo-menu/PrototipoMenu';
 
 const RicercaPage = lazy(() => import('./pages/RicercaPage').then((m) => ({ default: m.RicercaPage })));
 const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ default: m.SchedaPage })));
@@ -48,10 +49,12 @@ function Pagina() {
       return <ImpostazioniPage />;
     default:
       return (
-        <div className="page">
-          <h1>Pagina non trovata</h1>
-          <p className="muted mt-8">L'indirizzo non corrisponde a nessuna sezione di SALM-APP.</p>
-        </div>
+        <PaginaPrototipo path={r.path} altrimenti={
+          <div className="page">
+            <h1>Pagina non trovata</h1>
+            <p className="muted mt-8">L'indirizzo non corrisponde a nessuna sezione di SALM-APP.</p>
+          </div>
+        } />
       );
   }
 }
@@ -94,6 +97,7 @@ export function App() {
         <Topbar />
         <div className="content-wrap">
           <main className={`content ${piena ? 'content--full' : ''}`}>
+            {!piena && <NotaPrototipo />}
             <Suspense fallback={<div className="page"><div className="spinner" /></div>}>
               <Pagina />
             </Suspense>
@@ -104,6 +108,7 @@ export function App() {
       <Modali />
       <GrigliaParete />
       <Toasts />
+      <BarraPrototipo />
     </div>
   );
 }
