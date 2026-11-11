@@ -5,16 +5,32 @@ Gestione digitale del patrimonio cimiteriale di un Comune: censimento sul campo 
 ## Language
 
 **Postazione**:
-Il posto fisico di sepoltura che viene censito: loculo, tomba, cappella, ossario o urna.
+Il posto fisico di sepoltura che viene censito: loculo, tomba di famiglia, celletta ossario, nicchia cineraria o fossa in campo comune.
 _Avoid_: manufatto
+
+**Tomba di famiglia**:
+Postazione con più posti, data in concessione a una famiglia; comprende cappelle e mausolei.
+_Avoid_: cappella gentilizia
 
 **Scheda**:
 Il documento che descrive una postazione, identificato da un codice univoco.
 _Avoid_: record
 
+**Concessione**:
+Il contratto con cui il Comune assegna per un tempo determinato una o più postazioni a un concessionario.
+_Avoid_: assegnazione, contratto (da solo)
+
 **Concessionario**:
-La persona che ha in concessione una postazione in forza di un contratto con il Comune.
+La persona, le persone o l'ente che hanno una concessione.
 _Avoid_: intestatario, titolare
+
+**Rappresentante**:
+Il concessionario che tratta con il Comune per conto degli altri, quando i concessionari sono più di uno.
+_Avoid_: referente
+
+**Avente diritto**:
+Chi può essere sepolto in una tomba di famiglia in base alla concessione.
+_Avoid_: beneficiario
 
 **Illuminazione votiva**:
 Il servizio che tiene accesa una lampada su una postazione, a carico di chi lo richiede.
