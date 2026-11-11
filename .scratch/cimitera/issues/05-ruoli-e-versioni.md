@@ -1,7 +1,7 @@
 # Ruoli e versioni dell'app
 
 Type: grilling
-Status: open
+Status: claimed
 
 ## Question
 
@@ -15,3 +15,15 @@ Da decidere:
 - cosa può vedere chi cerca un defunto, e cosa resta riservato (concessionario, pagamenti, foto);
 - come si sceglie il ruolo nella demo, dato che non ci sono accessi veri;
 - cosa contiene la versione semplificata per telefono per ciascun ruolo.
+
+## Comments
+
+### 2026-11-11 · primo giro di domande, in attesa delle risposte di Dan
+
+1. **Nomi dei ruoli.** Proposta: tre ruoli chiamati Cittadino, Operatore e Amministratore. "Utente" resta fuori, perché indica chi ha un'utenza votiva.
+2. **Cosa vede il Cittadino.** Proposta: solo la ricerca per nome e cognome. Il risultato mostra la postazione sulla mappa, le indicazioni per arrivarci, la foto della lapide e le date. Non vede concessionario, pagamenti, manutenzioni, e non può sfogliare elenchi.
+3. **Come si sceglie il ruolo nella demo.** Proposta: una schermata iniziale "Entra come" con tre scelte, senza password, e la possibilità di cambiare ruolo dal riquadro dell'utente in fondo al menu.
+4. **Confine tra Operatore e Amministratore.** Proposta: l'Operatore fa rilievo, schede, segnalazioni di manutenzione e le verifiche che gli sono assegnate. L'Amministratore fa tutto il resto: concessioni, illuminazione votiva, pratiche, pagamenti, report, operatori e impostazioni.
+
+Il contenuto della versione per telefono di ogni ruolo si decide nel giro successivo, perché dipende dalla risposta 4.
+
