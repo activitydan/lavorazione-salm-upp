@@ -26,6 +26,8 @@ Dal ticket [Semplificazione di Censimento e Nuovo rilievo](16-semplificazione-ce
 
 Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md): la sezione "Fatturazione e pagamenti" sparisce dalla scheda (con "Stato pagamenti" e "Intestatario utenza"), quindi va tolta anche dai campi configurabili. Nella scheda "manufatto" diventa "postazione": va rinominata anche la sezione "Manufatto" dei campi configurabili.
 
+Dal ticket [Semplificazione di Manutenzioni](17-semplificazione-manutenzioni.md): le squadre di intervento spariscono, anche dall'elenco nelle Impostazioni, perché quando si programma una manutenzione si assegnano uno o più operatori. Le categorie di manutenzione restano. Le manutenzioni assegnate a un operatore sono tra le sue cose da fare.
+
 ## Comments
 
 ### 2026-11-12 · primo giro di domande, in attesa delle risposte di Dan
