@@ -84,3 +84,16 @@ Elenchi in bozza
     - la frase "nessun concorrente software fa anche recapito e notifica" vale per il recapito fisico e la notifica con il messo; sulla notifica digitale (PEC, app IO, SEND) Deda Next e APKappa sono già collegati. Suggeriamo: "Nessun concorrente software fa anche il recapito fisico e la notifica con il messo";
     - il 12 novembre sulla home di hyagroup.it comparivano frasi pubblicitarie di casinò fuori contesto: il sito sembra manomesso, conviene farlo controllare subito;
     - nel regolamento cimiteriale di Ragusa del 2023 alcuni rimandi interni sono sfasati di un articolo: può servire dirlo al Comune.
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte le 13 proposte.
+
+### 2026-11-12 · secondo giro di domande, in attesa delle risposte di Dan
+
+Il testo completo, con le 13 proposte approvate, è nella bozza [risposta-al-cliente.md](../risposta-al-cliente.md).
+
+1. **Testo.** Proposta: il testo della bozza va bene così, parola per parola.
+2. **Lunghezza.** Il testo è di circa 1.060 parole, quasi due pagine invece di una e mezza, perché contiene tutti i punti approvati. Proposta: lo teniamo così, senza tagli.
+3. **Firma.** Proposta: "Un saluto, Dan".
+4. **Ticket 18 in sospeso.** Proposta: chiudo questo ticket con il testo com'è. Nel ticket [Semplificazione di Impostazioni e Amministrazione](18-semplificazione-impostazioni.md) lascio una nota: se decide di mostrare nell'app i collegamenti esterni, chi lo chiude aggiunge una riga al punto 3 della risposta ("nella demo un riquadro mostra i collegamenti previsti").
