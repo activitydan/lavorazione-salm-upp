@@ -1,7 +1,7 @@
 # Semplificazione di Ricerca
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 06, 12
 
@@ -40,3 +40,22 @@ Sì a tutte e otto le proposte.
 ### 2026-11-12 · secondo giro, in attesa della risposta di Dan
 
 9. **Concessioni dentro Ricerca.** Oggi Ricerca ha il filtro "Concessione" (in scadenza, scadute, senza) e il filtro "Nominativo" trova anche il nome del concessionario. Proposta: restano entrambi, perché si combinano con gli altri filtri e con la mappa (per esempio i loculi senza concessione di un viale); l'elenco delle concessioni e dei concessionari sta in Concessioni.
+
+### 2026-11-12 · risposta di Dan al secondo giro
+
+Sì.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Com'è fatta la pagina**: titolo "Ricerca", senza frase sotto; in alto a destra "Vedi sulla mappa" ed "Esporta"; i filtri a sinistra come oggi; sopra la tabella l'interruttore "Schede / Defunti" e il numero dei risultati.
+- **Defunti**: Anagrafe › Defunti diventa la vista "Defunti" di Ricerca, con gli stessi filtri. Una riga per defunto: cognome, nome, nascita, morte, età, ubicazione, stato. Spariscono la barra delle lettere e i due indicatori.
+- **Postazioni libere**: nessun pulsante nuovo, il filtro pronto è lo stato "Libero". I conteggi per tipologia e per struttura passano al ticket [Censimento e Nuovo rilievo](16-semplificazione-censimento-e-rilievo.md).
+- **Esporta**: un solo pulsante, che apre una finestra con Excel (con la scelta delle colonne), PDF delle schede ed Excel dei totali. Esporta le righe selezionate o, se non ce ne sono, tutti i risultati, e lo scrive sul pulsante ("Esporta 12" / "Esporta 1.858"). Nella vista "Defunti" l'Excel ha una riga per defunto.
+- **Righe selezionate**: la barra ha solo Assegna verifica, Cambia stato e Deseleziona. Sparisce la barra con "PDF di tutte" ed "Etichette QR".
+- **Il resto di Esportazioni**: l'Excel delle lampade votive per la fatturazione va in Illuminazione votiva, l'Excel delle scadenze in Scadenze e pagamenti; "Esportazioni recenti" sparisce. Le etichette QR si decidono nel ticket [Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md).
+- **Telefono**: elenco a card con foto, nome del defunto, ID e viale, stato; si tocca per aprire la scheda. Niente selezione né Esporta. I filtri si aprono dal pulsante "Filtri".
+- **Righe per pagina**: 50, in tutte e due le viste e sul telefono.
+- **Concessioni dentro Ricerca**: restano il filtro "Concessione" (in scadenza, scadute, senza) e la ricerca per nome che trova anche il concessionario.
+- **Glossario**: entra "Defunto".

@@ -20,3 +20,5 @@ Da decidere:
 Gli spazi seguono [Regole degli spazi](12-regole-degli-spazi.md). Punto di partenza: [inventario-pagine.md](../inventario-pagine.md), doppioni 5, 6 e 8 e le sezioni Censimento e Nuovo rilievo; [Struttura del menu](06-struttura-del-menu.md) e [Ruoli e versioni dell'app](05-ruoli-e-versioni.md) per il telefono.
 
 Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): il flag "Lampada votiva" ora lo calcola CimiTera dall'utenza attiva e non si spunta più a mano. Da decidere qui: nel Nuovo rilievo, cosa fa l'operatore quando sul campo vede una lampada ma la scheda non ha un'utenza (o il contrario).
+
+Dal ticket [Semplificazione di Ricerca](15-semplificazione-ricerca.md): arrivano qui, con Statistiche, i conteggi delle postazioni libere per tipologia e per struttura (oggi in Report › Postazioni libere); in Ricerca le postazioni libere si trovano col filtro di stato "Libero". In Ricerca gli elenchi hanno 50 righe per pagina.

@@ -16,6 +16,10 @@ _Avoid_: cappella gentilizia
 Il documento che descrive una postazione, identificato da un codice univoco.
 _Avoid_: record
 
+**Defunto**:
+La persona sepolta in una postazione; una postazione può averne più di uno.
+_Avoid_: deceduto, estinto
+
 **Concessione**:
 Il contratto con cui il Comune assegna per un tempo determinato una o più postazioni a un concessionario.
 _Avoid_: assegnazione, contratto (da solo)
