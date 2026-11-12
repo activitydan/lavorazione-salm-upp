@@ -5,7 +5,7 @@ import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
 import type {
   AlertPersonale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione, Operatore, Quadrante, Scheda, Sessione, StileMappa,
-  Struttura, Verifica,
+  Struttura, Verifica, VoceDaInviare,
 } from './types';
 
 export interface Toast {
@@ -23,6 +23,10 @@ interface UiState {
   volaA: { lat: number; lng: number; zoom: number; n: number } | null;
   menuMobile: boolean;
   modale: Modale | null;
+  /** false quando il telefono non ha rete */
+  rete: boolean;
+  /** interruttore della demo, nel riquadro dell'utente: mostra il lavoro senza rete anche dal computer */
+  simulaSenzaRete: boolean;
 }
 
 export type Modale =
@@ -47,11 +51,11 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 4;
+export const VERSIONE_DATI = 5;
 
 const DB_VUOTO: Database = {
   versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
-  manutenzioni: [], verifiche: [], alert: [], alertLetti: [], esportazioni: [],
+  manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
 const CHIAVE_SESSIONE = 'cimitera:sessione';
@@ -81,6 +85,8 @@ export const useStore = create<Stato>(() => ({
     volaA: null,
     menuMobile: false,
     modale: null,
+    rete: typeof navigator === 'undefined' ? true : navigator.onLine,
+    simulaSenzaRete: false,
   },
   toasts: [],
   sessione: leggiSessione(),
@@ -116,7 +122,7 @@ async function caricaDemo(): Promise<Database> {
   // a settimane intere, per non spostare i giorni della settimana
   const giorni = d.generatoIl ? Math.floor(giorniTra(d.generatoIl, oggiISO()) / 7) * 7 : 0;
   if (giorni > 0) d = spostaDate(d, giorni);
-  return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], esportazioni: [] };
+  return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], daInviare: [], esportazioni: [] };
 }
 
 /** Stati e tipologie non si modificano: valgono sempre quelli di partenza. */
@@ -150,6 +156,9 @@ export async function avvia() {
   } catch (e) {
     setS({ errore: (e as Error).message, pronto: true });
   }
+  // stato vero della rete del telefono (si prova con la modalità aereo)
+  window.addEventListener('online', () => setRete({ rete: true }));
+  window.addEventListener('offline', () => setRete({ rete: false }));
   useStore.subscribe((s, prev) => {
     if (s.db !== prev.db) salvaDopo(CHIAVI.db, s.db);
     if (s.config !== prev.config) salvaDopo(CHIAVI.config, s.config);
@@ -201,6 +210,43 @@ export function utenteCorrente(): string {
 export function firmaCorrente(): string {
   const { sessione } = S();
   return sessione?.operatoreId ?? 'ufficio';
+}
+
+// ---------------------------------------------------------------------------
+// Lavoro senza rete
+// ---------------------------------------------------------------------------
+
+const senzaRete = (s: Stato) => !s.ui.rete || s.ui.simulaSenzaRete;
+
+/** true quando manca la rete, vera o simulata dall'interruttore della demo. */
+export function seSenzaRete(): boolean {
+  return senzaRete(S());
+}
+
+export function useSenzaRete(): boolean {
+  return useStore(senzaRete);
+}
+
+/** Cambia lo stato della rete; quando torna, l'invio all'ufficio parte da solo (nella demo è finto). */
+export function setRete(patch: { rete?: boolean; simulaSenzaRete?: boolean }) {
+  const prima = seSenzaRete();
+  setUi(patch);
+  const dopo = seSenzaRete();
+  if (!prima && dopo) toast('Senza rete: la mappa passa a Planimetria', 'info');
+  if (prima && !dopo) {
+    const n = S().db.daInviare.length;
+    if (n) {
+      setDb(() => ({ daInviare: [] }));
+      toast(n === 1 ? 'Una modifica inviata all\'ufficio' : `${n} modifiche inviate all'ufficio`);
+    } else toast('La rete è tornata', 'info');
+  }
+}
+
+/** Segna come "Da inviare" ciò che si fa senza rete. */
+function daInviare(tipo: VoceDaInviare['tipo'], riferimento: string, descrizione: string) {
+  if (!seSenzaRete()) return;
+  const voce: VoceDaInviare = { id: `DI-${Date.now().toString(36)}-${riferimento}`, tipo, riferimento, descrizione, data: adessoISO() };
+  setDb((db) => ({ daInviare: [...db.daInviare, voce] }));
 }
 
 // ---------------------------------------------------------------------------
@@ -343,6 +389,7 @@ export function creaScheda(dati: Omit<Scheda, 'id' | 'rilevatoIl' | 'aggiornatoI
   const ora = adessoISO();
   const s: Scheda = { ...dati, id, rilevatoIl: ora, aggiornatoIl: ora, storico: [evento('Scheda creata')] };
   setDb((db) => ({ schede: [...db.schede, s] }));
+  daInviare('rilievo', s.id, `Rilievo ${s.id}`);
   return s;
 }
 
@@ -397,6 +444,7 @@ export function creaManutenzione(m: Omit<Manutenzione, 'id' | 'segnalataIl' | 's
   setDb((db) => ({ manutenzioni: [...db.manutenzioni, nuova] }));
   const s = schedaPerId(m.schedaId);
   if (s && s.stato !== 'da_manutenzionare') aggiornaScheda(s.id, { stato: 'da_manutenzionare' }, `Segnalata manutenzione ${nuova.id}`);
+  daInviare('manutenzione', nuova.id, `Segnalazione ${nuova.id} · ${nomeCategoria(nuova.categoria)}`);
   return nuova;
 }
 
@@ -444,6 +492,7 @@ export function risolviManutenzione(id: string, fotoId: string, note: string) {
   if (!m) return;
   aggiornaManutenzione(id, { stato: 'risolta', risoltaIl: oggiISO(), fotoRisoluzione: fotoId, noteRisoluzione: note });
   liberaScheda(m, `Manutenzione ${id} risolta, foto aggiornata`, fotoId);
+  daInviare('manutenzione', id, `Manutenzione ${id} risolta`);
   avvisa([m.segnalataDa], { titolo: 'Manutenzione risolta', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId}`, link: `/manutenzioni?id=${id}` });
 }
 
@@ -468,6 +517,7 @@ export function completaVerifica(id: string, esito: NonNullable<Verifica['esito'
     verifiche: db.verifiche.map((x) => (x.id === id ? { ...x, stato: 'completata', esito, noteEsito, completataIl: oggiISO() } : x)),
   }));
   aggiornaScheda(v.schedaId, nuovoStato ? { stato: nuovoStato } : {}, `Verifica ${id} completata: ${esito}`);
+  daInviare('verifica', id, `Verifica ${id} chiusa · ${v.schedaId}`);
 }
 
 // ---------------------------------------------------------------------------

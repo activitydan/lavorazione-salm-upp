@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, MapPin, Navigation, Search } from 'lucide-react';
 import { FIRMA, Logo } from '../components/Logo';
 import { CemeteryMap } from '../components/map/CemeteryMap';
-import { useStore } from '../data/store';
+import { useSenzaRete, useStore } from '../data/store';
 import type { Defunto, Scheda } from '../data/types';
 import { data, decedutoDa, nomeCompleto, normalizza } from '../lib/format';
 import { googleMapsIndicazioni } from '../lib/geo';
@@ -23,6 +23,7 @@ export function CittadinoPage() {
   const foto = useStore((s) => s.foto);
   const [q, setQ] = useState('');
   const [scelto, setScelto] = useState<Trovato | null>(null);
+  const senzaRete = useSenzaRete();
 
   const trovati = useMemo(() => {
     const parole = normalizza(q).split(/\s+/).filter(Boolean);
@@ -49,7 +50,12 @@ export function CittadinoPage() {
         <Logo size={36} />
       </header>
 
-      {scelto ? (
+      {senzaRete ? (
+        <div className="pub__card">
+          <h1 className="pub__name">Serve la rete</h1>
+          <p className="muted">Per cercare un defunto il telefono deve essere collegato a Internet. Riprova quando torna la rete.</p>
+        </div>
+      ) : scelto ? (
         <div className="pub__card">
           <button className="btn btn--ghost btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => setScelto(null)}>
             <ArrowLeft size={15} />Torna ai risultati

@@ -1,0 +1,17 @@
+{
+  "name": "CimiTera",
+  "short_name": "CimiTera",
+  "description": "Gestione digitale del patrimonio cimiteriale. Una soluzione DAT | HYA Group.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F1B2D",
+  "icons": [
+    { "src": "./icone/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icone/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icone/icona-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3, ClipboardCheck, ClipboardList, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, Search, Settings, ShieldCheck, UserRound, Wrench,
+  BarChart3, ClipboardCheck, ClipboardList, CloudOff, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, Search, Settings, ShieldCheck, UserRound, Wrench,
   type LucideIcon,
 } from 'lucide-react';
-import { esci, setUi, useStore } from '../data/store';
+import { esci, setRete, setUi, useStore } from '../data/store';
 import { useUtente } from '../data/selectors';
 import type { Ruolo } from '../data/types';
 import { useTelefono } from '../lib/schermo';
 import { href, useRotta } from '../router';
 import { Logo } from './Logo';
 import { CampanellaAlert } from './Topbar';
+import { Switch } from './ui';
 
 export interface VoceMenu {
   path: string;
@@ -62,6 +63,7 @@ export function paginaSoloComputer(path: string): boolean {
 
 function RiquadroUtente({ chiudiMenu }: { chiudiMenu: () => void }) {
   const utente = useUtente();
+  const simula = useStore((s) => s.ui.simulaSenzaRete);
   const [aperto, setAperto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -84,6 +86,11 @@ function RiquadroUtente({ chiudiMenu }: { chiudiMenu: () => void }) {
             <b>{utente.nome}</b>
             <span className="small muted">{utente.etichettaRuolo}</span>
           </div>
+          <label className="popover__item" style={{ cursor: 'pointer' }}>
+            <CloudOff size={16} />
+            <span className="grow">Simula senza rete</span>
+            <Switch small on={simula} onChange={(v) => setRete({ simulaSenzaRete: v })} label="Simula senza rete" />
+          </label>
           <button className="popover__item" role="menuitem" onClick={() => { setAperto(false); chiudiMenu(); esci(); }}>
             <Repeat size={16} />
             <span className="grow">Cambia ruolo</span>

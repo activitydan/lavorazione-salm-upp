@@ -3,6 +3,7 @@ import { Map as MapIcon } from 'lucide-react';
 import { EntraCome } from './components/EntraCome';
 import { Modali, PannelloScheda } from './components/Modali';
 import { paginaPermessa, paginaSoloComputer, Sidebar } from './components/Sidebar';
+import { StrisciaRete } from './components/StrisciaRete';
 import { Topbar } from './components/Topbar';
 import { Empty, Toasts } from './components/ui';
 import { Mark, Wordmark } from './components/Logo';
@@ -127,6 +128,7 @@ export function App() {
     <div className="app">
       <Sidebar />
       <div className="main">
+        <StrisciaRete />
         <Topbar />
         <div className="content-wrap">
           <main className={`content ${piena ? 'content--full' : ''}`}>

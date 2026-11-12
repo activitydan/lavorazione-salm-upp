@@ -12,6 +12,7 @@ import { anniVita, data, dataBreve, dataOra, decedutoDa, eta, nomeCompleto } fro
 import { formatCoord, googleMapsIndicazioni } from '../../lib/geo';
 import { pdfScheda } from '../../lib/pdf';
 import { href, useRotta, vai } from '../../router';
+import { DaInviare } from '../StrisciaRete';
 import { Dot, Progress, Switch, TipologiaBadge } from '../ui';
 import { InputCampo, ValoreOpzione } from './Campi';
 import { FotoScheda } from './Media';
@@ -51,7 +52,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
       <FotoScheda s={s} />
       <div className="scheda-id">
         <div>
-          <div className="scheda-id__code">{s.id}</div>
+          <div className="scheda-id__code">{s.id} <DaInviare riferimento={s.id} /></div>
           <div className="scheda-id__name">{descrizioneScheda(s)}</div>
         </div>
         <TipologiaBadge tipologia={s.tipologia} />

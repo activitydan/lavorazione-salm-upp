@@ -155,3 +155,8 @@
 
 /* ---------- Amministrazione: pannello dell'operatore accanto alla tabella ---------- */
 .drawer--admin { position: sticky; top: 0; width: auto; max-height: calc(100dvh - 140px); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; transform: none; animation: none; }
+
+/* ---------- lavoro senza rete ---------- */
+.striscia-rete { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #fdf1e3; color: #7a4a10; border-bottom: 1px solid #f1d3ad; font-size: 13px; flex: none; }
+.striscia-rete .grow { min-width: 0; }
+@media (max-width: 760px) { .striscia-rete .grow { display: none; } .striscia-rete b { flex: 1; } }

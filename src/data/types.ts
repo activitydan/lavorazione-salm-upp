@@ -191,6 +191,16 @@ export interface AlertPersonale {
   link?: string;
 }
 
+/** Una cosa fatta senza rete, che aspetta di essere inviata all'ufficio. */
+export interface VoceDaInviare {
+  id: string;
+  tipo: 'rilievo' | 'manutenzione' | 'verifica';
+  /** id della scheda, della manutenzione o della verifica */
+  riferimento: string;
+  descrizione: string;
+  data: string;
+}
+
 export interface VoceEsportazione {
   data: string;
   tipo: string;
@@ -211,6 +221,7 @@ export interface Database {
   verifiche: Verifica[];
   alert: AlertPersonale[];
   alertLetti: string[];
+  daInviare: VoceDaInviare[];
   esportazioni: VoceEsportazione[];
 }
 

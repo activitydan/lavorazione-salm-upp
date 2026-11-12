@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { indiceSchede, useStore } from '../../data/store';
+import { indiceSchede, useSenzaRete, useStore } from '../../data/store';
 import { descrizioneScheda, statoDef, tipologiaDef } from '../../data/selectors';
 import type { Area, Cimitero, LatLng, Quadrante, Scheda, StileMappa, Struttura, Viale } from '../../data/types';
 import { centroide } from '../../lib/geo';
@@ -53,9 +53,12 @@ export interface CemeteryMapProps {
 export function CemeteryMap(props: CemeteryMapProps) {
   const {
     cimitero, schede, strutture, conteggiStrutture = null, quadranti = [], mostraQuadranti = false, evidenziaQuadrante = null,
-    viali = [], aree = [], stile, coloraPer = 'stato', selezionata = null, onSelect, onMapClick, disegno = null,
+    viali = [], aree = [], stile: stileScelto, coloraPer = 'stato', selezionata = null, onSelect, onMapClick, disegno = null,
     compatta = false, mostraPartenza = false, etichetteViali = true, className, children, onReady, segueVolo = true,
   } = props;
+  // senza rete le immagini satellitari non arrivano: la mappa passa da sola a Planimetria
+  const senzaRete = useSenzaRete();
+  const stile: StileMappa = senzaRete ? 'planimetria' : stileScelto;
   const box = useRef<HTMLDivElement>(null);
   const [mappa, setMappa] = useState<L.Map | null>(null);
   const config = useStore((s) => s.config);

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { ScegliFoto } from '../components/scheda/Media';
+import { DaInviare } from '../components/StrisciaRete';
 import { Avatar, Field, Modal, Seg, Tabs } from '../components/ui';
 import { MOTIVI_ANNULLAMENTO, STATI_MANUTENZIONE, UFFICIO } from '../config/defaults';
 import {
@@ -119,7 +120,7 @@ export function ManutenzioniPage() {
                   <button key={m.id} className="ricerca__card" onClick={() => setQuery('id', m.id)}>
                     <span className="list-item__thumb" style={{ overflow: 'hidden', display: 'block' }}><FotoManutenzione m={m} dopo={m.stato === 'risolta'} /></span>
                     <span className="grow">
-                      <b className="ellipsis">{labelLista(config.categorieManutenzione, m.categoria)}</b>
+                      <b className="ellipsis">{labelLista(config.categorieManutenzione, m.categoria)} <DaInviare riferimento={m.id} /></b>
                       <span className="tiny muted">{m.schedaId}{s ? ` · ${s.viale}` : ''}</span>
                       <span className="tiny muted">{m.dataProgrammata && !chiusa(m) ? `Programmata ${dataBreve(m.dataProgrammata)}` : `Segnalata ${dataBreve(m.segnalataIl)}`}</span>
                     </span>
@@ -142,7 +143,7 @@ export function ManutenzioniPage() {
                       <div className="ticket__foto"><FotoManutenzione m={m} dopo={m.stato === 'risolta'} /></div>
                       <div className="ticket__body">
                         <div className="row row--between">
-                          <span className="tiny muted strong">{m.id}</span>
+                          <span className="tiny muted strong">{m.id} <DaInviare riferimento={m.id} /></span>
                           <span className="badge badge--sm" style={{ background: `${st.colore}18`, color: st.colore }}>{st.label}</span>
                         </div>
                         <b className="ticket__title">{labelLista(config.categorieManutenzione, m.categoria)}</b>

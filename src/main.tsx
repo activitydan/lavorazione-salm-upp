@@ -16,6 +16,14 @@ import { avvia } from './data/store';
 
 avvia();
 
+// L'app si installa sul telefono e tiene i suoi file: così si apre anche senza rete.
+// In sviluppo non si registra, per non servire file vecchi.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker non registrato', e));
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
