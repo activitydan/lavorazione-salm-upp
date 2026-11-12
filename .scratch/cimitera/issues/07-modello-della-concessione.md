@@ -52,3 +52,7 @@ Dal ticket [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.m
 - Anche il **turno** della fossa in campo comune (10 anni nella demo) sta in Amministrazione. Le fosse a fine turno e le postazioni con la concessione chiusa ma ancora occupate entrano nello scadenzario unico di "Scadenze e pagamenti", da cui si aprono le pratiche d'ufficio.
 - La pratica non mostra la concessione. Quando una pratica è eseguita, CimiTera aggiorna da sola i posti occupati.
 
+
+### Aggiornamento del 2026-11-12 (utenza votiva)
+
+Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): quando una concessione si chiude, CimiTera chiude da sola le utenze votive delle sue schede, con motivo "fine della concessione".

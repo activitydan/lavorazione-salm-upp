@@ -13,3 +13,5 @@ Da decidere: da dove si parte (scadenzario delle concessioni e delle utenze voti
 Dal ticket "Struttura del menu": gli avvisi stanno nella voce "Scadenze e pagamenti", nello stesso giro scadenza → avviso → pagamento → sollecito. Lo scadenzario è uno solo per concessioni e utenze votive. Attenzione al nome: "avviso" indica anche l'avviso di pagamento pagoPA (ticket "Pagamenti simulati").
 
 Dal ticket "Modello di pratiche e operazioni": nello scadenzario unico entrano anche le esumazioni e le estumulazioni dovute (fosse a fine turno, postazioni con la concessione chiusa ma ancora occupate); da lì si aprono le pratiche d'ufficio. La campanella degli alert è personale: nessuno riceve alert generali sulle scadenze.
+
+Dal ticket "Modello dell'utenza votiva": per l'illuminazione votiva il destinatario è l'**abbonato**, all'indirizzo per la bolletta se diverso dalla residenza. Il canone si paga ogni anno solare, in anticipo.

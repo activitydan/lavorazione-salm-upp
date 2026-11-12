@@ -18,3 +18,5 @@ Da decidere:
 - se mostrare i collegamenti con i sistemi esterni (ANPR, protocollo, contabilità), che starebbero in una di queste due pagine (punto ancora aperto in "Not yet specified" della mappa).
 
 Gli spazi seguono [Regole degli spazi](12-regole-degli-spazi.md). Punto di partenza: [inventario-pagine.md](../inventario-pagine.md), sezione Impostazioni; [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.md) e l'aggiornamento in [Struttura del menu](06-struttura-del-menu.md).
+
+Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): Amministrazione riceve anche il canone votivo annuo per punto luce e il contributo di allaccio (demo 24 € e 15 €). Il campo "Lampada votiva" della scheda diventa calcolato e i campi "Canone lampada votiva" e "Codice utenza" spariscono: vanno tolti anche dai campi configurabili.

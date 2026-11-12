@@ -16,3 +16,5 @@ Da decidere:
 - sulla lapide non c'è un QR: cosa fare delle etichette QR e se la pagina pubblica del QR diventa la pagina del Cittadino (ricerca del defunto dal telefono).
 
 Gli spazi seguono [Regole degli spazi](12-regole-degli-spazi.md), tranne la home. Punto di partenza: [inventario-pagine.md](../inventario-pagine.md), doppioni 7 e 9 e le sezioni Dashboard, Mappa, Scheda e pagina pubblica del QR; [Ruoli e versioni dell'app](05-ruoli-e-versioni.md) per il Cittadino.
+
+Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): la Scheda mostra lo stato dell'utenza votiva in sola lettura, anche sul telefono; il flag "Lampada votiva" è calcolato e i campi "Canone lampada votiva" e "Codice utenza" spariscono.

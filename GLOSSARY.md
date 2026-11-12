@@ -36,6 +36,22 @@ _Avoid_: beneficiario
 Il servizio che tiene accesa una lampada su una postazione, a carico di chi lo richiede.
 _Avoid_: votiva (da sola), lampade
 
+**Utenza votiva**:
+Il contratto di illuminazione votiva su una postazione, per un defunto o per tutta una tomba di famiglia, con uno o più punti luce.
+_Avoid_: abbonamento, contratto (da solo), lampada
+
+**Abbonato**:
+Chi ha un'utenza votiva e ne paga il canone; non è per forza il concessionario.
+_Avoid_: utente, intestatario, richiedente (che indica chi chiede il servizio)
+
+**Punto luce**:
+Una lampada votiva collegata alla rete del cimitero; il canone si paga per punto luce.
+_Avoid_: lampada (da sola), luce
+
+**Voltura**:
+Il passaggio di un'utenza votiva a un nuovo abbonato, con il consenso del precedente o per il suo decesso.
+_Avoid_: subentro (che riguarda la concessione), cambio intestatario
+
 **Operazione cimiteriale**:
 Un intervento che mette o sposta la salma, i resti o le ceneri di un defunto: inumazione, tumulazione, esumazione, estumulazione o traslazione. Esumazione ed estumulazione sono ordinarie (a fine turno o a fine concessione) oppure straordinarie (prima, su richiesta o per ordine del giudice).
 _Avoid_: lavorazione, intervento (che indica una manutenzione)

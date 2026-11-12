@@ -91,3 +91,7 @@ Risolto il 2026-11-12.
 - **Agenzia funebre**: campo facoltativo della pratica, scelto da un elenco. Il portale per le agenzie non entra in questa versione: nella risposta al cliente è un passo successivo.
 - **Menu**: la voce "Pratiche e operazioni" si chiama **"Operazioni cimiteriali"**; dentro ci sono pratiche, agenda e registro, e il pulsante è "Nuova pratica". Nasce la voce **"Amministrazione"**, solo per l'Amministratore, sotto "Configurazione" e sopra Impostazioni: operatori (aggiungere, togliere, vedere alert e cose da fare di ognuno), agenzie funebri, durate delle concessioni e turno del campo comune, tariffe delle operazioni. Le Impostazioni restano per i campi della scheda (flag, tendine, sezioni) e per elenchi come categorie di manutenzione e squadre.
 - **Dati finti**: circa 40 pratiche di tutti i tipi e in tutti gli stati, agenda della settimana corrente piena, qualche pratica annullata con il motivo, un anno di registro, alcune fosse a fine turno nello scadenzario.
+
+### Aggiornamento del 2026-11-12 (utenza votiva)
+
+Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): quando una pratica eseguita toglie il defunto dalla postazione, CimiTera chiude da sola la sua utenza votiva (motivo "defunto spostato"). Nella traslazione la pratica chiede se spostare l'utenza sulla nuova postazione o chiuderla. Amministrazione riceve anche il canone votivo per punto luce e il contributo di allaccio.
