@@ -84,6 +84,18 @@ _Avoid_: rotazione (da sola), scadenza (che riguarda le concessioni)
 Lo stato di un rilievo, una segnalazione o una verifica fatta sul telefono senza rete e non ancora arrivata all'ufficio.
 _Avoid_: non sincronizzato, offline, in coda
 
+**Tariffa**:
+L'importo fissato dal Comune per una nuova concessione, per un rinnovo o per un'operazione cimiteriale; si paga una volta sola.
+_Avoid_: canone (che si paga ogni anno), costo, prezzo
+
+**Avviso di pagamento**:
+Il documento pagoPA con cui il Comune chiede di pagare un importo per un solo motivo: una concessione, un'utenza votiva per un anno o una pratica.
+_Avoid_: avviso (da solo), bollettino, bolletta
+
+**Lettera di scadenza**:
+La lettera, mandata tramite DAT con qualunque canale, che avvisa che una concessione o un'utenza votiva sta per scadere.
+_Avoid_: avviso di scadenza, avviso (da solo)
+
 ## Ruoli
 
 **Cittadino**:
