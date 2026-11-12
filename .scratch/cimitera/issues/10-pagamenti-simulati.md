@@ -19,6 +19,8 @@ Dal ticket "Modello dell'utenza votiva": chi paga il canone votivo è l'**abbona
 
 Dal ticket "Semplificazione di Ricerca": la pagina Esportazioni sparisce. L'Excel delle lampade votive per la fatturazione, con il foglio dei morosi, va in Illuminazione votiva; l'Excel delle scadenze delle concessioni va in "Scadenze e pagamenti".
 
+Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md): la sezione "Fatturazione e pagamenti" (con "Stato pagamenti") sparisce dalla scheda. La scheda mostra Concessione e Illuminazione votiva come riassunti in sola lettura con il loro stato; da decidere qui se e come quei riassunti mostrano la morosità.
+
 ## Comments
 
 ### Giro 1 (2026-11-12)

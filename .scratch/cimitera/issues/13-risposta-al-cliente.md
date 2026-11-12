@@ -15,3 +15,5 @@ Da includere: la precisazione sulla frase "nessun concorrente fa recapito e noti
 Da includere: nel regolamento cimiteriale di Ragusa del 2023 alcuni rimandi interni sono sfasati di un articolo; mancano le tariffe vigenti e il contratto-tipo, da chiedere al cliente o al Comune.
 
 Dal ticket "Modello di pratiche e operazioni": il portale per le agenzie funebri non entra in questa versione e va presentato come passo successivo (Deda Next ce l'ha già). Anche le tariffe delle operazioni nella demo sono inventate, da chiedere al cliente o al Comune. La voce del menu si chiama "Operazioni cimiteriali" e nasce la voce "Amministrazione" per l'Amministratore.
+
+Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md): sulla lapide non c'è un QR, quindi spariscono le etichette QR, il QR nel PDF della scheda e la pagina del QR. Al loro posto c'è la pagina del Cittadino, con la ricerca di un defunto in tutti i cimiteri del Comune. Va detto al cliente, perché la demo consegnata li ha.

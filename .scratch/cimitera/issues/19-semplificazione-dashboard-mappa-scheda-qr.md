@@ -1,7 +1,7 @@
 # Semplificazione di Dashboard, Mappa, Scheda e pagina del QR
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 05, 06, 09, 12
 
@@ -42,3 +42,22 @@ Oggi la Dashboard ha la mappa e i riquadri Alert, Censimento, Manutenzione e Att
 12. **Pagina del Cittadino.** Proposta: nasce dalla pagina del QR. In alto il logo e la casella "Cerca un defunto". Il risultato è per defunto: foto della lapide, nome e date, dove si trova (cimitero, viale, struttura, fila e colonna), piccola mappa, "Portami qui con Google Maps". Gli altri defunti della stessa postazione non compaiono. Spariscono "Area operatori · scheda completa", la scritta REST IN GPS e la mascotte. Sul computer è la stessa pagina, in una colonna al centro.
 13. **Quali cimiteri.** Proposta: il Cittadino cerca in tutti i cimiteri del Comune senza sceglierne uno prima; l'elenco dei risultati mostra nome, anni, cimitero e viale.
 14. **Uscita nella demo.** Proposta: in fondo alla pagina del Cittadino un collegamento discreto "Area riservata" riporta a "Entra come".
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e quattordici le proposte.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Dashboard**: gli spazi restano come sono. Il riquadro Alert diventa "Agenda di oggi": le operazioni cimiteriali di oggi e di domani (ora, tipo, defunto, postazione, operatori), con il collegamento all'agenda di Operazioni cimiteriali, uguale per Operatore e Amministratore. "Attività recente" resta per tutti e due i ruoli, com'è. Gli alert stanno solo nella campanella; "Apri il centro alert" sparisce.
+- **Mappa**: mentre si è sulla Mappa, nel menu del computer resta evidenziata la voce "Dashboard". La card del pin ha solo "Apri scheda" e "Indicazioni", per tutte le postazioni; "Parete" e "Vista estesa" restano dentro la scheda. Il resto resta com'è: Filtri, Colora per, Quadranti, Elenco, legenda cliccabile.
+- **Pannello laterale e vista estesa**: stesso contenuto; la vista estesa ha in più solo le due colonne e Precedente / Successiva. Spariscono il riquadro del QR e la mappa in fondo. In alto foto, codice, stato cliccabile e flag: "Lampada votiva" in sola lettura, "Visibile al pubblico" modificabile.
+- **Azioni della scheda**: Modifica, Modifica GPS, Scheda PDF, Segnala, Verifica, Indicazioni, Sulla mappa (nascosta quando si è già sulla Mappa). Nella testata della vista estesa "Sulla mappa" non c'è più.
+- **Sezioni della scheda**, in quest'ordine: Defunti, Ubicazione, Concessione, Illuminazione votiva, Pratiche, Manutenzioni e verifiche, campi configurabili, Note, Storico. Concessione e Illuminazione votiva sono riassunti in sola lettura (stato, concessionario o abbonato, scadenza o punti luce) con il collegamento alla loro pagina, che sul telefono non c'è. La sezione "Fatturazione e pagamenti" sparisce dalla scheda.
+- **Finestre**: la concessione esce dalla finestra Modifica; si crea e si cambia solo in Concessioni. Resta il sottotitolo di "Segnala manutenzione"; spariscono quelli di "Assegna una verifica" e "Modifica GPS".
+- **Parole**: nella scheda, nel pannello e nelle finestre "manufatto" diventa "postazione" (per esempio "Stato della postazione") e "Intestatario" diventa "Concessionario".
+- **QR**: sparisce del tutto: azione "QR Code" e la sua finestra, riquadro del QR, QR nel PDF della scheda, etichette QR, indirizzo `/qr/`.
+- **Pagina del Cittadino**: nasce dalla pagina del QR. Senza menu, con un suo indirizzo; in alto il logo e la casella "Cerca un defunto". Cerca in tutti i cimiteri del Comune senza sceglierne uno prima; con più risultati mostra un elenco con nome, anni, cimitero e viale. Il risultato è per defunto: foto della lapide, nome e date, dove si trova (cimitero, viale, struttura, fila e colonna), piccola mappa, "Portami qui con Google Maps". Gli altri defunti della stessa postazione non compaiono. Spariscono "Area operatori · scheda completa", la scritta REST IN GPS e la mascotte. Sul computer è la stessa pagina, in una colonna al centro. In fondo un collegamento discreto "Area riservata" riporta a "Entra come".
+- **Già deciso altrove e confermato**: i defunti con "Visibile al pubblico" spento non si trovano ([Ruoli e versioni dell'app](05-ruoli-e-versioni.md)); per un defunto spostato da un'operazione il Cittadino riceve le indicazioni ma non la posizione sulla mappa ([Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.md)); la pagina del Cittadino richiede la rete ([Uso senza rete sul campo](14-uso-senza-rete.md)).
