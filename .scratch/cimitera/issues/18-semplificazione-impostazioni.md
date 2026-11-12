@@ -30,6 +30,8 @@ Dal ticket [Semplificazione di Manutenzioni](17-semplificazione-manutenzioni.md)
 
 Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): Amministrazione riceve anche le tariffe delle concessioni (nuova concessione e rinnovo, per tipo, importi inventati) e tre numeri di giorni: 30 per pagare un avviso di pagamento, 30 di termine dopo il sollecito e 30 dopo la diffida. Li cambia solo l'Amministratore. Il campo "Stato pagamenti" sparisce anche dai campi configurabili.
 
+Dal ticket [Risposta al cliente](13-risposta-al-cliente.md): nella risposta al cliente i collegamenti esterni (ANPR, protocollo, contabilità) stanno tra le cose che richiedono accordi esterni. Se questo ticket decide di mostrarli nell'app, chi lo chiude aggiunge al punto 3 di [risposta-al-cliente.md](../risposta-al-cliente.md) la riga "nella demo un riquadro mostra i collegamenti previsti". Se non li mostra, il testo resta com'è.
+
 ## Comments
 
 ### 2026-11-12 · primo giro di domande, in attesa delle risposte di Dan

@@ -1,7 +1,7 @@
 # Risposta al cliente
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 05, 07, 08, 09, 10, 11
 
@@ -22,6 +22,10 @@ Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semp
 Dal ticket [Avvisi di scadenza inviati da DAT](11-avvisi-di-scadenza.md): tra le simulazioni c'è l'invio tramite DAT di lettere di scadenza, avvisi di pagamento, solleciti e diffide, a lotti, con i servizi di DAT per nome (Posta Certa, Raccomandata Certa, Notifica Certa con messo) ed esiti finti (consegnato, notificato, non consegnato, con ricevuta o relata). Tra gli accordi esterni: il collegamento vero con DAT per lotti ed esiti. Da chiedere al cliente: se i nomi dei servizi sono quelli giusti da mostrare, e al Comune i testi delle lettere (nella demo fissi e scritti da noi). PEC, app IO e SEND non ci sono, perché DAT non le dichiara.
 
 Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): tra le simulazioni ci sono gli avvisi di pagamento pagoPA (PDF sul modello ufficiale con "FAC-SIMILE", pulsante "Simula pagamento") e la gestione dei morosi con sollecito, diffida, sospensione dell'utenza votiva e avvio della decadenza: è il punto in cui CimiTera si distingue, perché nessun concorrente la dichiara. Tra gli accordi esterni: il collegamento vero con pagoPA, la riscossione coattiva e i rimborsi. Da chiedere al cliente o al Comune: le tariffe di nuova concessione e rinnovo (nella demo inventate) e le regole del canone annuo delle sepolture private di Ragusa (art. 50), che nella demo non c'è. Va detto anche che a Ragusa oggi la votiva si paga con il bollettino postale, mentre nella demo passa da pagoPA.
+
+## Assets
+
+- [risposta-al-cliente.md](../risposta-al-cliente.md): il testo approvato dell'email per DAT | HYA Group, con l'oggetto. Lo manda Dan.
 
 ## Comments
 
@@ -97,3 +101,22 @@ Il testo completo, con le 13 proposte approvate, è nella bozza [risposta-al-cli
 2. **Lunghezza.** Il testo è di circa 1.060 parole, quasi due pagine invece di una e mezza, perché contiene tutti i punti approvati. Proposta: lo teniamo così, senza tagli.
 3. **Firma.** Proposta: "Un saluto, Dan".
 4. **Ticket 18 in sospeso.** Proposta: chiudo questo ticket con il testo com'è. Nel ticket [Semplificazione di Impostazioni e Amministrazione](18-semplificazione-impostazioni.md) lascio una nota: se decide di mostrare nell'app i collegamenti esterni, chi lo chiude aggiunge una riga al punto 3 della risposta ("nella demo un riquadro mostra i collegamenti previsti").
+
+### 2026-11-12 · risposte di Dan al secondo giro
+
+Sì a tutte le 4 proposte: testo approvato così com'è, lunghezza senza tagli, firma "Un saluto, Dan", ticket chiuso con la nota nel ticket 18.
+
+## Answer
+
+Risolto il 2026-11-12. Il testo approvato è in [risposta-al-cliente.md](../risposta-al-cliente.md). Lo manda Dan: da qui non parte nulla.
+
+- **Forma**: email di solo testo a DAT | HYA Group, oggetto "CimiTera: cosa facciamo dalla vostra lista", senza allegati. Tono cordiale e professionale, con il "voi" e in prima persona plurale; circa due pagine; firma "Un saluto, Dan". Le domande per il Comune le gira DAT.
+- **Parole**: quelle del glossario; quando il cliente ne usa un'altra, la prima volta c'è la spiegazione tra parentesi (utenza votiva, abbonato, aventi diritto, lettere di scadenza, lotti).
+- **Struttura**: apertura con il "cerchio" del cliente (censiamo, troviamo chi non paga e lo raggiungiamo); sei sezioni; chiusura con le fasi, senza costi né date.
+- **Cosa facciamo subito**: nome e logo (colori e caratteri restano), pagine più semplici e menu nuovo, tre accessi, concessioni, illuminazione votiva, operazioni cimiteriali, pagina pubblica di ricerca, lavoro senza rete.
+- **Cosa mostriamo come simulazione**: pagamenti pagoPA (a Ragusa oggi la votiva si paga con il bollettino postale), morosi come punto di forza, invii tramite DAT, invio del lavoro fatto senza rete.
+- **Cosa richiede accordi esterni**: pagoPA vero, collegamento con DAT, recupero dei crediti e riscossione coattiva, conservazione a norma, ANPR, protocollo e contabilità, notifica digitale. **Dopo questa versione**: portale per le agenzie funebri, server e account veri.
+- **Cosa cambia rispetto alla lista del cliente**: pratiche senza documenti caricati né checklist delle autorizzazioni; niente lettera di scadenza per l'illuminazione votiva (c'è l'avviso di pagamento annuo del canone); niente totem né app pubblica separata; il QR sparisce.
+- **Cosa chiediamo**: documento Word sulle pratiche, tariffe vigenti, contratto-tipo con numero massimo e termine dei rinnovi, canone dell'art. 50, testi delle lettere, nomi dei servizi DAT e notifica digitale.
+- **Segnalazioni**: la frase sui concorrenti da precisare, il sito hyagroup.it che sembra manomesso, i rimandi sfasati del regolamento di Ragusa.
+- **In sospeso**: se il ticket [Semplificazione di Impostazioni e Amministrazione](18-semplificazione-impostazioni.md) decide di mostrare nell'app i collegamenti esterni, chi lo chiude aggiunge una riga al punto 3 della risposta. La nota è nel ticket 18.

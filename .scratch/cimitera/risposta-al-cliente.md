@@ -1,6 +1,6 @@
 # Risposta al cliente
 
-Bozza del 2026-11-12, in attesa dell'approvazione di Dan (ticket [Risposta al cliente](issues/13-risposta-al-cliente.md)). Email di solo testo per DAT | HYA Group: la manda Dan.
+Testo approvato da Dan il 2026-11-12 (ticket [Risposta al cliente](issues/13-risposta-al-cliente.md)). Email di solo testo per DAT | HYA Group: la manda Dan.
 
 ---
 
