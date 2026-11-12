@@ -4,15 +4,17 @@ import {
 } from 'lucide-react';
 import { CemeteryMap, ZoomControls } from '../components/map/CemeteryMap';
 import { LocationPicker } from '../components/map/LocationPicker';
-import { Avatar, Barre, Field, Modal, Progress, Seg, StatoBadge, Switch, Tabs } from '../components/ui';
+import { BarraPagine, paginaDi } from '../components/Esporta';
+import { Avatar, Barre, Ciambella, Field, Modal, Progress, Seg, StatoBadge, Switch, Tabs } from '../components/ui';
 import {
   aggiornaQuadrante, apriParete, apriModale, completaVerifica, contaNelPoligono, creaQuadrante, creaStruttura, eliminaQuadrante, indiceSchede,
   resetFiltri, salvaOperatore, seleziona, toast, useStore,
 } from '../data/store';
-import { descrizioneScheda, labelLista, occupazioneStruttura, statoDef, useCimitero, useDatiCimitero, useSchedeCimitero } from '../data/selectors';
+import { conta, descrizioneScheda, labelLista, occupazioneStruttura, useCimitero, useDatiCimitero, useSchedeCimitero, useUtente } from '../data/selectors';
 import type { Faccia, LatLng, Operatore, Quadrante, Verifica } from '../data/types';
 import { aggiungiGiorni, data, dataBreve, dataOra, numero, oggiISO, percentuale } from '../lib/format';
 import { quadranteDi, vialePiuVicino } from '../lib/geo';
+import { useTelefono } from '../lib/schermo';
 import { setQuery, useRotta, vai } from '../router';
 
 type Tab = 'avanzamento' | 'quadranti' | 'operatori' | 'verifiche' | 'strutture';
@@ -20,18 +22,26 @@ const COLORI = ['#2F6FB3', '#8E5BB5', '#1E8C8C', '#C0487A', '#5E9A3A', '#E07B22'
 
 export function CensimentoPage() {
   const rotta = useRotta();
+  const telefono = useTelefono();
   const tab = (rotta.query.get('tab') as Tab) ?? 'avanzamento';
   const verifiche = useStore((s) => s.db.verifiche);
   const { quadranti, strutture } = useDatiCimitero();
   const operatori = useStore((s) => s.db.operatori);
+  // sul telefono Censimento non c'è: resta la voce Verifiche, con le verifiche aperte di chi è entrato
+  if (telefono)
+    return (
+      <div className="page">
+        <div className="page-head">
+          <div className="page-head__title"><h1>Verifiche</h1></div>
+        </div>
+        <VerificheTelefono />
+      </div>
+    );
   return (
     <div className="page">
       <div className="page-head">
         <div className="page-head__title">
-          <h1>Gestione censimento</h1>
-        </div>
-        <div className="page-head__actions">
-          <button className="btn" onClick={() => apriModale({ tipo: 'verifica' })}><ClipboardCheck size={16} />Assegna verifica</button>
+          <h1>Censimento</h1>
         </div>
       </div>
       <Tabs value={tab} onChange={(t) => setQuery('tab', t)} tabs={[
@@ -55,15 +65,16 @@ export function CensimentoPage() {
 function Avanzamento() {
   const schede = useSchedeCimitero();
   const db = useStore((s) => s.db);
-  const cim = useCimitero();
-  const { quadranti, viali, aree, strutture } = useDatiCimitero();
+  const config = useStore((s) => s.config);
+  const { quadranti } = useDatiCimitero();
   const oggi = oggiISO();
   const stimate = quadranti.reduce((t, q) => t + q.stimaManufatti, 0);
   const giorni = useMemo(() => {
+    const perGiorno = conta(schede, (s) => s.rilevatoIl.slice(0, 10));
     const out = [];
     for (let i = 44; i >= 0; i--) {
       const d = aggiungiGiorni(oggi, -i);
-      out.push({ label: i % 7 === 0 ? d.slice(8, 10) : '', valore: schede.filter((s) => s.rilevatoIl.startsWith(d)).length, titolo: `${dataBreve(d)}: ${schede.filter((s) => s.rilevatoIl.startsWith(d)).length} schede` });
+      out.push({ label: i % 7 === 0 ? d.slice(8, 10) : '', valore: perGiorno[d] ?? 0, titolo: `${dataBreve(d)}: ${perGiorno[d] ?? 0} schede` });
     }
     return out;
   }, [schede, oggi]);
@@ -73,29 +84,73 @@ function Avanzamento() {
   const media = Math.round(ultimi30 / 22);
   const restanti = Math.max(0, stimate - schede.length);
   const fine = media ? aggiungiGiorni(oggi, Math.ceil((restanti / media) * 1.4)) : null;
+  const stati = config.stati.filter((x) => !x.archiviato);
+  const perStato = useMemo(() => conta(schede, (s) => s.stato), [schede]);
+  // per ogni tipologia: quante postazioni e quante libere
+  const tipologie = useMemo(() => config.tipologie.filter((t) => !t.archiviata).map((t) => {
+    const sue = schede.filter((s) => s.tipologia === t.id);
+    return { ...t, totale: sue.length, libere: sue.filter((s) => s.stato === 'libero').length };
+  }).filter((t) => t.totale > 0), [schede, config.tipologie]);
+  const maxTip = Math.max(1, ...tipologie.map((t) => t.totale));
 
   return (
     <div className="col gap-16">
       <div className="kpi-grid">
         <div className="card kpi-card"><span className="kpi"><span className="kpi__label">Schede censite</span><span className="kpi__value">{numero(schede.length)}<small>/ {numero(stimate)}</small></span><Progress value={schede.length} max={stimate} verde small /></span></div>
         <div className="card kpi-card"><span className="kpi"><span className="kpi__label">Ultimi 30 giorni</span><span className="kpi__value">{numero(ultimi30)}</span><span className="kpi__sub">circa {media} schede per giorno lavorativo</span></span></div>
-        <div className="card kpi-card"><span className="kpi"><span className="kpi__label">Fine stimata</span><span className="kpi__value" style={{ fontSize: 22 }}>{fine ? dataBreve(fine) : '—'}</span><span className="kpi__sub">{numero(restanti)} manufatti da censire</span></span></div>
+        <div className="card kpi-card"><span className="kpi"><span className="kpi__label">Fine stimata</span><span className="kpi__value" style={{ fontSize: 22 }}>{fine ? dataBreve(fine) : '—'}</span><span className="kpi__sub">{numero(restanti)} postazioni da censire</span></span></div>
         <button className="card kpi-card card--link" onClick={() => setQuery('tab', 'verifiche')}><span className="kpi"><span className="kpi__label">Da verificare</span><span className="kpi__value" style={{ color: '#B8860B' }}>{daVerificare}</span><span className="kpi__sub">{incompleti} con dati anagrafici incompleti</span></span></button>
       </div>
-      <div className="report-2col">
+      <div className="griglia griglia--3">
         <section className="card card--pad">
           <h3>Schede censite al giorno · ultime 6 settimane</h3>
-          <div className="mt-16"><Barre dati={giorni} altezza={120} colore="#79AA4F" /></div>
+          <div className="mt-16"><Barre dati={giorni} altezza={150} colore="#79AA4F" /></div>
         </section>
-        <section className="card cens-mappa">
-          <CemeteryMap cimitero={cim} schede={schede} strutture={strutture} quadranti={quadranti} mostraQuadranti viali={viali} aree={aree} stile="satellite" compatta mostraPartenza segueVolo={false} onSelect={(id) => seleziona(id)} />
+        <section className="card card--pad">
+          <h3>Stato delle postazioni</h3>
+          <div className="row gap-16 mt-16 row--wrap">
+            <Ciambella size={150} spessore={20} dati={stati.map((x) => ({ id: x.id, label: x.label, valore: perStato[x.id] ?? 0, colore: x.colore }))}
+              centro={<div className="display" style={{ fontSize: 22, fontWeight: 800 }}>{numero(schede.length)}</div>} sotto={<div className="tiny muted">schede</div>} />
+            <div className="col gap-8 grow">
+              {stati.map((x) => (
+                <div key={x.id} className="row row--between gap-16 small">
+                  <StatoBadge stato={x.id} small />
+                  <span className="mono"><b>{numero(perStato[x.id] ?? 0)}</b> <span className="muted">· {percentuale(perStato[x.id] ?? 0, schede.length)}%</span></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="card card--pad">
+          <h3>Tipologie</h3>
+          <div className="col gap-12 mt-16">
+            {tipologie.map((t) => (
+              <div key={t.id} className="tip-riga">
+                <div className="row row--between small">
+                  <b>{t.label}</b>
+                  <span className="mono">{numero(t.totale)} <span className="muted">· {numero(t.libere)} libere</span></span>
+                </div>
+                <div className="tip-riga__barra" title={`${t.totale - t.libere} occupate o da controllare, ${t.libere} libere`}>
+                  <span style={{ width: `${((t.totale - t.libere) / maxTip) * 100}%`, background: t.colore }} />
+                  <span style={{ width: `${(t.libere / maxTip) * 100}%`, background: `${t.colore}55` }} />
+                </div>
+              </div>
+            ))}
+            {!tipologie.length && <p className="small muted">Nessuna scheda censita.</p>}
+          </div>
         </section>
       </div>
       <section className="card">
-        <div className="card__head"><h3>Avanzamento per quadrante</h3><span className="small muted">Il censimento parte dalla punta sud del cimitero</span></div>
+        <div className="card__head"><h3>Avanzamento per quadrante</h3></div>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Quadrante</th><th>Operatore</th><th style={{ width: '32%' }}>Avanzamento</th><th className="num">Censite</th><th className="num">Stimate</th><th>Stato</th><th>Ultimo rilievo</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Quadrante</th><th>Operatore</th><th style={{ width: '20%' }}>Avanzamento</th><th className="num">Censite</th><th className="num">Stimate</th>
+                {stati.map((x) => <th key={x.id} className="num">{x.label}</th>)}
+                <th>Ultimo rilievo</th>
+              </tr>
+            </thead>
             <tbody>
               {quadranti.map((q) => {
                 const qs = schede.filter((s) => s.quadranteId === q.id);
@@ -109,37 +164,14 @@ function Avanzamento() {
                     <td><div className="row gap-8"><div className="grow"><Progress value={qs.length} max={q.stimaManufatti} colore={q.colore} /></div><b className="mono small">{p}%</b></div></td>
                     <td className="num">{numero(qs.length)}</td>
                     <td className="num">{numero(q.stimaManufatti)}</td>
-                    <td><span className={`badge badge--sm ${p >= 100 ? 'badge--verde' : p > 0 ? 'badge--blu' : ''}`}>{p >= 100 ? 'Completato' : p > 0 ? 'In corso' : 'Da avviare'}</span></td>
+                    {stati.map((x) => <td key={x.id} className="num">{numero(qs.filter((y) => y.stato === x.id).length)}</td>)}
                     <td className="small muted nowrap">{ultimo ? dataOra(ultimo) : '—'}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      </section>
-      <section>
-        <h3 className="section-title">Operatori sul campo</h3>
-        <div className="op-grid">
-          {db.operatori.map((o) => {
-            const sue = schede.filter((s) => s.rilevatoDa === o.id);
-            const ultimo = sue.reduce((m, s) => (s.rilevatoIl > m ? s.rilevatoIl : m), '');
-            const oggiN = sue.filter((s) => s.rilevatoIl.startsWith(oggi)).length;
-            return (
-              <div key={o.id} className="card card--pad op-card">
-                <div className="row gap-12">
-                  <Avatar nome={o.nome} colore={o.colore} size="lg" />
-                  <div className="grow"><b>{o.nome}</b><div className="small muted">{o.ruolo}</div></div>
-                </div>
-                <div className="row row--between mt-12 small"><span className="muted">Schede rilevate</span><b>{numero(sue.length)}</b></div>
-                <div className="row row--between small"><span className="muted">Oggi</span><b>{oggiN}</b></div>
-                <div className="row row--between small"><span className="muted">Ultima attività</span><b>{ultimo ? dataOra(ultimo) : '—'}</b></div>
-                <div className="row row--wrap gap-4 mt-8">
-                  {quadranti.filter((q) => q.operatoreId === o.id).map((q) => <span key={q.id} className="badge badge--sm" style={{ background: `${q.colore}18`, color: q.colore }}>{q.codice}</span>)}
-                </div>
-              </div>
-            );
-          })}
+          {!quadranti.length && <div className="empty"><h3>Nessun quadrante</h3><p>Disegnane uno nella linguetta Quadranti.</p></div>}
         </div>
       </section>
     </div>
@@ -183,7 +215,7 @@ function ModaleQuadrante({ q, poligono, onChiudi }: { q?: Quadrante; poligono?: 
             {operatori.filter((o) => o.attivo).map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
           </select>
         </Field>
-        <Field label="Manufatti stimati" hint="Serve a calcolare l'avanzamento"><input className="input" type="number" min={1} value={b.stimaManufatti} onChange={(e) => set({ stimaManufatti: Number(e.target.value) })} /></Field>
+        <Field label="Postazioni stimate" hint="Serve a calcolare l'avanzamento"><input className="input" type="number" min={1} value={b.stimaManufatti} onChange={(e) => set({ stimaManufatti: Number(e.target.value) })} /></Field>
         <Field label="Stato">
           <select className="select" value={b.stato} onChange={(e) => set({ stato: e.target.value as Quadrante['stato'] })}>
             <option value="da_avviare">Da avviare</option><option value="in_corso">In corso</option><option value="completato">Completato</option>
@@ -310,6 +342,7 @@ function Operatori() {
   const schede = useSchedeCimitero();
   const { quadranti } = useDatiCimitero();
   const [modale, setModale] = useState<{ o?: Operatore } | null>(null);
+  const oggi = oggiISO();
   return (
     <section className="card">
       <div className="card__head">
@@ -318,30 +351,30 @@ function Operatori() {
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Operatore</th><th>Ruolo</th><th>Contatti</th><th>Quadranti</th><th className="num">Schede</th><th className="num">Verifiche aperte</th><th>Stato</th><th /></tr></thead>
+          <thead><tr><th>Operatore</th><th>Quadranti</th><th className="num">Schede rilevate</th><th className="num">Oggi</th><th>Ultima attività</th><th className="num">Verifiche aperte</th><th>Contatti</th><th /></tr></thead>
           <tbody>
-            {db.operatori.map((o) => (
-              <tr key={o.id}>
-                <td><span className="row gap-8"><Avatar nome={o.nome} colore={o.colore} /><b>{o.nome}</b></span></td>
-                <td>{o.ruolo}</td>
-                <td className="small">{o.telefono}<br /><span className="muted">{o.email}</span></td>
-                <td>
-                  <select
-                    className="select select--sm"
-                    style={{ minWidth: 150 }}
-                    value=""
-                    onChange={(e) => { if (e.target.value) { aggiornaQuadrante(e.target.value, { operatoreId: o.id }); toast('Quadrante assegnato'); } }}
-                  >
-                    <option value="">{quadranti.filter((q) => q.operatoreId === o.id).map((q) => q.codice).join(', ') || 'Assegna…'}</option>
-                    {quadranti.filter((q) => q.operatoreId !== o.id).map((q) => <option key={q.id} value={q.id}>Assegna {q.nome}</option>)}
-                  </select>
-                </td>
-                <td className="num">{numero(schede.filter((s) => s.rilevatoDa === o.id).length)}</td>
-                <td className="num">{db.verifiche.filter((v) => v.operatoreId === o.id && v.stato === 'aperta').length}</td>
-                <td>{o.attivo ? <span className="badge badge--verde badge--sm">Attivo</span> : <span className="badge badge--sm">Non attivo</span>}</td>
-                <td><button className="btn btn--xs" onClick={() => setModale({ o })}><Pencil size={12} />Modifica</button></td>
-              </tr>
-            ))}
+            {db.operatori.map((o) => {
+              const sue = schede.filter((s) => s.rilevatoDa === o.id);
+              const ultimo = sue.reduce((m, s) => (s.rilevatoIl > m ? s.rilevatoIl : m), '');
+              const suoi = quadranti.filter((q) => q.operatoreId === o.id);
+              return (
+                <tr key={o.id}>
+                  <td><span className="row gap-8"><Avatar nome={o.nome} colore={o.colore} /><span><b>{o.nome}</b>{!o.attivo && <div className="tiny muted">Non attivo</div>}</span></span></td>
+                  <td>
+                    <span className="row row--wrap gap-4">
+                      {suoi.map((q) => <span key={q.id} className="badge badge--sm" style={{ background: `${q.colore}18`, color: q.colore }}>{q.codice}</span>)}
+                      {!suoi.length && <span className="muted">—</span>}
+                    </span>
+                  </td>
+                  <td className="num">{numero(sue.length)}</td>
+                  <td className="num">{sue.filter((s) => s.rilevatoIl.startsWith(oggi)).length}</td>
+                  <td className="small nowrap">{ultimo ? dataOra(ultimo) : '—'}</td>
+                  <td className="num">{db.verifiche.filter((v) => v.operatoreId === o.id && v.stato === 'aperta').length}</td>
+                  <td className="small">{o.telefono}<br /><span className="muted">{o.email}</span></td>
+                  <td><button className="btn btn--xs" onClick={() => setModale({ o })}><Pencil size={12} />Modifica</button></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -384,20 +417,21 @@ function Verifiche() {
   const indice = indiceSchede(db.schede);
   const ids = useMemo(() => new Set(schede.map((s) => s.id)), [schede]);
   const [filtro, setFiltro] = useState<'aperta' | 'completata'>('aperta');
+  const [pagina, setPagina] = useState(0);
   const [chiudi, setChiudi] = useState<Verifica | null>(null);
   const oggi = oggiISO();
   const lista = db.verifiche.filter((v) => ids.has(v.schedaId) && v.stato === filtro).sort((a, b) => (filtro === 'aperta' ? a.scadenza.localeCompare(b.scadenza) : (b.completataIl ?? '').localeCompare(a.completataIl ?? '')));
   return (
     <section className="card">
       <div className="card__head">
-        <Seg light small value={filtro} onChange={setFiltro} options={[{ id: 'aperta', label: `Aperte (${db.verifiche.filter((v) => ids.has(v.schedaId) && v.stato === 'aperta').length})` }, { id: 'completata', label: 'Completate' }]} />
+        <Seg light small value={filtro} onChange={(f) => { setFiltro(f); setPagina(0); }} options={[{ id: 'aperta', label: `Aperte (${db.verifiche.filter((v) => ids.has(v.schedaId) && v.stato === 'aperta').length})` }, { id: 'completata', label: 'Completate' }]} />
         <button className="btn btn--sm btn--primary" onClick={() => apriModale({ tipo: 'verifica' })}><Plus size={14} />Assegna verifica</button>
       </div>
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>ID</th><th>Scheda</th><th>Motivo</th><th>Operatore</th><th>Assegnata</th><th>{filtro === 'aperta' ? 'Scadenza' : 'Esito'}</th><th /></tr></thead>
           <tbody>
-            {lista.map((v) => {
+            {paginaDi(lista, pagina).map((v) => {
               const s = indice.get(v.schedaId);
               const op = db.operatori.find((o) => o.id === v.operatoreId);
               const ritardo = v.stato === 'aperta' && v.scadenza < oggi;
@@ -411,7 +445,7 @@ function Verifiche() {
                   <td className="nowrap">
                     {v.stato === 'aperta' ? <span className={`badge badge--sm ${ritardo ? 'badge--rosso' : 'badge--giallo'}`}><CalendarDays size={11} />{data(v.scadenza)}{ritardo ? ' · in ritardo' : ''}</span> : <span className="badge badge--verde badge--sm">{v.esito?.replace('_', ' ')} · {dataBreve(v.completataIl)}</span>}
                   </td>
-                  <td>{v.stato === 'aperta' && <button className="btn btn--xs btn--success" onClick={() => setChiudi(v)}>Chiudi</button>}{s && <StatoBadge stato={s.stato} small />}</td>
+                  <td>{v.stato === 'aperta' && <button className="btn btn--xs btn--success" onClick={() => setChiudi(v)}>Chiudi</button>}</td>
                 </tr>
               );
             })}
@@ -419,8 +453,45 @@ function Verifiche() {
         </table>
         {!lista.length && <div className="empty"><h3>Nessuna verifica {filtro === 'aperta' ? 'aperta' : 'completata'}</h3></div>}
       </div>
+      <BarraPagine pagina={pagina} totale={lista.length} onPagina={setPagina} />
       {chiudi && <ModaleChiudiVerifica v={chiudi} onChiudi={() => setChiudi(null)} />}
     </section>
+  );
+}
+
+/** Sul telefono: solo le verifiche aperte di chi è entrato (tutte, per l'Amministratore), a card. */
+function VerificheTelefono() {
+  const db = useStore((s) => s.db);
+  const config = useStore((s) => s.config);
+  const utente = useUtente();
+  const indice = indiceSchede(db.schede);
+  const [chiudi, setChiudi] = useState<Verifica | null>(null);
+  const oggi = oggiISO();
+  const lista = db.verifiche
+    .filter((v) => v.stato === 'aperta' && (utente.amministratore || v.operatoreId === utente.operatoreId))
+    .sort((a, b) => a.scadenza.localeCompare(b.scadenza));
+  return (
+    <div className="col gap-8">
+      {lista.map((v) => {
+        const s = indice.get(v.schedaId);
+        const ritardo = v.scadenza < oggi;
+        return (
+          <div key={v.id} className="card card--pad col gap-8">
+            <button className="ver-card" onClick={() => seleziona(v.schedaId)}>
+              <span className="grow">
+                <b>{s ? descrizioneScheda(s) : v.schedaId}</b>
+                <span className="tiny muted">{v.schedaId}{s ? ` · ${s.viale}` : ''}</span>
+              </span>
+              <span className={`badge badge--sm ${ritardo ? 'badge--rosso' : 'badge--giallo'}`}>{dataBreve(v.scadenza)}{ritardo ? ' · in ritardo' : ''}</span>
+            </button>
+            <div className="small">{labelLista(config.motiviVerifica, v.motivo)}{v.note ? <span className="muted"> · {v.note}</span> : null}</div>
+            <button className="btn btn--success btn--sm" onClick={() => setChiudi(v)}><CheckCircle2 size={15} />Chiudi</button>
+          </div>
+        );
+      })}
+      {!lista.length && <div className="card"><div className="empty"><h3>Nessuna verifica aperta</h3><p>Quando l'ufficio te ne assegna una, compare qui.</p></div></div>}
+      {chiudi && <ModaleChiudiVerifica v={chiudi} onChiudi={() => setChiudi(null)} />}
+    </div>
   );
 }
 
@@ -466,60 +537,57 @@ function ModaleStruttura({ onChiudi }: { onChiudi: () => void }) {
 
 function Strutture() {
   const db = useStore((s) => s.db);
-  const config = useStore((s) => s.config);
   const { strutture } = useDatiCimitero();
   const [tipo, setTipo] = useState<'tutte' | 'colombaio' | 'cappella'>('tutte');
   const [q, setQ] = useState('');
+  const [pagina, setPagina] = useState(0);
   const [nuova, setNuova] = useState(false);
   const lista = strutture
     .filter((s) => (tipo === 'tutte' || s.tipo === tipo) && s.nome.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => (a.tipo === b.tipo ? a.nome.localeCompare(b.nome) : a.tipo === 'colombaio' ? -1 : 1));
   const indice = indiceSchede(db.schede);
   return (
-    <>
-      <div className="row row--between row--wrap gap-12" style={{ marginBottom: 14 }}>
+    <section className="card">
+      <div className="card__head" style={{ flexWrap: 'wrap' }}>
         <div className="row gap-8 row--wrap">
-          <Seg light small value={tipo} onChange={setTipo} options={[{ id: 'tutte', label: `Tutte (${strutture.length})` }, { id: 'colombaio', label: 'Colombari' }, { id: 'cappella', label: 'Cappelle familiari' }]} />
-          <div className="input-icon" style={{ width: 240 }}><Search size={15} /><input className="input input--sm" placeholder="Cerca struttura" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          <Seg light small value={tipo} onChange={(t) => { setTipo(t); setPagina(0); }} options={[{ id: 'tutte', label: `Tutte (${strutture.length})` }, { id: 'colombaio', label: 'Colombari' }, { id: 'cappella', label: 'Cappelle familiari' }]} />
+          <div className="input-icon" style={{ width: 240 }}><Search size={15} /><input className="input input--sm" placeholder="Cerca struttura" value={q} onChange={(e) => { setQ(e.target.value); setPagina(0); }} /></div>
         </div>
         <button className="btn btn--primary btn--sm" onClick={() => setNuova(true)}><Plus size={14} />Nuova struttura</button>
       </div>
-      <div className="str-grid">
-        {lista.map((st) => {
-          const occ = occupazioneStruttura(db.schede, st.id);
-          const cont = indice.get(st.schedaId);
-          const f0 = st.facce[0];
-          return (
-            <div key={st.id} className="card str-card">
-              <div className="row row--between">
-                <span className={`badge badge--sm ${st.tipo === 'colombaio' ? 'badge--blu' : ''}`} style={st.tipo === 'cappella' ? { background: '#f3edf9', color: '#7B4FA8' } : undefined}>{st.tipo === 'colombaio' ? 'Colombaio' : 'Cappella'}</span>
-                {cont && <StatoBadge stato={cont.stato} small />}
-              </div>
-              <b className="str-card__nome">{st.nome}</b>
-              <span className="tiny muted">{st.viale} · {st.facce.length} {st.facce.length === 1 ? 'parete' : 'pareti'} · {occ.totale} posti</span>
-              <button className="str-card__grid" onClick={() => apriParete(st.id)} title="Apri la griglia a parete" style={{ gridTemplateColumns: `repeat(${Math.min(f0.colonne, 30)}, minmax(0, 18px))` }}>
-                {Array.from({ length: f0.righe }, (_, r) => f0.righe - r).flatMap((fila) =>
-                  Array.from({ length: Math.min(f0.colonne, 30) }, (_, c) => {
-                    const l = occ.loculi.find((x) => x.posizione!.faccia === 0 && x.posizione!.fila === fila && x.posizione!.colonna === c + 1);
-                    const col = l ? statoDef(config, l.stato).colore : '#E2E7EE';
-                    return <span key={`${fila}-${c}`} style={{ background: col.toUpperCase() === '#FFFFFF' ? '#fff' : col }} />;
-                  }),
-                )}
-              </button>
-              <div className="row row--between small"><span>{occ.occupati} occupati · <b style={{ color: '#3F9A3C' }}>{occ.liberi} liberi</b></span><span className="mono">{percentuale(occ.occupati, occ.totale)}%</span></div>
-              <Progress value={occ.occupati} max={occ.totale} verde small />
-              <div className="row gap-4 mt-8">
-                <button className="btn btn--sm btn--primary grow" onClick={() => apriParete(st.id)}><Grid3x3 size={14} />Griglia a parete</button>
-                {cont && <button className="btn btn--sm" onClick={() => seleziona(cont.id)}>Scheda</button>}
-                <button className="btn btn--sm btn--icon" title="Sulla mappa" onClick={() => { vai('/mappa'); if (cont) seleziona(cont.id, { vola: true, pannello: false }); }}><MapPinned size={14} /></button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Nome</th><th>Tipo</th><th>Viale</th><th className="num">Posti</th><th className="num">Occupati</th><th className="num">Liberi</th><th style={{ width: '16%' }}>Occupazione</th><th /></tr></thead>
+          <tbody>
+            {paginaDi(lista, pagina).map((st) => {
+              const occ = occupazioneStruttura(db.schede, st.id);
+              const cont = indice.get(st.schedaId);
+              return (
+                <tr key={st.id}>
+                  <td><b>{st.nome}</b></td>
+                  <td><span className={`badge badge--sm ${st.tipo === 'colombaio' ? 'badge--blu' : ''}`} style={st.tipo === 'cappella' ? { background: '#f3edf9', color: '#7B4FA8' } : undefined}>{st.tipo === 'colombaio' ? 'Colombaio' : 'Cappella'}</span></td>
+                  <td className="nowrap">{st.viale}</td>
+                  <td className="num">{numero(occ.totale)}</td>
+                  <td className="num">{numero(occ.occupati)}</td>
+                  <td className="num"><b style={{ color: occ.liberi ? '#3F9A3C' : undefined }}>{numero(occ.liberi)}</b></td>
+                  <td><div className="row gap-8"><div className="grow"><Progress value={occ.occupati} max={occ.totale} verde small /></div><span className="mono small">{percentuale(occ.occupati, occ.totale)}%</span></div></td>
+                  <td>
+                    <span className="row gap-4" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn btn--xs btn--primary" onClick={() => apriParete(st.id)}><Grid3x3 size={12} />Griglia a parete</button>
+                      {cont && <button className="btn btn--xs" onClick={() => seleziona(cont.id)}>Scheda</button>}
+                      <button className="btn btn--xs" onClick={() => { vai('/mappa'); if (cont) seleziona(cont.id, { vola: true, pannello: false }); }}><MapPinned size={12} />Sulla mappa</button>
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {!lista.length && <div className="empty"><h3>Nessuna struttura</h3></div>}
       </div>
-      {!lista.length && <div className="empty"><h3>Nessuna struttura</h3></div>}
+      <BarraPagine pagina={pagina} totale={lista.length} onPagina={setPagina} />
       {nuova && <ModaleStruttura onChiudi={() => setNuova(false)} />}
-    </>
+    </section>
   );
 }
 

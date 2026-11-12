@@ -145,3 +145,10 @@
 
 /* ---------- scheda: flag "Visibile al pubblico" ---------- */
 .flag-pubblico { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; }
+
+/* ---------- Censimento ---------- */
+.tip-riga { display: flex; flex-direction: column; gap: 4px; }
+.tip-riga__barra { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
+.tip-riga__barra span { display: block; height: 100%; }
+.ver-card { display: flex; align-items: center; gap: 12px; border: none; background: transparent; padding: 0; text-align: left; color: var(--text); width: 100%; }
+.ver-card .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

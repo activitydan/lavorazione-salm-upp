@@ -26,9 +26,6 @@ export const CONFIG_DEFAULT: ConfigScheda = {
   ],
   campi: [
     { id: 'lampada_votiva', label: 'Lampada votiva', tipo: 'flag', sezione: 'flag', icona: 'lampada', inFiltri: true, inTabella: true, inExport: true, inPopup: true, inApp: true },
-    { id: 'tomba_singola', label: 'Tomba singola', tipo: 'flag', sezione: 'flag', icona: 'tomba', inFiltri: true, inTabella: false, inExport: true, inPopup: true, inApp: true },
-    { id: 'cappella', label: 'Cappella', tipo: 'flag', sezione: 'flag', icona: 'cappella', inFiltri: true, inTabella: false, inExport: true, inPopup: true, inApp: true },
-    { id: 'colombaio', label: 'Colombaio', tipo: 'flag', sezione: 'flag', icona: 'colombaio', inFiltri: true, inTabella: false, inExport: true, inPopup: true, inApp: true },
     {
       id: 'stato_pagamenti', label: 'Stato pagamenti', tipo: 'select', sezione: 'fatturazione',
       opzioni: [

@@ -267,7 +267,7 @@ function uniqueId(base: string, voci: Voce[], proprio: string) {
 function AnteprimaScheda({ evidenzia }: { evidenzia?: string }) {
   const config = useStore((s) => s.config);
   const [tip, setTip] = useState('loculo');
-  const [valori, setValori] = useState<Record<string, ValoreCampo>>({ lampada_votiva: true, tomba_singola: true });
+  const [valori, setValori] = useState<Record<string, ValoreCampo>>({ lampada_votiva: true });
   const campi = config.campi.filter((c) => !c.archiviato && c.inApp && (!c.applicaA?.length || c.applicaA.includes(tip)));
   return (
     <div className="anteprima">

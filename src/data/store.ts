@@ -43,8 +43,14 @@ interface Stato {
   sessione: Sessione | null;
 }
 
+/**
+ * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
+ * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
+ */
+export const VERSIONE_DATI = 2;
+
 const DB_VUOTO: Database = {
-  versione: 1, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], esportazioni: [],
 };
 
@@ -91,16 +97,24 @@ async function caricaDemo(): Promise<Database> {
   const r = await fetch('./demo/salmup-demo.json', { cache: 'no-cache' });
   if (!r.ok) throw new Error(`Dataset dimostrativo non trovato (${r.status})`);
   const d = await r.json();
-  return { ...DB_VUOTO, ...d, alertLetti: [], esportazioni: [] };
+  return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], esportazioni: [] };
 }
 
 export async function avvia() {
   try {
-    const [db, config, foto] = await Promise.all([
+    let [db, config, foto] = await Promise.all([
       leggi<Database>(CHIAVI.db),
       leggi<ConfigScheda>(CHIAVI.config),
       leggi<Record<string, string>>(CHIAVI.foto),
     ]);
+    // dati salvati con una versione precedente: si riparte dai dati dimostrativi
+    if (db && db.versione !== VERSIONE_DATI) {
+      await cancellaTutto();
+      db = undefined;
+      config = undefined;
+      foto = undefined;
+      window.setTimeout(() => toast('CimiTera è stata aggiornata: ho ricaricato i dati dimostrativi', 'info'), 600);
+    }
     const dati = db ?? (await caricaDemo());
     setS({
       db: { ...DB_VUOTO, ...dati },
@@ -464,7 +478,7 @@ export function creaStruttura(dati: {
   const contenitore: Scheda = {
     id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: tipoLabel, stato: 'libero', lat: dati.lat, lng: dati.lng,
     viale: dati.viale, quadranteId: dati.quadranteId, defunti: [], concessione: null,
-    campi: { cappella: dati.tipo === 'cappella', colombaio: dati.tipo === 'colombaio' },
+    campi: {},
     rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora, nomeManufatto: dati.nome, strutturaId: sid,
     storico: [evento(`Struttura creata con ${dati.facce.reduce((t, f) => t + f.righe * f.colonne, 0)} posti`)],
   };
@@ -476,7 +490,7 @@ export function creaStruttura(dati: {
         loculi.push({
           id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: 'loculo', stato: 'libero', lat: dati.lat, lng: dati.lng,
           viale: dati.viale, quadranteId: dati.quadranteId, defunti: [], concessione: null,
-          campi: { cappella: dati.tipo === 'cappella', colombaio: dati.tipo === 'colombaio', lampada_votiva: false },
+          campi: { lampada_votiva: false },
           rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora,
           posizione: { strutturaId: sid, faccia: fi, fila, colonna: col }, storico: [evento('Posto generato con la struttura')],
         });

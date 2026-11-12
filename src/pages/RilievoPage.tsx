@@ -17,7 +17,7 @@ import { precaricaMotore } from '../lib/ocr';
 import { riduciFoto } from '../lib/photo';
 import { href, vai } from '../router';
 
-const PASSI = ['Foto', 'Posizione', 'Classificazione', 'Anagrafica', 'Flag e dati', 'Riepilogo'];
+const PASSI = ['Foto', 'Posizione', 'Classificazione', 'Anagrafica', 'Riepilogo'];
 
 interface Bozza {
   /** Foto in alta risoluzione per la lettura della lapide; si riduce al salvataggio. */
@@ -106,7 +106,7 @@ export function RilievoPage() {
       if (!b.defunti.some((d) => d.cognome.trim() || d.nome.trim())) return 'Inserisci almeno il cognome del defunto, oppure segna il posto come Libero';
     }
     if (passo === 2 && contenitore && !b.nomeManufatto.trim()) return 'Dai un nome alla struttura';
-    if (passo === 4) {
+    if (passo === 3) {
       const mancanti = campiApp.filter((c) => c.obbligatorio && (b.campi[c.id] === undefined || b.campi[c.id] === null || b.campi[c.id] === ''));
       if (mancanti.length) return `Compila: ${mancanti.map((c) => c.label).join(', ')}`;
     }
@@ -144,7 +144,7 @@ export function RilievoPage() {
       const defunti = b.stato === 'libero' || b.tipologia === 'vuota' || b.tipologia === 'in_costruzione' ? [] : b.defunti.filter((d) => d.cognome.trim() || d.nome.trim());
       const s = creaScheda({
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
-        defunti, concessione: null, campi: { ...b.campi, tomba_singola: b.campi.tomba_singola ?? (defunti.length === 1 && b.tipologia === 'tomba') },
+        defunti, concessione: null, campi: { ...b.campi },
         rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
       });
       if (b.daFoto && defunti.length) aggiornaScheda(s.id, {}, 'Anagrafica letta dalla foto della lapide e controllata');
@@ -318,7 +318,7 @@ export function RilievoPage() {
 
         {passo === 3 && (
           <div className="col gap-16">
-            <h2>Anagrafica e ubicazione</h2>
+            <h2>Anagrafica</h2>
             {contenitore || b.tipologia === 'vuota' || b.tipologia === 'in_costruzione' || b.stato === 'libero' ? (
               <p className="callout">Per {b.stato === 'libero' ? 'un posto libero' : `una ${tip.label.toLowerCase()}`} non servono dati anagrafici{contenitore ? ': i defunti si registrano poi nei singoli loculi.' : '.'}</p>
             ) : (
@@ -348,13 +348,6 @@ export function RilievoPage() {
                 </>
               )}
             </div>
-          </div>
-        )}
-
-        {passo === 4 && (
-          <div className="col gap-16">
-            <h2>Flag e informazioni aggiuntive</h2>
-            <p className="muted small">Questi campi si configurano in Impostazioni → Scheda Pro (“Visibile nel rilievo”): aggiungere un flag o un menu a tendina lo fa comparire qui.</p>
             {config.sezioni.map((sez) => {
               const cs = campiApp.filter((c) => c.sezione === sez.id);
               if (!cs.length) return null;
@@ -380,7 +373,7 @@ export function RilievoPage() {
           </div>
         )}
 
-        {passo === 5 && (
+        {passo === 4 && (
           <div className="riepilogo">
             <div className="col gap-12">
               <h2>Riepilogo</h2>

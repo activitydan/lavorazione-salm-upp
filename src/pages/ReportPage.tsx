@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
-import { BellPlus, CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon, PieChart } from 'lucide-react';
-import { Barre, Ciambella, Dot, Progress, StatoBadge, Tabs } from '../components/ui';
+import { BellPlus, CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon } from 'lucide-react';
+import { Barre, Ciambella, Dot, Progress, Tabs } from '../components/ui';
 import { creaAlert, registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
-import { conta, descrizioneScheda, statoConcessione, useCimitero, useDatiCimitero, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
+import { conta, descrizioneScheda, statoConcessione, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
 import type { Scheda } from '../data/types';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
 import { aggiungiMesi, data, euro, numero, oggiISO, percentuale } from '../lib/format';
 import { setQuery, useRotta, vai } from '../router';
 
-type Vista = 'scadenze' | 'lampade' | 'pagamenti' | 'statistiche';
+type Vista = 'scadenze' | 'lampade' | 'pagamenti';
 
 export function ReportPage() {
   const rotta = useRotta();
@@ -24,12 +24,10 @@ export function ReportPage() {
         { id: 'scadenze', label: 'Scadenze concessioni', icon: <CalendarClock size={16} /> },
         { id: 'lampade', label: 'Lampade votive', icon: <Lightbulb size={16} /> },
         { id: 'pagamenti', label: 'Pagamenti', icon: <Euro size={16} /> },
-        { id: 'statistiche', label: 'Statistiche', icon: <PieChart size={16} /> },
       ]} />
       {vista === 'scadenze' && <Scadenze />}
       {vista === 'lampade' && <Lampade />}
       {vista === 'pagamenti' && <Pagamenti />}
-      {vista === 'statistiche' && <Statistiche />}
     </div>
   );
 }
@@ -200,66 +198,6 @@ function Pagamenti() {
           { label: pag.label, v: (s) => valoreLeggibile(pag, s.campi.stato_pagamenti) },
         ]} />
       </section>
-    </div>
-  );
-}
-
-function Statistiche() {
-  const schede = useSchedeCimitero();
-  const config = useStore((s) => s.config);
-  const { quadranti } = useDatiCimitero();
-  const perStato = conta(schede, (s) => s.stato);
-  const perTip = conta(schede, (s) => s.tipologia);
-  const cim = useCimitero();
-  return (
-    <div className="report-grid">
-      <div className="report-2col">
-        <section className="card card--pad">
-          <h3>Stato delle postazioni</h3>
-          <div className="row gap-16 mt-16 row--wrap">
-            <Ciambella size={170} spessore={22} dati={config.stati.map((s) => ({ id: s.id, label: s.label, valore: perStato[s.id] ?? 0, colore: s.colore }))}
-              centro={<div className="display" style={{ fontSize: 24, fontWeight: 800 }}>{numero(schede.length)}</div>} sotto={<div className="tiny muted">schede</div>} />
-            <div className="col gap-8">{config.stati.map((s) => <StatoRiga key={s.id} id={s.id} n={perStato[s.id] ?? 0} tot={schede.length} />)}</div>
-          </div>
-        </section>
-        <section className="card card--pad">
-          <h3>Tipologie</h3>
-          <div className="mt-16">
-            <Barre dati={config.tipologie.map((t) => ({ label: t.label, valore: perTip[t.id] ?? 0 }))} altezza={150} />
-          </div>
-        </section>
-      </div>
-      <section className="card">
-        <div className="card__head"><h3>Riepilogo per quadrante · {cim.breve}</h3></div>
-        <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>Quadrante</th><th className="num">Censite</th><th className="num">Stimate</th><th>Avanzamento</th>{config.stati.map((s) => <th key={s.id} className="num">{s.label}</th>)}</tr></thead>
-            <tbody>
-              {quadranti.map((q) => {
-                const qs = schede.filter((s) => s.quadranteId === q.id);
-                return (
-                  <tr key={q.id}>
-                    <td><span className="row gap-4"><Dot colore={q.colore} /><b>{q.nome}</b></span></td>
-                    <td className="num">{qs.length}</td>
-                    <td className="num">{q.stimaManufatti}</td>
-                    <td style={{ minWidth: 140 }}><Progress value={qs.length} max={q.stimaManufatti} small colore={q.colore} /></td>
-                    {config.stati.map((s) => <td key={s.id} className="num">{qs.filter((x) => x.stato === s.id).length}</td>)}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function StatoRiga({ id, n, tot }: { id: string; n: number; tot: number }) {
-  return (
-    <div className="row row--between gap-16 small">
-      <StatoBadge stato={id} small />
-      <span className="mono"><b>{numero(n)}</b> <span className="muted">· {percentuale(n, tot)}%</span></span>
     </div>
   );
 }
