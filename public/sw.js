@@ -1,6 +1,6 @@
 // Service worker di CimiTera: tiene sul telefono tutti i file dell'app, così si apre anche senza rete.
 // Le immagini satellitari non si conservano: senza rete la mappa passa a Planimetria.
-const CACHE = 'cimitera-v1';
+const CACHE = 'cimitera-v2';
 const BASE = [
   './', './index.html', './favicon.svg', './manifest.webmanifest', './demo/salmup-demo.json',
   './icone/icona-192.png', './icone/icona-512.png',
