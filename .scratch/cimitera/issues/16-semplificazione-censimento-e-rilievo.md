@@ -1,7 +1,7 @@
 # Semplificazione di Censimento e Nuovo rilievo
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 05, 06, 09, 12
 
@@ -39,3 +39,21 @@ Oggi Censimento ha in alto "Assegna verifica" e cinque linguette: Avanzamento (q
 7. **Telefono.** Proposta: Censimento resta solo sul computer, come deciso nel menu; il problema delle linguette che escono dallo schermo non si pone.
 8. **Nuovo rilievo in cinque passi.** Proposta: Foto, Posizione, Classificazione, Anagrafica, Riepilogo. Note e campi configurabili vanno in fondo ad Anagrafica. I flag Tomba singola, Cappella e Colombaio si tolgono, perché ripetono la classificazione.
 9. **Lampada vista sul campo.** Proposta: nel rilievo la scheda mostra lo stato dell'utenza votiva in sola lettura e una domanda sì/no "C'è una lampada accesa?". Se c'è una lampada ma nessuna utenza, la scheda compare all'ufficio in Illuminazione votiva tra le lampade da controllare; se c'è un'utenza attiva ma la lampada è spenta, CimiTera propone "Segnala guasto".
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e nove le proposte.
+
+## Answer
+
+Risolto il 2026-11-12. Censimento resta solo sul computer; sul telefono ci sono Nuovo rilievo e la voce Verifiche.
+
+- **Intestazione**: titolo "Censimento" e linguette Avanzamento, Quadranti, Operatori, Verifiche, Colombari e cappelle. Il pulsante "Assegna verifica" in alto sparisce: resta nella linguetta Verifiche, nella barra delle righe selezionate di Ricerca e nella scheda.
+- **Avanzamento**: i quattro indicatori (compreso "Schede censite", perché il riquadro della Dashboard porta qui); accanto al grafico delle schede al giorno i riquadri "Stato delle postazioni" (ciambella) e "Tipologie" (barre con la parte libera di ogni tipologia); una sola tabella per quadrante con una colonna per ogni stato. Spariscono la mappa (c'è in Quadranti) e la card "Operatori sul campo".
+- **Statistiche**: Report › Statistiche entra in Avanzamento, senza linguetta propria.
+- **Quadranti**: resta com'è; da qui si assegna l'operatore a un quadrante.
+- **Operatori**: elenco in sola lettura con nome, quadranti, schede rilevate, schede di oggi, ultima attività, verifiche aperte e contatti. "Nuovo operatore" e "Modifica" vanno in Amministrazione.
+- **Verifiche**: sul computer tabella a pagine da 50, con Aperte / Completate. Sul telefono la voce Verifiche mostra solo le verifiche aperte dell'operatore che è entrato, a card, con "Chiudi".
+- **Colombari e cappelle**: tabella a pagine da 50 con nome, tipo, viale, posti, occupati, liberi e percentuale, e i pulsanti Griglia a parete, Scheda e Sulla mappa. La colonna "Liberi" prende il posto dei loculi liberi per struttura di Report.
+- **Nuovo rilievo**: cinque passi, Foto, Posizione, Classificazione, Anagrafica, Riepilogo. Note e campi configurabili stanno in fondo ad Anagrafica. I flag Tomba singola, Cappella e Colombaio si tolgono perché ripetono la classificazione.
+- **Lampada vista sul campo**: nel rilievo la scheda mostra lo stato dell'utenza votiva in sola lettura e chiede "C'è una lampada accesa?". Lampada senza utenza: la scheda compare all'ufficio in Illuminazione votiva tra le lampade da controllare. Utenza attiva con lampada spenta: CimiTera propone "Segnala guasto".
