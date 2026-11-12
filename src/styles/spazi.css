@@ -132,3 +132,13 @@
 .pub__riga:hover { border-color: var(--blu); }
 .pub__riga .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pub__foot { justify-content: space-between; width: 100%; }
+
+/* ---------- Ricerca: finestra Esporta ed elenco a card sul telefono ---------- */
+.esporta { display: flex; flex-direction: column; gap: 12px; }
+.esporta__voce { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; }
+.esporta__voce .grow { min-width: 0; }
+.esporta__ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.esporta__colonne { margin: 0; padding: 12px 16px; border: 1px dashed var(--border); border-radius: 12px; }
+.ricerca__card-list { display: flex; flex-direction: column; }
+.ricerca__card { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); background: transparent; text-align: left; color: var(--text); width: 100%; }
+.ricerca__card .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

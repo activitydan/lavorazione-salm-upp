@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
-import { BellPlus, CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon, PieChart, SquareDashed } from 'lucide-react';
+import { BellPlus, CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon, PieChart } from 'lucide-react';
 import { Barre, Ciambella, Dot, Progress, StatoBadge, Tabs } from '../components/ui';
-import { apriParete, creaAlert, registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
-import { conta, descrizioneScheda, statoConcessione, tipologiaDef, useCimitero, useDatiCimitero, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
+import { creaAlert, registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
+import { conta, descrizioneScheda, statoConcessione, useCimitero, useDatiCimitero, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
 import type { Scheda } from '../data/types';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
 import { aggiungiMesi, data, euro, numero, oggiISO, percentuale } from '../lib/format';
 import { setQuery, useRotta, vai } from '../router';
 
-type Vista = 'scadenze' | 'libere' | 'lampade' | 'pagamenti' | 'statistiche';
+type Vista = 'scadenze' | 'lampade' | 'pagamenti' | 'statistiche';
 
 export function ReportPage() {
   const rotta = useRotta();
@@ -22,13 +22,11 @@ export function ReportPage() {
       </div>
       <Tabs value={vista} onChange={(v) => setQuery('vista', v)} tabs={[
         { id: 'scadenze', label: 'Scadenze concessioni', icon: <CalendarClock size={16} /> },
-        { id: 'libere', label: 'Postazioni libere', icon: <SquareDashed size={16} /> },
         { id: 'lampade', label: 'Lampade votive', icon: <Lightbulb size={16} /> },
         { id: 'pagamenti', label: 'Pagamenti', icon: <Euro size={16} /> },
         { id: 'statistiche', label: 'Statistiche', icon: <PieChart size={16} /> },
       ]} />
       {vista === 'scadenze' && <Scadenze />}
-      {vista === 'libere' && <Libere />}
       {vista === 'lampade' && <Lampade />}
       {vista === 'pagamenti' && <Pagamenti />}
       {vista === 'statistiche' && <Statistiche />}
@@ -113,64 +111,6 @@ function Scadenze() {
           { label: 'Scadenza', v: (s) => data(s.concessione!.dataScadenza) },
           { label: 'Giorni', num: true, v: (s) => { const g = statoConcessione(s)!.giorni; return <b style={{ color: g < 0 ? '#D9473F' : g < 31 ? '#E07B22' : undefined }}>{g}</b>; } },
           { label: pag?.label ?? 'Pagamenti', v: (s) => (pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '') },
-        ]} />
-      </section>
-    </div>
-  );
-}
-
-function Libere() {
-  const schede = useSchedeCimitero();
-  const config = useStore((s) => s.config);
-  const { quadranti, strutture } = useDatiCimitero();
-  const libere = useMemo(() => schede.filter((s) => s.stato === 'libero' && !s.strutturaId), [schede]);
-  const perTip = conta(libere, (s) => s.tipologia);
-  const perStr = useMemo(() => strutture.map((st) => ({ st, n: libere.filter((s) => s.posizione?.strutturaId === st.id).length })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n), [libere, strutture]);
-  return (
-    <div className="report-grid">
-      <div className="kpi-grid">
-        <div className="card kpi-card"><span className="kpi-card__icon" style={{ background: '#eef6e7', color: '#3F9A3C' }}><SquareDashed size={20} /></span><span className="kpi"><span className="kpi__label">Postazioni libere</span><span className="kpi__value">{libere.length}</span></span></div>
-        {config.tipologie.filter((t) => perTip[t.id]).map((t) => (
-          <div key={t.id} className="card kpi-card"><span className="kpi-card__icon" style={{ background: `${t.colore}18`, color: t.colore }}><Dot colore={t.colore} size="lg" /></span><span className="kpi"><span className="kpi__label">{t.label}</span><span className="kpi__value">{perTip[t.id]}</span></span></div>
-        ))}
-      </div>
-      <div className="report-2col">
-        <section className="card">
-          <div className="card__head">
-            <h3>Dove sono i posti liberi</h3>
-            <button className="btn btn--sm btn--primary" onClick={() => { resetFiltri({ stati: ['libero'] }); vai('/mappa'); }}><MapIcon size={14} />Vedi sulla mappa</button>
-          </div>
-          <div className="card__body bar-list">
-            {quadranti.map((q) => {
-              const n = libere.filter((s) => s.quadranteId === q.id).length;
-              return (
-                <div key={q.id} className="bar-list__row">
-                  <span className="row gap-4"><Dot colore={q.colore} />{q.nome}</span>
-                  <Progress value={n} max={Math.max(1, ...quadranti.map((x) => libere.filter((s) => s.quadranteId === x.id).length))} colore={q.colore} small />
-                  <span className="num">{n}</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-        <section className="card">
-          <div className="card__head"><h3>Loculi liberi per struttura</h3></div>
-          <div className="list" style={{ maxHeight: 360, overflow: 'auto' }}>
-            {perStr.slice(0, 30).map(({ st, n }) => (
-              <button key={st.id} className="list-item" onClick={() => { resetFiltri({ stati: ['libero'] }); apriParete(st.id); }} title="Apri la griglia a parete con i posti liberi evidenziati">
-                <span className="grow"><b>{st.nome}</b><div className="tiny muted">{st.viale}</div></span>
-                <span className="badge badge--verde">{n} liberi</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      </div>
-      <section className="card">
-        <div className="card__head"><h3>Elenco postazioni libere</h3></div>
-        <TabellaSchede lista={libere} colonne={[
-          { label: 'Tipologia', v: (s) => tipologiaDef(config, s.tipologia).label },
-          { label: 'Posizione', v: (s) => (s.posizione ? `${strutture.find((x) => x.id === s.posizione!.strutturaId)?.nome ?? ''} · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : `${s.area ?? ''} ${s.numeroPosto ?? ''}`) },
-          { label: 'Quadrante', v: (s) => quadranti.find((q) => q.id === s.quadranteId)?.codice ?? '—' },
         ]} />
       </section>
     </div>
