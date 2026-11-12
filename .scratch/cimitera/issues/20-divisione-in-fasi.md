@@ -1,7 +1,7 @@
 # Divisione in fasi
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 18
 
@@ -63,3 +63,47 @@ Dati, Amministrazione e cliente
 18. **Dati finti.** Proposta: ogni fase scrive i dati finti di ciò che costruisce, nel generatore dei dati dimostrativi, legati a quelli delle fasi prima (per esempio le utenze votive della 9 stanno su schede con concessioni della 8).
 19. **Dati vecchi nel browser.** Proposta: quando una fase cambia la forma dei dati, la demo ricarica da sola i dati dimostrativi alla prima apertura e lo dice con un messaggio breve. Niente conversione dei dati vecchi: le prove fatte dal cliente nella fase prima si perdono.
 20. **Cosa vede il cliente.** Proposta: alla fine di ogni fase Dan aggiorna la copia di lavoro online (mai la demo consegnata) e manda al cliente il link con le tre righe "Al cliente" della fase. Nessuna data, come nella risposta già approvata.
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e venti le proposte. Il ticket 18 è ancora aperto: i punti che dipendono da lui restano in sospeso (vedi Answer).
+
+## Answer
+
+Risolto il 2026-11-12. Alcuni punti restano in sospeso e dipendono dal ticket [Semplificazione di Impostazioni e Amministrazione](18-semplificazione-impostazioni.md).
+
+**Regole**
+
+- **13 fasi**, una per sessione, una alla volta e mai in parallelo (toccano gli stessi file). Prima le pagine e il telefono (1–7), poi i modelli nuovi (8–13).
+- **La demo resta intera a ogni fase**: una cosa vecchia si toglie solo nella fase che costruisce quella che la prende al suo posto.
+  - Anagrafe: Defunti esce nella 2, Concessionari nella 8; la voce sparisce nella 8.
+  - Esportazioni: Excel di Ricerca ed "Esportazioni recenti" nella 2, etichette QR nella 3, Excel delle lampade votive nella 9, Excel delle scadenze nella 12; la voce sparisce nella 12.
+  - Report: Postazioni libere nella 2, Statistiche nella 4, Lampade votive nella 9, Scadenze nella 12, Pagamenti nella 13; la voce sparisce nella 13.
+  - Scheda: la concessione resta nella finestra Modifica fino alla 8; flag "Lampada votiva" a mano, "Canone lampada votiva", "Codice utenza" e "Intestatario utenza" fino alla 9; "Stato pagamenti" e la sezione "Fatturazione e pagamenti" fino alla 13.
+  - Censimento › Operatori: "Nuovo operatore" e "Modifica" fino alla 6.
+  - Dashboard: il riquadro Alert mostra dalla 5 gli alert personali di chi è entrato e diventa "Agenda di oggi" nella 11.
+- **Nessuna fase si lascia a metà**: si chiude con la demo funzionante, commit e push. Se in to-spec una fase sembra troppo grande, si divide in due prima di cominciarla.
+- **Amministrazione cresce per fasi**: la pagina nasce nella 6; ogni fase di modello ci aggiunge le sue regole, importi compresi (8 durate, rinnovo, soglia "in scadenza" e tariffe delle concessioni; 9 canone e allaccio; 10 turno e tariffe delle operazioni; 13 i giorni per pagare, dopo il sollecito e dopo la diffida) e le sue cose da fare dell'operatore. Dove stanno nella pagina: in sospeso, dipende dal ticket 18.
+- **Dati finti**: ogni fase scrive quelli di ciò che costruisce, nel generatore dei dati dimostrativi, legati a quelli delle fasi prima.
+- **Dati vecchi nel browser**: quando una fase cambia la forma dei dati, la demo ricarica da sola i dati dimostrativi alla prima apertura, con un messaggio breve. Niente conversione: le prove del cliente della fase prima si perdono.
+- **Cliente**: alla fine di ogni fase Dan aggiorna la copia di lavoro online (mai la demo consegnata) e manda il link con le tre righe "Al cliente" della fase, senza date.
+
+**Fasi**
+
+| Fase | Contenuto | Grandezza | Al cliente |
+|---|---|---|---|
+| 1 Nome, cornice e accessi | nome e logo CimiTera ("REST IN GPS" sparisce, "Una soluzione DAT \| HYA Group" nel caricamento e nei PDF); regole degli spazi sulla cornice di tutte le pagine; "Entra come"; menu nuovo per ruolo, computer e telefono, con le voci che esistono (Mappa esce dal menu del computer); riquadro dell'utente con il cambio di ruolo | media | nome nuovo, pagine più pulite, ingresso per ruolo, telefono solo per il campo |
+| 2 Ricerca | ticket 15 per intero; finestra Esporta e barra delle pagine, riusate dopo | media | una sola ricerca per postazioni e defunti, un solo Esporta |
+| 3 Scheda, Mappa e pagina del Cittadino | ticket 19 tranne "Agenda di oggi"; QR via; "Visibile al pubblico"; i riassunti Concessione, Illuminazione votiva e Pratiche si riempiono nelle fasi 8, 9, 10 | grande | scheda più ordinata, pagina pubblica per trovare un defunto |
+| 4 Censimento e Nuovo rilievo | ticket 16 per intero, Statistiche in Avanzamento, rilievo in cinque passi; "C'è una lampada accesa?" arriva nella 9; flag doppioni fuori anche dai campi configurabili: in sospeso, dipende dal ticket 18 | grande | avanzamento in una pagina, rilievo più corto |
+| 5 Manutenzioni e campanella personale | ticket 17 per intero (squadre via anche dalle Impostazioni); campanella personale su computer e telefono con gli alert di manutenzioni e verifiche | media | ognuno vede le sue manutenzioni e i suoi alert |
+| 6 Impostazioni e Amministrazione | dopo la 5 (alert e cose da fare degli operatori), prima della 8 (durate); contenuto in sospeso, dipende dal ticket 18 | media | in sospeso, dipende dal ticket 18 |
+| 7 Lavoro senza rete | ticket 14 per intero: app installabile, Planimetria automatica, "Senza rete", "Da inviare" con invio finto, "Simula senza rete" | media | con il telefono in modalità aereo si lavora lo stesso |
+| 8 Concessioni | ticket 07: contratti, concessionari, aventi diritto, stati, azioni, storico; Anagrafe › Concessionari entra qui; concessione fuori dalla finestra Modifica; riassunto nella scheda; senza avvisi di pagamento né lettere | grande | concessioni complete con scadenze calcolate e rinnovi |
+| 9 Illuminazione votiva | ticket 08: utenze, abbonati, punti luce, stati, azioni, storico, "Segnala guasto", chiusura a fine concessione, flag calcolato, riassunto, Excel per la fatturazione, lampada nel rilievo e lampade da controllare; canoni dell'anno e morosità nella 13 | grande | illuminazione votiva legata a postazione e defunto |
+| 10 Pratiche | ticket 09, linguetta Pratiche di Operazioni cimiteriali: cinque operazioni, richiedente, stati, esecuzione che aggiorna schede, posti e utenze, traslazione, resti, sezione nella scheda, defunto spostato in Ricerca e nella pagina del Cittadino, avviso maggio–settembre, agenzia funebre | grande | una pratica dall'apertura all'esecuzione, la scheda si aggiorna da sola |
+| 11 Agenda e registro | ticket 09: agenda unica con filtri e sovrapposizioni, registro in PDF, "Agenda di oggi" nella Dashboard, alert delle pratiche | media | agenda dell'ufficio e registro chiesto dalla legge |
+| 12 Scadenzario e invii tramite DAT | voce Scadenze e pagamenti: scadenzario unico e pratiche d'ufficio dalle righe; ticket 11 per intero (lettere, lotti, canali, esiti, prove, reinvio, affissione, "Invii DAT", diffida con Notifica Certa, alert dei non consegnati) | grande | tutte le scadenze in un posto e le lettere tramite DAT, simulate |
+| 13 Avvisi di pagamento e morosi | ticket 10 per intero: avvisi dalle azioni, "Simula pagamento", PDF "FAC-SIMILE", "Avvisi di pagamento" e "Morosi", scala della morosità, sospensione e riaccensione, "Emetti i canoni dell'anno", canoni, solleciti e diffide tramite DAT, "Moroso" | grande | il giro completo: scadenza, lettera, avviso, pagamento simulato, moroso, sollecito |
+
+**In sospeso, dipende dal ticket 18**: il contenuto della fase 6 (linguette, campi da togliere, operatori e loro ruolo, agenzie funebri, registro, collegamenti esterni); dove stanno le regole che ogni fase di modello aggiunge in Amministrazione; se i flag Tomba singola, Cappella e Colombaio escono dai campi configurabili nella fase 4 o nella 6. Quando il ticket 18 si chiude, chi lo chiude aggiunge qui un aggiornamento e, se cambia una fase, lo scrive nella tabella.

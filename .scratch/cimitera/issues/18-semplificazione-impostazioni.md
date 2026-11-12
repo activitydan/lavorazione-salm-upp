@@ -32,6 +32,8 @@ Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): Amministrazione ricev
 
 Dal ticket [Risposta al cliente](13-risposta-al-cliente.md): nella risposta al cliente i collegamenti esterni (ANPR, protocollo, contabilità) stanno tra le cose che richiedono accordi esterni. Se questo ticket decide di mostrarli nell'app, chi lo chiude aggiunge al punto 3 di [risposta-al-cliente.md](../risposta-al-cliente.md) la riga "nella demo un riquadro mostra i collegamenti previsti". Se non li mostra, il testo resta com'è.
 
+Dal ticket [Divisione in fasi](20-divisione-in-fasi.md): Impostazioni e Amministrazione sono la fase 6 di 13, dopo Manutenzioni e prima di Concessioni. Amministrazione nasce lì e le fasi 8, 9, 10 e 13 ci aggiungono le regole dei loro modelli. Restano in sospeso nel ticket 20, e chi chiude questo ticket li scrive lì come aggiornamento: il contenuto della fase 6, dove stanno le regole che ogni modello aggiunge, e se i flag Tomba singola, Cappella e Colombaio escono dai campi configurabili nella fase 4 (Censimento e Nuovo rilievo) o nella 6.
+
 ## Comments
 
 ### 2026-11-12 · primo giro di domande, in attesa delle risposte di Dan
