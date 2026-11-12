@@ -208,6 +208,10 @@ COLOMBARI = [
          facce=[("Lato interno", 4, 36)], era=(2008, 2026), occ=0.62),
     dict(nome="Colombario Est", c=(1845, 531), L=122, W=18, ang=90,
          facce=[("Lato ovest", 5, 18)], era=(1990, 2024), occ=0.88),
+    dict(nome="Ossario comunale", tipo="ossario", c=(1263, 484), L=60, W=14, ang=0,
+         facce=[("Fronte", 6, 20)], era=(1948, 2012), occ=0.74),
+    dict(nome="Cinerario", tipo="cinerario", c=(1032, 484), L=60, W=14, ang=0,
+         facce=[("Fronte", 5, 16)], era=(2004, 2026), occ=0.55),
 ]
 for c in COLOMBARI:
     cx, cy = D(*c["c"])
@@ -452,10 +456,10 @@ censiti.sort(key=lambda t: (t[0], t[1], t[2]))
 # Costruzione schede
 # ---------------------------------------------------------------------------
 OPERATORI = [
-    dict(id="op-1", nome="Giorgio Licitra", ruolo="Rilevatore", telefono="+39 333 000 1101", email="g.licitra@esempio.it", colore="#2F6FB3", attivo=True),
-    dict(id="op-2", nome="Martina Cascone", ruolo="Rilevatrice", telefono="+39 333 000 1102", email="m.cascone@esempio.it", colore="#E07B22", attivo=True),
-    dict(id="op-3", nome="Salvatore Occhipinti", ruolo="Rilevatore", telefono="+39 333 000 1103", email="s.occhipinti@esempio.it", colore="#1E8C8C", attivo=True),
-    dict(id="op-4", nome="Elena Distefano", ruolo="Supervisore", telefono="+39 333 000 1104", email="e.distefano@esempio.it", colore="#8E5BB5", attivo=True),
+    dict(id="op-1", nome="Giorgio Licitra", ruolo="Operatore", telefono="+39 333 000 1101", email="g.licitra@esempio.it", colore="#2F6FB3", attivo=True),
+    dict(id="op-2", nome="Martina Cascone", ruolo="Operatore", telefono="+39 333 000 1102", email="m.cascone@esempio.it", colore="#E07B22", attivo=True),
+    dict(id="op-3", nome="Salvatore Occhipinti", ruolo="Operatore", telefono="+39 333 000 1103", email="s.occhipinti@esempio.it", colore="#1E8C8C", attivo=True),
+    dict(id="op-4", nome="Elena Distefano", ruolo="Operatore", telefono="+39 333 000 1104", email="e.distefano@esempio.it", colore="#8E5BB5", attivo=True),
 ]
 NOME_OP = {o["id"]: o["nome"] for o in OPERATORI}
 
@@ -511,14 +515,10 @@ NOTE = ["Foto ceramica presente sulla lapide", "Vaso portafiori in bronzo", "Epi
 
 def campi_dinamici(kind, stato, defunti, conc, in_cappella=False, in_colombario=False):
     occupato = len(defunti) > 0
-    p_lampada = {"tomba_campo": 0.45, "tomba_filare": 0.5, "tomba_famiglia": 0.55, "loculo": 0.62, "cappella": 0.7}.get(kind, 0)
+    p_lampada = {"tomba_campo": 0.45, "tomba_filare": 0.5, "tomba_famiglia": 0.55, "loculo": 0.62, "cappella": 0.7,
+                 "celletta_ossario": 0.22, "nicchia_cineraria": 0.3}.get(kind, 0)
     lampada = (occupato or kind == "cappella") and rng.random() < p_lampada and stato != "inaccessibile"
-    c = {
-        "lampada_votiva": lampada,
-        "tomba_singola": kind in ("tomba_campo", "tomba_filare", "loculo") and len(defunti) == 1,
-        "cappella": in_cappella or kind == "cappella",
-        "colombaio": in_colombario or kind == "colombaio",
-    }
+    c = {"lampada_votiva": lampada}
     if conc or lampada:
         c["stato_pagamenti"] = scegli({"regolare": 85, "moroso": 10, "in_verifica": 5})
     if lampada:
@@ -530,7 +530,7 @@ def campi_dinamici(kind, stato, defunti, conc, in_cappella=False, in_colombario=
                 break
         c["codice_utenza"] = cod
         c["intestatario_utenza"] = conc["intestatario"] if conc else intestatario(defunti[0]["cognome"] if defunti else rng.choice(COGNOMI))
-    if kind in ("tomba_campo", "tomba_filare", "tomba_famiglia", "loculo", "cappella"):
+    if kind in ("tomba_campo", "tomba_filare", "tomba_famiglia", "loculo", "cappella", "celletta_ossario", "nicchia_cineraria"):
         c["materiale"] = scegli(MATERIALI)
         if stato == "da_manutenzionare":
             c["condizione_lapide"] = scegli({"danneggiata": 70, "discreta": 30})
@@ -570,25 +570,24 @@ for giorno, minuti, op, pos in censiti:
     k = pos["kind"]
     p = pos["p"]
     if k in ("tomba_campo", "tomba_filare", "tomba_famiglia"):
-        era = {"tomba_campo": (1990, 2026), "tomba_filare": (1955, 2018), "tomba_famiglia": (1935, 2024)}[k]
+        era = {"tomba_campo": (2011, 2026), "tomba_filare": (1955, 2018), "tomba_famiglia": (1935, 2024)}[k]
         occ = {"tomba_campo": 0.92, "tomba_filare": 0.97, "tomba_famiglia": 0.98}[k]
         if rng.random() < occ:
             cog = rng.choice(COGNOMI)
-            n = 1 if k == "tomba_campo" and rng.random() < 0.86 else (rng.randint(1, 3) if k == "tomba_filare" else rng.randint(2, 5))
-            if k == "tomba_campo" and n != 1:
-                n = 2
+            n = 1 if k == "tomba_campo" else (rng.randint(1, 3) if k == "tomba_filare" else rng.randint(2, 5))
             defunti = sorted([persona(cog if (i == 0 or rng.random() < 0.7) else None, era, recente=(k == "tomba_campo")) for i in range(n)], key=lambda d: d["dataMorte"])
-            durata = {"tomba_campo": 20, "tomba_filare": 50, "tomba_famiglia": 99}[k]
-            conc = concessione(dt.date.fromisoformat(defunti[0]["dataMorte"]), durata, cog)
+            # la fossa in campo comune non ha concessione: ha il turno
+            conc = None if k == "tomba_campo" else concessione(dt.date.fromisoformat(defunti[0]["dataMorte"]), 99, cog)
             stato = stato_occupato()
         else:
             defunti, conc, stato = [], None, stato_libero()
-        nuova_scheda("tomba", p, pos, giorno, minuti, op, stato, defunti, conc,
+        nuova_scheda("fossa" if k == "tomba_campo" else "tomba_famiglia", p, pos, giorno, minuti, op, stato, defunti, conc,
                      campi_dinamici(k, stato, defunti, conc), area=pos["area"], numeroPosto=f"Fila {pos['fila']} · n. {pos['num']}")
     elif k == "lotto":
-        tip = "in_costruzione" if rng.random() < 0.09 else "vuota"
-        stato = "inaccessibile" if tip == "in_costruzione" else ("libero" if rng.random() < 0.94 else "da_verificare")
-        nuova_scheda(tip, p, pos, giorno, minuti, op, stato, [], None, {"lampada_votiva": False, "tomba_singola": False, "cappella": False, "colombaio": False},
+        in_costruzione = rng.random() < 0.09
+        tip = "tomba_famiglia" if in_costruzione else "fossa"
+        stato = "inaccessibile" if in_costruzione else ("libero" if rng.random() < 0.94 else "da_verificare")
+        nuova_scheda(tip, p, pos, giorno, minuti, op, stato, [], None, {"lampada_votiva": False},
                      area=pos["area"], numeroPosto=f"Lotto {pos['num']}")
     elif k in ("colombaio", "cappella"):
         if k == "colombaio":
@@ -607,7 +606,7 @@ for giorno, minuti, op, pos in censiti:
             L, W, ang = max(pos["bw"], 12), max(pos["bh"], 12), 0
             footprint = rect_poly(p[0], p[1], L, W, 0)
         sid = f"STR-{len(strutture) + 1:03d}"
-        tipo_str = "colombaio" if k == "colombaio" else "cappella"
+        tipo_str = pos["col"].get("tipo", "colombaio") if k == "colombaio" else "cappella"
         stato_c = "occupato"
         # scheda contenitore
         if k == "cappella":
@@ -615,7 +614,9 @@ for giorno, minuti, op, pos in censiti:
             conc_c = concessione(fondazione, 99, cog_fam, intest=f"Eredi {cog_fam}")
         else:
             conc_c = None
-        contenitore = nuova_scheda(tipo_str, centro, pos, giorno, minuti, op, "occupato", [], conc_c, {}, nomeManufatto=nome, strutturaId=sid)
+        # la cappella è una tomba di famiglia; colombaio, ossario e cinerario sono solo strutture
+        tip_posto = {"colombaio": "loculo", "cappella": "loculo", "ossario": "celletta_ossario", "cinerario": "nicchia_cineraria"}[tipo_str]
+        contenitore = nuova_scheda("tomba_famiglia" if k == "cappella" else "struttura", centro, pos, giorno, minuti, op, "occupato", [], conc_c, {}, nomeManufatto=nome, strutturaId=sid)
         loculi = []
         totale_posti = sum(r * cc for _, r, cc in facce)
         for fi, (fnome, righe, colonne) in enumerate(facce):
@@ -634,16 +635,17 @@ for giorno, minuti, op, pos in censiti:
                     if rng.random() < occ:
                         cog = cog_fam if (k == "cappella" and rng.random() < 0.72) else None
                         d = persona(cog, era)
-                        if rng.random() < 0.05 and k == "colombaio":
+                        if rng.random() < (0.35 if tipo_str == "ossario" else 0.05) and k == "colombaio":
                             defs = sorted([d, persona(d["cognome"], (anno(d["dataMorte"]), min(2026, anno(d["dataMorte"]) + 25)))], key=lambda x: x["dataMorte"])
                         else:
                             defs = [d]
-                        conc = None if k == "cappella" else concessione(dt.date.fromisoformat(defs[0]["dataMorte"]), 30 if rng.random() < 0.55 else 50, defs[0]["cognome"])
+                        durata_posto = 30 if tipo_str in ("ossario", "cinerario") else 60
+                        conc = None if k == "cappella" else concessione(dt.date.fromisoformat(defs[0]["dataMorte"]), durata_posto, defs[0]["cognome"])
                         st = stato_occupato()
                     else:
                         defs, conc, st = [], None, stato_libero()
-                    campi = campi_dinamici("loculo", st, defs, conc, in_cappella=(k == "cappella"), in_colombario=(k == "colombaio"))
-                    s = nuova_scheda("loculo", lp, pos, giorno, minuti, op, st, defs, conc, campi,
+                    campi = campi_dinamici(tip_posto, st, defs, conc)
+                    s = nuova_scheda(tip_posto, lp, pos, giorno, minuti, op, st, defs, conc, campi,
                                      posizione=dict(strutturaId=sid, faccia=fi, fila=fila, colonna=col))
                     if k == "cappella":
                         s["note"] = "Posto incluso nella concessione della cappella"
@@ -657,7 +659,6 @@ for giorno, minuti, op, pos in censiti:
             stato_c = "da_manutenzionare"
         contenitore["stato"] = stato_c
         contenitore["campi"] = campi_dinamici(k, stato_c, [1] if occupati else [], conc_c)
-        contenitore["campi"]["tomba_singola"] = False
         contenitore["campi"].pop("stato_pagamenti", None) if k == "colombaio" else None
         if k == "colombaio":
             contenitore["campi"]["lampada_votiva"] = False
@@ -688,8 +689,11 @@ for s in rng.sample(con_conc, max(0, 46 - len(in_scadenza))):
 CAT_PER = {
     "loculo": {"lapide_danneggiata": 35, "infiltrazioni": 20, "lampada_guasta": 30, "pulizia": 15},
     "tomba": {"lapide_danneggiata": 30, "vegetazione": 30, "cedimento": 20, "lampada_guasta": 20},
-    "cappella": {"infiltrazioni": 40, "cedimento": 25, "pulizia": 20, "vegetazione": 15},
-    "colombaio": {"infiltrazioni": 60, "cedimento": 40},
+    "fossa": {"lapide_danneggiata": 30, "vegetazione": 40, "cedimento": 10, "lampada_guasta": 20},
+    "tomba_famiglia": {"infiltrazioni": 30, "cedimento": 25, "pulizia": 15, "vegetazione": 15, "lapide_danneggiata": 15},
+    "celletta_ossario": {"lapide_danneggiata": 60, "pulizia": 40},
+    "nicchia_cineraria": {"lapide_danneggiata": 60, "pulizia": 40},
+    "struttura": {"infiltrazioni": 60, "cedimento": 40},
 }
 DESCR = {
     "lapide_danneggiata": ["Lastra di marmo incrinata nell'angolo inferiore", "Lapide con frattura verticale, rischio distacco", "Cornice della lapide scheggiata"],
@@ -708,7 +712,7 @@ def nuova_manutenzione(s, stato, data_segn):
     man_seq += 1
     cat = scegli(CAT_PER.get(s["tipologia"], CAT_PER["tomba"]))
     if cat == "lampada_guasta" and not s["campi"].get("lampada_votiva"):
-        cat = "lapide_danneggiata" if s["tipologia"] in ("loculo", "tomba") else "pulizia"
+        cat = "lapide_danneggiata" if s["tipologia"] in ("loculo", "fossa", "celletta_ossario", "nicchia_cineraria") else "pulizia"
     prio = scegli({"bassa": 22, "media": 42, "alta": 26, "urgente": 10})
     if cat == "cedimento":
         prio = rng.choice(["alta", "urgente"])

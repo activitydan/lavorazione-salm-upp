@@ -51,13 +51,13 @@ export interface Faccia {
   colonne: number;
 }
 
-/** Colombari e cappelle familiari: contengono una griglia di loculi a parete. */
+/** Struttura: la costruzione con più posti a parete (colombaio, cappella, ossario, cinerario), visti in una griglia. */
 export interface Struttura {
   id: string;
   cimiteroId: string;
-  tipo: 'colombaio' | 'cappella';
+  tipo: 'colombaio' | 'cappella' | 'ossario' | 'cinerario';
   nome: string;
-  schedaId: string; // scheda del manufatto contenitore
+  schedaId: string; // scheda della struttura
   lat: number;
   lng: number;
   angolo: number;
@@ -72,10 +72,12 @@ export interface Struttura {
 export interface Operatore {
   id: string;
   nome: string;
-  ruolo: string;
+  /** come nel glossario: l'Amministratore è l'operatore che gestisce anche operatori, regole e impostazioni */
+  ruolo: 'Operatore' | 'Amministratore';
   telefono: string;
   email: string;
   colore: string;
+  /** un operatore non si cancella: si disattiva */
   attivo: boolean;
 }
 
@@ -130,7 +132,7 @@ export interface Scheda {
   area?: string;
   numeroPosto?: string;
   nomeManufatto?: string;
-  strutturaId?: string; // valorizzato sulle schede contenitore (cappella, colombaio)
+  strutturaId?: string; // valorizzato sulla scheda della struttura
   posizione?: PosizioneLoculo; // valorizzato sui loculi dentro una struttura
   fotoId?: string;
   storico?: EventoStorico[];

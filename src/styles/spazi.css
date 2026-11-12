@@ -152,3 +152,6 @@
 .tip-riga__barra span { display: block; height: 100%; }
 .ver-card { display: flex; align-items: center; gap: 12px; border: none; background: transparent; padding: 0; text-align: left; color: var(--text); width: 100%; }
 .ver-card .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* ---------- Amministrazione: pannello dell'operatore accanto alla tabella ---------- */
+.drawer--admin { position: sticky; top: 0; width: auto; max-height: calc(100dvh - 140px); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; transform: none; animation: none; }

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PRIORITA, UFFICIO } from '../config/defaults';
+import { PRIORITA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
 import { aggiungiGiorni, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
 import { loculiPerStruttura, useStore } from './store';
 import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
@@ -14,13 +14,13 @@ export function useUtente() {
   const operatori = useStore((s) => s.db.operatori);
   return useMemo(() => {
     const ruolo = sessione?.ruolo ?? 'amministratore';
-    const op = ruolo === 'operatore' ? operatori.find((o) => o.id === sessione?.operatoreId) : undefined;
+    const op = sessione?.operatoreId ? operatori.find((o) => o.id === sessione.operatoreId) : undefined;
     const nome = op?.nome ?? (ruolo === 'operatore' ? 'Operatore' : UFFICIO);
     return {
       ruolo,
       operatoreId: op?.id ?? null,
       nome,
-      etichettaRuolo: ruolo === 'amministratore' ? 'Amministratore' : ruolo === 'operatore' ? 'Operatore' : 'Cittadino',
+      etichettaRuolo: ruolo === 'amministratore' ? 'Amministratore' : 'Operatore',
       colore: op?.colore ?? '#0A2F55',
       sigla: nome.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase(),
       amministratore: ruolo === 'amministratore',
@@ -88,6 +88,7 @@ export function statoDef(config: ConfigScheda, id: string) {
 }
 
 export function tipologiaDef(config: ConfigScheda, id: string) {
+  if (id === TIPOLOGIA_STRUTTURA.id) return TIPOLOGIA_STRUTTURA;
   return config.tipologie.find((t) => t.id === id) ?? { id, label: id, colore: '#9AA6B2', icona: 'loculo' };
 }
 

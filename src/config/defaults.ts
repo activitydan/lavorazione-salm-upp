@@ -1,7 +1,7 @@
-import type { ConfigScheda, Filtri } from '../data/types';
+import type { ConfigScheda, Filtri, Struttura, TipologiaDef } from '../data/types';
 
-// Configurazione iniziale della scheda. Si modifica da Impostazioni → Scheda Pro:
-// questi valori servono solo come punto di partenza e per il "ripristina predefiniti".
+// Configurazione iniziale della scheda. Campi ed elenchi si modificano da Impostazioni;
+// stati e tipologie sono fissi: le tipologie sono i cinque tipi di postazione del glossario.
 export const CONFIG_DEFAULT: ConfigScheda = {
   versione: 1,
   stati: [
@@ -13,16 +13,15 @@ export const CONFIG_DEFAULT: ConfigScheda = {
   ],
   tipologie: [
     { id: 'loculo', label: 'Loculo', colore: '#2F6FB3', icona: 'loculo' },
-    { id: 'tomba', label: 'Tomba', colore: '#8A6D3B', icona: 'tomba' },
-    { id: 'cappella', label: 'Cappella', colore: '#7B4FA8', icona: 'cappella', contenitore: true },
-    { id: 'colombaio', label: 'Colombaio', colore: '#1E8C8C', icona: 'colombaio', contenitore: true },
-    { id: 'vuota', label: 'Vuota', colore: '#9AA6B2', icona: 'vuota' },
-    { id: 'in_costruzione', label: 'In costruzione', colore: '#E07B22', icona: 'cantiere' },
+    { id: 'tomba_famiglia', label: 'Tomba di famiglia', colore: '#7B4FA8', icona: 'cappella' },
+    { id: 'celletta_ossario', label: 'Celletta ossario', colore: '#8A6D3B', icona: 'box' },
+    { id: 'nicchia_cineraria', label: 'Nicchia cineraria', colore: '#1E8C8C', icona: 'fiamma' },
+    { id: 'fossa', label: 'Fossa in campo comune', colore: '#5E9A3A', icona: 'tomba' },
   ],
   sezioni: [
     { id: 'flag', label: 'Flag e informazioni aggiuntive' },
     { id: 'fatturazione', label: 'Fatturazione e pagamenti' },
-    { id: 'manufatto', label: 'Lapide' },
+    { id: 'manufatto', label: 'Postazione' },
   ],
   campi: [
     { id: 'lampada_votiva', label: 'Lampada votiva', tipo: 'flag', sezione: 'flag', icona: 'lampada', inFiltri: true, inTabella: true, inExport: true, inPopup: true, inApp: true },
@@ -49,7 +48,6 @@ export const CONFIG_DEFAULT: ConfigScheda = {
         { id: 'travertino', label: 'Travertino' },
       ],
       inFiltri: false, inTabella: false, inExport: true, inPopup: false, inApp: true,
-      applicaA: ['loculo', 'tomba', 'cappella'],
     },
     {
       id: 'condizione_lapide', label: 'Condizione lapide', tipo: 'select', sezione: 'manufatto',
@@ -59,7 +57,6 @@ export const CONFIG_DEFAULT: ConfigScheda = {
         { id: 'danneggiata', label: 'Danneggiata', colore: '#D9473F' },
       ],
       inFiltri: true, inTabella: false, inExport: true, inPopup: false, inApp: true,
-      applicaA: ['loculo', 'tomba', 'cappella'],
     },
   ],
   categorieManutenzione: [
@@ -78,6 +75,18 @@ export const CONFIG_DEFAULT: ConfigScheda = {
     { id: 'discordanza_registro', label: 'Discordanza con il registro' },
   ],
   registro: [],
+};
+
+/** Scheda di una struttura che non è una postazione: colombaio, ossario, cinerario. */
+export const TIPOLOGIA_STRUTTURA: TipologiaDef = { id: 'struttura', label: 'Struttura', colore: '#64748B', icona: 'colombaio', contenitore: true };
+
+export const NOMI_STRUTTURA: Record<Struttura['tipo'], string> = {
+  colombaio: 'Colombaio', cappella: 'Cappella', ossario: 'Ossario', cinerario: 'Cinerario',
+};
+
+/** Tipo di postazione dei posti a parete di ogni struttura. */
+export const POSTO_IN_STRUTTURA: Record<Struttura['tipo'], string> = {
+  colombaio: 'loculo', cappella: 'loculo', ossario: 'celletta_ossario', cinerario: 'nicchia_cineraria',
 };
 
 export const FILTRI_VUOTI: Filtri = {

@@ -241,8 +241,8 @@ export function CemeteryMap(props: CemeteryMapProps) {
       const cont = indice.get(st.schedaId);
       const c = cont ? colore(cont) : '#9AA6B2';
       const poly = L.polygon(st.impronta, {
-        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: st.tipo === 'colombaio' ? 1.5 : 1, opacity: 0.9,
-        fillColor: c.toUpperCase() === '#FFFFFF' ? '#E7ECF1' : c, fillOpacity: st.tipo === 'colombaio' ? 0.62 : 0.5,
+        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: st.tipo !== 'cappella' ? 1.5 : 1, opacity: 0.9,
+        fillColor: c.toUpperCase() === '#FFFFFF' ? '#E7ECF1' : c, fillOpacity: st.tipo !== 'cappella' ? 0.62 : 0.5,
       });
       if (!compatta)
         poly.bindTooltip(`<b>${st.nome}</b><br>${st.facce.reduce((t, f) => t + f.righe * f.colonne, 0)} posti${n ? `<br><span class="tt-extra">${n} risultati</span>` : ''}`, {
@@ -254,7 +254,7 @@ export function CemeteryMap(props: CemeteryMapProps) {
       });
       poly.addTo(g);
       if (st.tipo === 'cappella' && cont) pin(cont, n ?? undefined);
-      if (st.tipo === 'colombaio' && !compatta) {
+      if (st.tipo !== 'cappella' && !compatta) {
         L.marker([st.lat, st.lng], {
           pane: 'strutture', interactive: false,
           icon: L.divIcon({ className: 'str-lbl-wrap', html: `<span class="str-lbl">${st.nome.replace('Colombario ', 'Col. ')}</span>`, iconSize: [0, 0] }),

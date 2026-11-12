@@ -23,6 +23,7 @@ const AnagrafePage = lazy(() => import('./pages/AnagrafePage').then((m) => ({ de
 const ManutenzioniPage = lazy(() => import('./pages/ManutenzioniPage').then((m) => ({ default: m.ManutenzioniPage })));
 const ReportPage = lazy(() => import('./pages/ReportPage').then((m) => ({ default: m.ReportPage })));
 const EsportazioniPage = lazy(() => import('./pages/EsportazioniPage').then((m) => ({ default: m.EsportazioniPage })));
+const AmministrazionePage = lazy(() => import('./pages/AmministrazionePage').then((m) => ({ default: m.AmministrazionePage })));
 const ImpostazioniPage = lazy(() => import('./pages/ImpostazioniPage').then((m) => ({ default: m.ImpostazioniPage })));
 
 function Pagina() {
@@ -68,6 +69,8 @@ function Pagina() {
       return <ReportPage />;
     case 'esportazioni':
       return <EsportazioniPage />;
+    case 'amministrazione':
+      return <AmministrazionePage />;
     case 'impostazioni':
       return <ImpostazioniPage />;
     default:

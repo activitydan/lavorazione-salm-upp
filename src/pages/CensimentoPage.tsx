@@ -8,16 +8,18 @@ import { BarraPagine, paginaDi } from '../components/Esporta';
 import { Avatar, Barre, Ciambella, Field, Modal, Progress, Seg, StatoBadge, Switch, Tabs } from '../components/ui';
 import {
   aggiornaQuadrante, apriParete, apriModale, completaVerifica, contaNelPoligono, creaQuadrante, creaStruttura, eliminaQuadrante, indiceSchede,
-  resetFiltri, salvaOperatore, seleziona, toast, useStore,
+  resetFiltri, seleziona, toast, useStore,
 } from '../data/store';
 import { conta, descrizioneScheda, labelLista, occupazioneStruttura, useCimitero, useDatiCimitero, useSchedeCimitero, useUtente } from '../data/selectors';
-import type { Faccia, LatLng, Operatore, Quadrante, Verifica } from '../data/types';
+import { NOMI_STRUTTURA } from '../config/defaults';
+import type { Faccia, LatLng, Quadrante, Struttura, Verifica } from '../data/types';
 import { aggiungiGiorni, data, dataBreve, dataOra, numero, oggiISO, percentuale } from '../lib/format';
 import { quadranteDi, vialePiuVicino } from '../lib/geo';
 import { useTelefono } from '../lib/schermo';
 import { setQuery, useRotta, vai } from '../router';
 
 type Tab = 'avanzamento' | 'quadranti' | 'operatori' | 'verifiche' | 'strutture';
+const ORDINE_STRUTTURE: Struttura['tipo'][] = ['colombaio', 'cappella', 'ossario', 'cinerario'];
 const COLORI = ['#2F6FB3', '#8E5BB5', '#1E8C8C', '#C0487A', '#5E9A3A', '#E07B22', '#4F5FB8', '#B8860B', '#D9473F', '#0A2F55'];
 
 export function CensimentoPage() {
@@ -313,45 +315,19 @@ function Quadranti() {
 
 // ---------------------------------------------------------------------------
 
-function ModaleOperatore({ o, onChiudi }: { o?: Operatore; onChiudi: () => void }) {
-  const [b, setB] = useState<Operatore>(() => o ?? { id: `op-${Date.now().toString(36)}`, nome: '', ruolo: 'Rilevatore', telefono: '', email: '', colore: COLORI[Math.floor(Math.random() * COLORI.length)], attivo: true });
-  const set = (p: Partial<Operatore>) => setB((x) => ({ ...x, ...p }));
-  return (
-    <Modal titolo={o ? `Modifica ${o.nome}` : 'Nuovo operatore'} onClose={onChiudi}
-      footer={<><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--primary" onClick={() => { if (!b.nome.trim()) return toast('Inserisci il nome', 'errore'); salvaOperatore(b); toast('Operatore salvato'); onChiudi(); }}>Salva</button></>}>
-      <div className="grid-form">
-        <Field label="Nome e cognome" className="span-2"><input className="input" value={b.nome} onChange={(e) => set({ nome: e.target.value })} autoFocus /></Field>
-        <Field label="Ruolo">
-          <select className="select" value={b.ruolo} onChange={(e) => set({ ruolo: e.target.value })}>
-            {['Rilevatore', 'Rilevatrice', 'Supervisore', 'Manutentore', 'Amministratore'].map((r) => <option key={r}>{r}</option>)}
-          </select>
-        </Field>
-        <Field label="Attivo"><Switch on={b.attivo} onChange={(v) => set({ attivo: v })} label="Operatore attivo" /></Field>
-        <Field label="Telefono"><input className="input" value={b.telefono} onChange={(e) => set({ telefono: e.target.value })} /></Field>
-        <Field label="Email"><input className="input" type="email" value={b.email} onChange={(e) => set({ email: e.target.value })} /></Field>
-        <Field label="Colore sulla mappa" className="span-2">
-          <div className="row row--wrap gap-4">{COLORI.map((c) => <button key={c} type="button" className={`swatch ${b.colore === c ? 'is-on' : ''}`} style={{ background: c }} onClick={() => set({ colore: c })} aria-label={c} />)}</div>
-        </Field>
-      </div>
-    </Modal>
-  );
-}
-
 function Operatori() {
   const db = useStore((s) => s.db);
   const schede = useSchedeCimitero();
   const { quadranti } = useDatiCimitero();
-  const [modale, setModale] = useState<{ o?: Operatore } | null>(null);
   const oggi = oggiISO();
   return (
     <section className="card">
       <div className="card__head">
         <h3>Operatori</h3>
-        <button className="btn btn--sm btn--primary" onClick={() => setModale({})}><Plus size={14} />Nuovo operatore</button>
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Operatore</th><th>Quadranti</th><th className="num">Schede rilevate</th><th className="num">Oggi</th><th>Ultima attività</th><th className="num">Verifiche aperte</th><th>Contatti</th><th /></tr></thead>
+          <thead><tr><th>Operatore</th><th>Quadranti</th><th className="num">Schede rilevate</th><th className="num">Oggi</th><th>Ultima attività</th><th className="num">Verifiche aperte</th><th>Contatti</th></tr></thead>
           <tbody>
             {db.operatori.map((o) => {
               const sue = schede.filter((s) => s.rilevatoDa === o.id);
@@ -371,14 +347,12 @@ function Operatori() {
                   <td className="small nowrap">{ultimo ? dataOra(ultimo) : '—'}</td>
                   <td className="num">{db.verifiche.filter((v) => v.operatoreId === o.id && v.stato === 'aperta').length}</td>
                   <td className="small">{o.telefono}<br /><span className="muted">{o.email}</span></td>
-                  <td><button className="btn btn--xs" onClick={() => setModale({ o })}><Pencil size={12} />Modifica</button></td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      {modale && <ModaleOperatore o={modale.o} onChiudi={() => setModale(null)} />}
     </section>
   );
 }
@@ -500,7 +474,7 @@ function VerificheTelefono() {
 function ModaleStruttura({ onChiudi }: { onChiudi: () => void }) {
   const cim = useCimitero();
   const { viali, quadranti } = useDatiCimitero();
-  const [tipo, setTipo] = useState<'colombaio' | 'cappella'>('colombaio');
+  const [tipo, setTipo] = useState<Struttura['tipo']>('colombaio');
   const [nome, setNome] = useState('Colombario ');
   const [facce, setFacce] = useState<Faccia[]>([{ nome: 'Fronte', righe: 5, colonne: 12 }]);
   const [p, setP] = useState<LatLng>(cim.centro);
@@ -509,11 +483,17 @@ function ModaleStruttura({ onChiudi }: { onChiudi: () => void }) {
   const posti = facce.reduce((t, f) => t + f.righe * f.colonne, 0);
   const setF = (i: number, patch: Partial<Faccia>) => setFacce(facce.map((f, j) => (j === i ? { ...f, ...patch } : f)));
   return (
-    <Modal size="lg" titolo="Nuova struttura" sottotitolo="Crea un colombaio o una cappella: le schede dei loculi vengono generate libere, pronte per il censimento." onClose={onChiudi}
+    <Modal size="lg" titolo="Nuova struttura" sottotitolo="Le schede dei posti a parete nascono libere, pronte per il censimento." onClose={onChiudi}
       footer={<><span className="small muted grow">{posti} posti · {viale || 'viale da definire'}{q ? ` · ${q.nome}` : ''}</span><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--primary" disabled={!nome.trim() || !posti} onClick={() => { const st = creaStruttura({ cimiteroId: cim.id, tipo, nome: nome.trim(), lat: p[0], lng: p[1], facce, viale, quadranteId: q?.id ?? null }); onChiudi(); apriParete(st.id); }}>Crea struttura</button></>}>
       <div className="col gap-16">
         <div className="grid-form">
-          <Field label="Tipo"><Seg light value={tipo} onChange={(t) => { setTipo(t); setNome(t === 'colombaio' ? 'Colombario ' : 'Cappella Fam. '); setFacce(t === 'colombaio' ? [{ nome: 'Fronte', righe: 5, colonne: 12 }] : [{ nome: 'Parete sinistra', righe: 3, colonne: 2 }, { nome: 'Parete destra', righe: 3, colonne: 2 }]); }} options={[{ id: 'colombaio', label: 'Colombaio' }, { id: 'cappella', label: 'Cappella familiare' }]} /></Field>
+          <Field label="Tipo">
+            <Seg light value={tipo} onChange={(t) => {
+              setTipo(t);
+              setNome(t === 'cappella' ? 'Cappella Fam. ' : `${NOMI_STRUTTURA[t] === 'Colombaio' ? 'Colombario' : NOMI_STRUTTURA[t]} `);
+              setFacce(t === 'cappella' ? [{ nome: 'Parete sinistra', righe: 3, colonne: 2 }, { nome: 'Parete destra', righe: 3, colonne: 2 }] : [{ nome: 'Fronte', righe: 5, colonne: 12 }]);
+            }} options={(Object.keys(NOMI_STRUTTURA) as Struttura['tipo'][]).map((t) => ({ id: t, label: NOMI_STRUTTURA[t] }))} />
+          </Field>
           <Field label="Nome"><input className="input" value={nome} onChange={(e) => setNome(e.target.value)} /></Field>
         </div>
         <Field label="Pareti con loculi">
@@ -526,7 +506,7 @@ function ModaleStruttura({ onChiudi }: { onChiudi: () => void }) {
                 <button className="btn btn--xs btn--icon btn--danger" disabled={facce.length === 1} onClick={() => setFacce(facce.filter((_, j) => j !== i))} aria-label="Rimuovi parete"><Trash2 size={13} /></button>
               </div>
             ))}
-            {facce.length < (tipo === 'colombaio' ? 2 : 3) && <button className="btn btn--sm" onClick={() => setFacce([...facce, { nome: tipo === 'colombaio' ? 'Retro' : 'Parete di fondo', righe: facce[0].righe, colonne: facce[0].colonne }])}><Plus size={14} />Aggiungi parete</button>}
+            {facce.length < (tipo === 'cappella' ? 3 : 2) && <button className="btn btn--sm" onClick={() => setFacce([...facce, { nome: tipo === 'cappella' ? 'Parete di fondo' : 'Retro', righe: facce[0].righe, colonne: facce[0].colonne }])}><Plus size={14} />Aggiungi parete</button>}
           </div>
         </Field>
         <Field label="Posizione"><LocationPicker cimitero={cim} valore={p} onChange={setP} altezza={300} /></Field>
@@ -538,19 +518,19 @@ function ModaleStruttura({ onChiudi }: { onChiudi: () => void }) {
 function Strutture() {
   const db = useStore((s) => s.db);
   const { strutture } = useDatiCimitero();
-  const [tipo, setTipo] = useState<'tutte' | 'colombaio' | 'cappella'>('tutte');
+  const [tipo, setTipo] = useState<'tutte' | Struttura['tipo']>('tutte');
   const [q, setQ] = useState('');
   const [pagina, setPagina] = useState(0);
   const [nuova, setNuova] = useState(false);
   const lista = strutture
     .filter((s) => (tipo === 'tutte' || s.tipo === tipo) && s.nome.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => (a.tipo === b.tipo ? a.nome.localeCompare(b.nome) : a.tipo === 'colombaio' ? -1 : 1));
+    .sort((a, b) => (a.tipo === b.tipo ? a.nome.localeCompare(b.nome) : ORDINE_STRUTTURE.indexOf(a.tipo) - ORDINE_STRUTTURE.indexOf(b.tipo)));
   const indice = indiceSchede(db.schede);
   return (
     <section className="card">
       <div className="card__head" style={{ flexWrap: 'wrap' }}>
         <div className="row gap-8 row--wrap">
-          <Seg light small value={tipo} onChange={(t) => { setTipo(t); setPagina(0); }} options={[{ id: 'tutte', label: `Tutte (${strutture.length})` }, { id: 'colombaio', label: 'Colombari' }, { id: 'cappella', label: 'Cappelle familiari' }]} />
+          <Seg light small value={tipo} onChange={(t) => { setTipo(t); setPagina(0); }} options={[{ id: 'tutte', label: `Tutte (${strutture.length})` }, { id: 'colombaio', label: 'Colombari' }, { id: 'cappella', label: 'Cappelle' }, { id: 'ossario', label: 'Ossari' }, { id: 'cinerario', label: 'Cinerari' }]} />
           <div className="input-icon" style={{ width: 240 }}><Search size={15} /><input className="input input--sm" placeholder="Cerca struttura" value={q} onChange={(e) => { setQ(e.target.value); setPagina(0); }} /></div>
         </div>
         <button className="btn btn--primary btn--sm" onClick={() => setNuova(true)}><Plus size={14} />Nuova struttura</button>
@@ -565,7 +545,7 @@ function Strutture() {
               return (
                 <tr key={st.id}>
                   <td><b>{st.nome}</b></td>
-                  <td><span className={`badge badge--sm ${st.tipo === 'colombaio' ? 'badge--blu' : ''}`} style={st.tipo === 'cappella' ? { background: '#f3edf9', color: '#7B4FA8' } : undefined}>{st.tipo === 'colombaio' ? 'Colombaio' : 'Cappella'}</span></td>
+                  <td><span className={`badge badge--sm ${st.tipo === 'colombaio' ? 'badge--blu' : ''}`} style={st.tipo === 'cappella' ? { background: '#f3edf9', color: '#7B4FA8' } : undefined}>{NOMI_STRUTTURA[st.tipo]}</span></td>
                   <td className="nowrap">{st.viale}</td>
                   <td className="num">{numero(occ.totale)}</td>
                   <td className="num">{numero(occ.occupati)}</td>

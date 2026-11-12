@@ -5,12 +5,13 @@ import { LetturaLapide, type EsitoLettura } from '../components/rilievo/LetturaL
 import { InputCampo } from '../components/scheda/Campi';
 import { ScegliFoto } from '../components/scheda/Media';
 import { EditorDefunti } from '../components/scheda/SchedaForm';
-import { Dot, Field, Icona, Switch } from '../components/ui';
+import { Dot, Field, Icona, Seg, Switch } from '../components/ui';
 import {
   aggiornaScheda, aggiungiFoto, apriParete, creaScheda, creaStruttura, firmaCorrente, loculiPerStruttura, prossimoId, seleziona, toast, useStore,
 } from '../data/store';
 import { campiPer, descrizioneScheda, statoDef, tipologiaDef, useCimitero, useDatiCimitero } from '../data/selectors';
-import type { Defunto, Faccia, LatLng, Scheda, ValoreCampo } from '../data/types';
+import type { Defunto, Faccia, LatLng, Scheda, Struttura, ValoreCampo } from '../data/types';
+import { NOMI_STRUTTURA, TIPOLOGIA_STRUTTURA } from '../config/defaults';
 import { decedutoDa, nomeCompleto } from '../lib/format';
 import { quadranteDi, vialePiuVicino } from '../lib/geo';
 import { precaricaMotore } from '../lib/ocr';
@@ -26,6 +27,10 @@ interface Bozza {
   daFoto: boolean;
   pos: LatLng;
   tipologia: string;
+  /** tomba di famiglia con posti a parete: è una cappella */
+  aParete: boolean;
+  /** quando si rileva una struttura che non è una postazione */
+  strutturaTipo: Exclude<Struttura['tipo'], 'cappella'>;
   stato: string;
   defunti: Defunto[];
   viale: string;
@@ -47,7 +52,9 @@ export function RilievoPage() {
     foto: null,
     daFoto: false,
     pos: ultimo ? [ultimo.lat, ultimo.lng] : cim.puntoPartenza,
-    tipologia: 'tomba',
+    tipologia: 'fossa',
+    aParete: false,
+    strutturaTipo: 'colombaio',
     stato: 'occupato',
     defunti: [{ nome: '', cognome: '', dataNascita: null, dataMorte: null }],
     viale: '',
@@ -93,7 +100,8 @@ export function RilievoPage() {
     }));
   };
   const tip = tipologiaDef(config, b.tipologia);
-  const contenitore = !!config.tipologie.find((t) => t.id === b.tipologia)?.contenitore;
+  const contenitore = b.tipologia === TIPOLOGIA_STRUTTURA.id || (b.tipologia === 'tomba_famiglia' && b.aParete);
+  const tipoStruttura: Struttura['tipo'] = b.tipologia === 'tomba_famiglia' ? 'cappella' : b.strutturaTipo;
   const vialeAuto = vialePiuVicino(b.pos, viali);
   const q = quadranteDi(b.pos, quadranti);
   const campiApp = campiPer(config, b.tipologia, (c) => c.inApp);
@@ -102,7 +110,7 @@ export function RilievoPage() {
   const loculoEsistente = strutturaScelta ? (loculiPerStruttura(db.schede).get(strutturaScelta.id) ?? []).find((l) => l.posizione!.faccia === cella.faccia && l.posizione!.fila === cella.fila && l.posizione!.colonna === cella.colonna) : undefined;
 
   const valido = () => {
-    if (passo === 3 && !contenitore && b.tipologia !== 'vuota' && b.tipologia !== 'in_costruzione' && b.stato !== 'libero') {
+    if (passo === 3 && !contenitore && b.stato !== 'libero') {
       if (!b.defunti.some((d) => d.cognome.trim() || d.nome.trim())) return 'Inserisci almeno il cognome del defunto, oppure segna il posto come Libero';
     }
     if (passo === 2 && contenitore && !b.nomeManufatto.trim()) return 'Dai un nome alla struttura';
@@ -136,12 +144,12 @@ export function RilievoPage() {
     setSalvando(false);
     const viale = b.viale || vialeAuto;
     if (contenitore) {
-      const st = creaStruttura({ cimiteroId: cim.id, tipo: b.tipologia === 'colombaio' ? 'colombaio' : 'cappella', nome: b.nomeManufatto.trim(), lat: b.pos[0], lng: b.pos[1], facce: b.facce, viale, quadranteId: q?.id ?? null });
+      const st = creaStruttura({ cimiteroId: cim.id, tipo: tipoStruttura, nome: b.nomeManufatto.trim(), lat: b.pos[0], lng: b.pos[1], facce: b.facce, viale, quadranteId: q?.id ?? null });
       const s = useStore.getState().db.schede.find((x) => x.id === st.schedaId)!;
       aggiornaScheda(s.id, { fotoId, stato: b.stato, campi: { ...s.campi, ...b.campi } }, 'Dati del rilievo sul campo');
       setSalvata(s);
     } else {
-      const defunti = b.stato === 'libero' || b.tipologia === 'vuota' || b.tipologia === 'in_costruzione' ? [] : b.defunti.filter((d) => d.cognome.trim() || d.nome.trim());
+      const defunti = b.stato === 'libero' ? [] : b.defunti.filter((d) => d.cognome.trim() || d.nome.trim());
       const s = creaScheda({
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
         defunti, concessione: null, campi: { ...b.campi },
@@ -280,13 +288,25 @@ export function RilievoPage() {
           <div className="col gap-16">
             <h2>Classificazione</h2>
             <div className="tip-grid">
-              {config.tipologie.filter((t) => !t.archiviata).map((t) => (
-                <button key={t.id} className={`tip-card ${b.tipologia === t.id ? 'is-on' : ''}`} onClick={() => set({ tipologia: t.id, stato: t.id === 'vuota' ? 'libero' : t.id === 'in_costruzione' ? 'inaccessibile' : b.stato })} style={{ ['--c' as string]: t.colore }}>
+              {[...config.tipologie, TIPOLOGIA_STRUTTURA].map((t) => (
+                <button key={t.id} className={`tip-card ${b.tipologia === t.id ? 'is-on' : ''}`} onClick={() => set({ tipologia: t.id })} style={{ ['--c' as string]: t.colore }}>
                   <Icona nome={t.icona} size={26} />
                   <b>{t.label}</b>
                 </button>
               ))}
             </div>
+            {b.tipologia === 'tomba_famiglia' && (
+              <label className="row small" style={{ cursor: 'pointer' }}>
+                <Switch small on={b.aParete} onChange={(v) => set({ aParete: v })} />
+                È una cappella con i posti a parete
+              </label>
+            )}
+            {b.tipologia === TIPOLOGIA_STRUTTURA.id && (
+              <Field label="Che struttura è">
+                <Seg light value={b.strutturaTipo} onChange={(v) => set({ strutturaTipo: v })}
+                  options={(['colombaio', 'ossario', 'cinerario'] as const).map((t) => ({ id: t, label: NOMI_STRUTTURA[t] }))} />
+              </Field>
+            )}
             <Field label="Stato della postazione">
               <div className="stati-picker">
                 {config.stati.filter((s) => !s.archiviato).map((s) => (
@@ -296,10 +316,10 @@ export function RilievoPage() {
             </Field>
             {contenitore && (
               <div className="col gap-12">
-                <Field label={`Nome ${b.tipologia === 'cappella' ? 'della cappella' : 'del colombaio'}`}>
-                  <input className="input" value={b.nomeManufatto} placeholder={b.tipologia === 'cappella' ? 'Cappella Fam. …' : 'Colombario …'} onChange={(e) => set({ nomeManufatto: e.target.value })} />
+                <Field label="Nome della struttura">
+                  <input className="input" value={b.nomeManufatto} placeholder={tipoStruttura === 'cappella' ? 'Cappella Fam. …' : `${NOMI_STRUTTURA[tipoStruttura]} …`} onChange={(e) => set({ nomeManufatto: e.target.value })} />
                 </Field>
-                <Field label="Pareti con loculi" hint="Per ogni parete: file (dal basso) e colonne. Le schede dei loculi vengono create libere.">
+                <Field label="Pareti con i posti" hint="Per ogni parete: file (dal basso) e colonne. Le schede dei posti nascono libere.">
                   <div className="col gap-8">
                     {b.facce.map((f, i) => (
                       <div key={i} className="row gap-8 row--wrap">
@@ -319,8 +339,8 @@ export function RilievoPage() {
         {passo === 3 && (
           <div className="col gap-16">
             <h2>Anagrafica</h2>
-            {contenitore || b.tipologia === 'vuota' || b.tipologia === 'in_costruzione' || b.stato === 'libero' ? (
-              <p className="callout">Per {b.stato === 'libero' ? 'un posto libero' : `una ${tip.label.toLowerCase()}`} non servono dati anagrafici{contenitore ? ': i defunti si registrano poi nei singoli loculi.' : '.'}</p>
+            {contenitore || b.stato === 'libero' ? (
+              <p className="callout">Per {contenitore ? 'una struttura' : 'un posto libero'} non servono dati anagrafici{contenitore ? ': i defunti si registrano poi nei singoli posti.' : '.'}</p>
             ) : (
               <>
                 {b.daFoto && (
@@ -380,9 +400,9 @@ export function RilievoPage() {
               {b.foto ? <div className="foto"><img src={b.foto} alt="" /></div> : <div className="callout callout--warn">Nessuna foto: potrai aggiungerla dalla scheda.</div>}
               <dl className="kv">
                 <dt>ID automatico</dt><dd className="mono">{id}</dd>
-                <dt>Tipologia</dt><dd>{tip.label}</dd>
+                <dt>Tipologia</dt><dd>{contenitore ? NOMI_STRUTTURA[tipoStruttura] : tip.label}</dd>
                 <dt>Stato</dt><dd><span className="row gap-4"><Dot colore={statoDef(config, b.stato).colore} />{statoDef(config, b.stato).label}</span></dd>
-                {contenitore ? (<><dt>Nome</dt><dd>{b.nomeManufatto}</dd><dt>Posti</dt><dd>{b.facce.reduce((t, f) => t + f.righe * f.colonne, 0)} loculi</dd></>) : (
+                {contenitore ? (<><dt>Nome</dt><dd>{b.nomeManufatto}</dd><dt>Posti</dt><dd>{b.facce.reduce((t, f) => t + f.righe * f.colonne, 0)} posti a parete</dd></>) : (
                   <><dt>Defunti</dt><dd>{b.defunti.filter((d) => d.cognome || d.nome).map((d) => nomeCompleto(d)).join(', ') || '—'}</dd></>
                 )}
                 {b.daFoto && !contenitore && <><dt>Anagrafica</dt><dd><span className="row gap-4"><ScanText size={14} />Letta dalla foto della lapide</span></dd></>}

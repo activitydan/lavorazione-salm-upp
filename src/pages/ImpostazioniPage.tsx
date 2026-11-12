@@ -1,57 +1,81 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowUp, Calendar, CheckSquare, ChevronDown, Database, Download, Euro, Eye, FileClock,
-  Filter, Hash, LayoutList, List, ListChecks, MapPinned, Plus, RotateCcw, Save, Smartphone, Table, Tag, ToggleRight, Trash2,
-  Type, Undo2, Upload, Wand2,
+  Archive, ArchiveRestore, ArrowDown, ArrowUp, Calendar, CheckSquare, ChevronDown, Database, Download, Euro, Filter, Hash, LayoutList, List, ListChecks,
+  Plus, RotateCcw, Save, Smartphone, Table, ToggleRight, Trash2, Type, Undo2, Upload,
 } from 'lucide-react';
 import { EditorLista, type Voce } from '../components/EditorLista';
 import { InputCampo } from '../components/scheda/Campi';
 import { Field, Icona, ICONE, Modal, Switch, Tabs } from '../components/ui';
-import { TIPI_CAMPO, UFFICIO } from '../config/defaults';
+import { TIPI_CAMPO } from '../config/defaults';
 import {
-  aggiungiCampo, eliminaCampo, esportaBackup, idCampoLibero, importaBackup, modificaCampo, riassegnaStato, riassegnaTipologia,
-  ripristinaDemo, salvaListaConfig, salvaStati, salvaTipologie, salvaViali, setConfig, sostituisciOpzione, spostaCampo, toast,
-  usiCampo, usiOpzione, usiStato, usiTipologia, useStore,
+  aggiungiCampo, eliminaCampo, esportaBackup, idCampoLibero, importaBackup, modificaCampo, ripristinaDemo, salvaListaConfig, salvaViali, setConfig,
+  sostituisciOpzione, spostaCampo, toast, usiCampo, usiOpzione, useStore,
 } from '../data/store';
 import { useCimitero } from '../data/selectors';
 import type { CampoDef, ConfigScheda, TipoCampo, ValoreCampo } from '../data/types';
-import { dataOra, numero, oggiISO, slug } from '../lib/format';
+import { numero, oggiISO, slug } from '../lib/format';
 import { setQuery, useRotta } from '../router';
 
-type Tab = 'campi' | 'stati' | 'tipologie' | 'elenchi' | 'dati' | 'registro';
+type Tab = 'campi' | 'elenchi';
 
 const ICONE_TIPO: Record<TipoCampo, React.ReactNode> = {
   flag: <ToggleRight size={15} />, select: <ChevronDown size={15} />, multiselect: <ListChecks size={15} />, testo: <Type size={15} />,
   testo_lungo: <LayoutList size={15} />, numero: <Hash size={15} />, importo: <Euro size={15} />, data: <Calendar size={15} />,
 };
 
+/** Impostazioni: i campi della scheda e gli elenchi di voci. Solo per l'Amministratore, solo sul computer. */
 export function ImpostazioniPage() {
   const rotta = useRotta();
-  const tab = (rotta.query.get('tab') as Tab) ?? 'campi';
+  const tab: Tab = rotta.query.get('tab') === 'elenchi' ? 'elenchi' : 'campi';
   const config = useStore((s) => s.config);
+  const [backup, setBackup] = useState(false);
   return (
     <div className="page">
       <div className="page-head">
         <div className="page-head__title">
           <h1>Impostazioni</h1>
         </div>
-        <span className="badge badge--outline"><Save size={13} />Versione configurazione {config.versione} · salvataggio automatico</span>
+        <div className="page-head__actions">
+          <button className="btn" onClick={() => setBackup(true)}><Database size={16} />Backup</button>
+        </div>
       </div>
-      <Tabs value={tab} onChange={(t) => setQuery('tab', t)} tabs={[
-        { id: 'campi', label: 'Scheda Pro · campi', icon: <Wand2 size={16} />, count: config.campi.filter((c) => !c.archiviato).length },
-        { id: 'stati', label: 'Stati', icon: <Tag size={16} />, count: config.stati.length },
-        { id: 'tipologie', label: 'Tipologie', icon: <LayoutList size={16} />, count: config.tipologie.length },
+      <Tabs value={tab} onChange={(t) => setQuery('tab', t === 'campi' ? null : t)} tabs={[
+        { id: 'campi', label: 'Campi della scheda', icon: <LayoutList size={16} />, count: config.campi.filter((c) => !c.archiviato).length },
         { id: 'elenchi', label: 'Elenchi', icon: <List size={16} /> },
-        { id: 'dati', label: 'Cimitero e dati', icon: <Database size={16} /> },
-        { id: 'registro', label: 'Registro modifiche', icon: <FileClock size={16} />, count: config.registro.length },
       ]} />
       {tab === 'campi' && <SchedaPro />}
-      {tab === 'stati' && <Stati />}
-      {tab === 'tipologie' && <Tipologie />}
       {tab === 'elenchi' && <Elenchi />}
-      {tab === 'dati' && <Dati />}
-      {tab === 'registro' && <Registro />}
+      {backup && <ModaleBackup onChiudi={() => setBackup(false)} />}
     </div>
+  );
+}
+
+function ModaleBackup({ onChiudi }: { onChiudi: () => void }) {
+  const file = useRef<HTMLInputElement>(null);
+  const scarica = () => {
+    const blob = new Blob([esportaBackup()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `CimiTera_backup_${oggiISO()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  return (
+    <Modal titolo="Backup" sottotitolo="In questa versione dimostrativa i dati restano in questo browser." onClose={onChiudi}>
+      <div className="col gap-8">
+        <button className="btn" onClick={scarica}><Download size={16} />Scarica il backup</button>
+        <button className="btn" onClick={() => file.current?.click()}><Upload size={16} />Importa un backup</button>
+        <input ref={file} type="file" accept="application/json" hidden onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (!f) return;
+          try { importaBackup(await f.text()); onChiudi(); } catch (err) { toast((err as Error).message, 'errore'); }
+        }} />
+        <button className="btn btn--danger" onClick={() => { if (confirm('Ripristinare i dati dimostrativi? Le modifiche fatte in questo browser andranno perse.')) { void ripristinaDemo(); onChiudi(); } }}>
+          <RotateCcw size={16} />Ripristina i dati dimostrativi
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -130,20 +154,18 @@ function EditorCampo({ campo, onEliminato }: { campo: CampoDef; onEliminato: () 
     if (b.label !== campo.label) cambi.push(`rinominato da “${campo.label}” a “${b.label}”`);
     if (b.tipo !== campo.tipo) cambi.push(`tipo: ${campo.tipo} → ${b.tipo}`);
     if (b.sezione !== campo.sezione) cambi.push('spostato di sezione');
-    for (const k of ['inFiltri', 'inTabella', 'inExport', 'inPopup', 'inApp', 'obbligatorio'] as const) if (b[k] !== campo[k]) cambi.push(`${k} ${b[k] ? 'attivo' : 'disattivo'}`);
+    for (const k of ['inFiltri', 'inTabella', 'inApp', 'obbligatorio'] as const) if (b[k] !== campo[k]) cambi.push(`${k} ${b[k] ? 'attivo' : 'disattivo'}`);
     const patch: Partial<CampoDef> = { ...restoB };
     if (conOpzioni && !campo.opzioni?.length) patch.opzioni = [{ id: 'opzione_1', label: 'Opzione 1', colore: '#2F6FB3' }];
     modificaCampo(campo.id, patch, `Campo “${b.label}”: ${cambi.join(', ') || 'impostazioni aggiornate'}`);
     toast('Campo aggiornato');
   };
 
-  const toggles: { k: 'inFiltri' | 'inTabella' | 'inExport' | 'inPopup' | 'inApp' | 'obbligatorio'; label: string; icon: React.ReactNode; aiuto: string }[] = [
-    { k: 'inApp', label: 'Visibile nel rilievo', icon: <Smartphone size={15} />, aiuto: 'Lo compila l’operatore sul campo' },
-    { k: 'inFiltri', label: 'Mostra nei filtri', icon: <Filter size={15} />, aiuto: 'Ricerca e mappa' },
-    { k: 'inTabella', label: 'Colonna in Ricerca', icon: <Table size={15} />, aiuto: 'Tabella dei risultati' },
-    { k: 'inExport', label: 'Nelle esportazioni', icon: <Download size={15} />, aiuto: 'Excel e PDF' },
-    { k: 'inPopup', label: 'Nel popup della mappa', icon: <MapPinned size={15} />, aiuto: 'Card del pin (flag attivi)' },
-    { k: 'obbligatorio', label: 'Obbligatorio', icon: <CheckSquare size={15} />, aiuto: 'Non si salva senza' },
+  const toggles: { k: 'inFiltri' | 'inTabella' | 'inApp' | 'obbligatorio'; label: string; icon: React.ReactNode }[] = [
+    { k: 'inApp', label: 'Nel rilievo', icon: <Smartphone size={15} /> },
+    { k: 'inFiltri', label: 'Nei filtri', icon: <Filter size={15} /> },
+    { k: 'inTabella', label: 'Colonna in Ricerca', icon: <Table size={15} /> },
+    { k: 'obbligatorio', label: 'Obbligatorio', icon: <CheckSquare size={15} /> },
   ];
 
   return (
@@ -151,14 +173,13 @@ function EditorCampo({ campo, onEliminato }: { campo: CampoDef; onEliminato: () 
       <div className="campo-ed__head">
         <span className="tipo-campo__ico">{ICONE_TIPO[b.tipo]}</span>
         <div className="grow" style={{ minWidth: 0 }}>
-          <div className="tiny muted">Chiave nei dati: <code>{campo.id}</code> · usato in {numero(n)} schede</div>
           <h2 className="ellipsis">{b.label || 'Senza nome'}</h2>
         </div>
         {campo.archiviato && <span className="badge badge--giallo">Archiviato</span>}
       </div>
 
       <div className="grid-form">
-        <Field label="Nome del campo" hint="Rinominare non tocca i dati: la chiave resta la stessa">
+        <Field label="Nome del campo" hint="Rinominare non tocca i dati già raccolti">
           <input className="input" value={b.label} onChange={(e) => set({ label: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && modificato && salva()} />
         </Field>
         <Field label="Tipo">
@@ -202,7 +223,7 @@ function EditorCampo({ campo, onEliminato }: { campo: CampoDef; onEliminato: () 
         {toggles.map((t) => (
           <label key={t.k} className="toggle-row">
             <span className="toggle-row__ico">{t.icon}</span>
-            <span className="grow"><b>{t.label}</b><span className="tiny muted">{t.aiuto}</span></span>
+            <span className="grow"><b>{t.label}</b></span>
             <Switch small on={!!b[t.k]} onChange={(v) => set({ [t.k]: v } as Partial<CampoDef>)} label={t.label} />
           </label>
         ))}
@@ -239,19 +260,15 @@ function EditorCampo({ campo, onEliminato }: { campo: CampoDef; onEliminato: () 
         {campo.archiviato ? (
           <button className="btn btn--sm" onClick={() => { modificaCampo(campo.id, { archiviato: false }, `Ripristinato il campo “${campo.label}”`); toast('Campo ripristinato'); }}><ArchiveRestore size={14} />Ripristina campo</button>
         ) : (
-          <button className="btn btn--sm" onClick={() => { modificaCampo(campo.id, { archiviato: true }, `Archiviato il campo “${campo.label}”`); toast('Campo archiviato: i dati restano'); }}><Archive size={14} />Archivia (nasconde, i dati restano)</button>
+          <button className="btn btn--sm" onClick={() => { modificaCampo(campo.id, { archiviato: true }, `Archiviato il campo “${campo.label}”`); toast('Campo archiviato: i dati restano'); }}><Archive size={14} />Archivia</button>
         )}
-        <button
-          className="btn btn--sm btn--danger"
-          onClick={() => {
-            if (n > 0 && !confirm(`Il campo “${campo.label}” ha un valore in ${n} schede. Eliminandolo quei dati vanno persi. Procedere?`)) return;
-            eliminaCampo(campo.id);
-            toast('Campo eliminato');
-            onEliminato();
-          }}
-        >
-          <Trash2 size={14} />Elimina definitivamente
-        </button>
+        {n === 0 ? (
+          <button className="btn btn--sm btn--danger" onClick={() => { eliminaCampo(campo.id); toast('Campo eliminato'); onEliminato(); }}>
+            <Trash2 size={14} />Elimina
+          </button>
+        ) : (
+          <span className="small muted">Ha dati in {numero(n)} schede: si può solo archiviare.</span>
+        )}
       </div>
     </div>
   );
@@ -266,13 +283,13 @@ function uniqueId(base: string, voci: Voce[], proprio: string) {
 
 function AnteprimaScheda({ evidenzia }: { evidenzia?: string }) {
   const config = useStore((s) => s.config);
-  const [tip, setTip] = useState('loculo');
+  const [tip, setTip] = useState(config.tipologie[0]?.id ?? 'loculo');
   const [valori, setValori] = useState<Record<string, ValoreCampo>>({ lampada_votiva: true });
   const campi = config.campi.filter((c) => !c.archiviato && c.inApp && (!c.applicaA?.length || c.applicaA.includes(tip)));
   return (
     <div className="anteprima">
       <div className="anteprima__phone">
-        <div className="anteprima__bar"><span className="wordmark__name" style={{ fontSize: 15, color: '#fff' }}>Cimi<span style={{ color: '#8bbd5e' }}>APP</span></span><span className="tiny" style={{ color: '#a9bcd2' }}>Rilievo</span></div>
+        <div className="anteprima__bar"><span className="wordmark__name" style={{ fontSize: 15, color: '#fff' }}>Cimi<span style={{ color: '#8bbd5e' }}>Tera</span></span><span className="tiny" style={{ color: '#a9bcd2' }}>Rilievo</span></div>
         <div className="anteprima__body">
           <div className="row row--between"><b>Scheda {config.tipologie.find((t) => t.id === tip)?.label.toLowerCase()}</b>
             <select className="select select--sm" style={{ width: 'auto' }} value={tip} onChange={(e) => setTip(e.target.value)} aria-label="Tipologia dell'anteprima">
@@ -320,13 +337,6 @@ function SchedaPro() {
 
   return (
     <>
-      <div className="callout mb-16">
-        <Wand2 size={18} />
-        <div>
-          <b>Il censimento cambia in fretta: qui lo adegui da solo.</b> Aggiungi o rinomina un flag, crea un menu a tendina, cambia le voci al suo interno.
-          Ogni modifica vale subito per scheda, rilievo sul campo, filtri, mappa ed esportazioni. I dati già raccolti non si perdono.
-        </div>
-      </div>
       <div className="pro">
         <section className="card pro__list">
           <div className="card__head">
@@ -366,7 +376,6 @@ function SchedaPro() {
                       <span className="pro__flags">
                         {c.inApp && <Smartphone size={13} aria-label="Nel rilievo" />}
                         {c.inFiltri && <Filter size={13} aria-label="Nei filtri" />}
-                        {c.inExport && <Download size={13} aria-label="Nelle esportazioni" />}
                       </span>
                     </div>
                   ))}
@@ -375,7 +384,7 @@ function SchedaPro() {
               );
             })}
             <form className="row gap-4" style={{ padding: 12 }} onSubmit={(e) => { e.preventDefault(); const v = nuovaSez.trim(); if (!v) return; setConfig((c) => ({ sezioni: [...c.sezioni, { id: idSez(v, c), label: v }] }), `Nuova sezione “${v}”`); setNuovaSez(''); }}>
-              <input className="input input--sm" placeholder="Nuova sezione, es. Pratiche" value={nuovaSez} onChange={(e) => setNuovaSez(e.target.value)} />
+              <input className="input input--sm" placeholder="Nuova sezione" value={nuovaSez} onChange={(e) => setNuovaSez(e.target.value)} />
               <button className="btn btn--sm" disabled={!nuovaSez.trim()}><Plus size={14} /></button>
             </form>
             {config.campi.some((c) => c.archiviato) && (
@@ -413,47 +422,6 @@ function idSez(label: string, c: ConfigScheda) {
 }
 
 // ---------------------------------------------------------------------------
-
-function Stati() {
-  const config = useStore((s) => s.config);
-  return (
-    <section className="card card--pad">
-      <h3>Stati della postazione</h3>
-      <p className="small muted mb-16">Colore del pin sulla mappa e della legenda. Il numero indica quante schede hanno quello stato.</p>
-      <EditorLista
-        voci={config.stati.map((s) => ({ id: s.id, label: s.label, colore: s.colore, descrizione: s.descrizione, archiviato: s.archiviato }))}
-        nomeVoce="stato"
-        conDescrizione
-        minimo={2}
-        usi={usiStato}
-        onElimina={(id, a) => a && riassegnaStato(id, a)}
-        onSalva={(voci, d) => { salvaStati(voci.map((v) => ({ id: v.id, label: v.label.trim(), colore: v.colore ?? '#9AA6B2', descrizione: v.descrizione, archiviato: v.archiviato || undefined })), `Stati: ${d}`); toast('Stati aggiornati'); }}
-      />
-    </section>
-  );
-}
-
-function Tipologie() {
-  const config = useStore((s) => s.config);
-  return (
-    <section className="card card--pad">
-      <h3>Tipologie (classificazione)</h3>
-      <p className="small muted mb-16">Loculo, tomba, cappella, colombaio, vuota, in costruzione… Cappella e colombaio contengono una griglia di loculi a parete.</p>
-      <EditorLista
-        voci={config.tipologie.map((t) => ({ id: t.id, label: t.label, colore: t.colore, icona: t.icona, archiviato: t.archiviata }))}
-        nomeVoce="tipologia"
-        conIcona
-        minimo={2}
-        usi={usiTipologia}
-        onElimina={(id, a) => a && riassegnaTipologia(id, a)}
-        onSalva={(voci, d) => {
-          salvaTipologie(voci.map((v) => ({ id: v.id, label: v.label.trim(), colore: v.colore ?? '#9AA6B2', icona: v.icona ?? 'box', contenitore: config.tipologie.find((t) => t.id === v.id)?.contenitore, archiviata: v.archiviato || undefined })), `Tipologie: ${d}`);
-          toast('Tipologie aggiornate');
-        }}
-      />
-    </section>
-  );
-}
 
 function Elenchi() {
   const config = useStore((s) => s.config);
@@ -493,65 +461,3 @@ function Elenchi() {
   );
 }
 
-function Dati() {
-  const cim = useCimitero();
-  const db = useStore((s) => s.db);
-  const config = useStore((s) => s.config);
-  const file = useRef<HTMLInputElement>(null);
-  const scarica = () => {
-    const blob = new Blob([esportaBackup()], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `CimiTera_backup_${oggiISO()}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-  return (
-    <div className="elenchi-grid">
-      <section className="card card--pad">
-        <h3>{cim.nome}</h3>
-        <dl className="kv mt-12">
-          <dt>Codice per gli ID</dt><dd className="mono">CIM-{cim.codice}-000001</dd>
-          <dt>Comune</dt><dd>{cim.comune}</dd>
-          <dt>Perimetro</dt><dd>{cim.fonteGeometria}</dd>
-          <dt>Partenza censimento</dt><dd className="mono">{cim.puntoPartenza[0].toFixed(6)}, {cim.puntoPartenza[1].toFixed(6)} (punta sud)</dd>
-          <dt>Schede</dt><dd>{numero(db.schede.filter((s) => s.cimiteroId === cim.id).length)}</dd>
-          <dt>Utente</dt><dd>{UFFICIO} · Amministratore</dd>
-        </dl>
-      </section>
-      <section className="card card--pad">
-        <h3>Backup e ripristino</h3>
-        <p className="small muted mt-8">In questa versione dimostrativa i dati restano nel browser (IndexedDB). Il backup contiene schede, configurazione e foto caricate.</p>
-        <div className="col gap-8 mt-16">
-          <button className="btn" onClick={scarica}><Download size={16} />Scarica backup completo (JSON)</button>
-          <button className="btn" onClick={() => file.current?.click()}><Upload size={16} />Importa un backup</button>
-          <input ref={file} type="file" accept="application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { importaBackup(await f.text()); } catch (err) { toast((err as Error).message, 'errore'); } }} />
-          <button className="btn btn--danger" onClick={() => { if (confirm('Ripristinare i dati dimostrativi? Le modifiche fatte in questo browser andranno perse.')) ripristinaDemo(); }}><RotateCcw size={16} />Ripristina i dati dimostrativi</button>
-        </div>
-      </section>
-      <section className="card card--pad">
-        <h3>Configurazione</h3>
-        <p className="small muted mt-8">Versione {config.versione} · {config.campi.length} campi · {config.stati.length} stati · {config.tipologie.length} tipologie.</p>
-        <p className="small muted mt-8">Lo stesso motore di configurazione può servire altri censimenti (per esempio le letture dei contatori dell'acqua): cambiano solo campi e tipologie.</p>
-      </section>
-    </div>
-  );
-}
-
-function Registro() {
-  const config = useStore((s) => s.config);
-  return (
-    <section className="card">
-      <div className="card__head"><h3>Registro delle modifiche alla configurazione</h3><Eye size={16} /></div>
-      <div className="list">
-        {config.registro.length === 0 && <p className="small muted" style={{ padding: 16 }}>Nessuna modifica ancora: prova ad aggiungere un flag in Scheda Pro.</p>}
-        {config.registro.map((r, i) => (
-          <div key={i} className="list-item">
-            <span className="grow"><b className="small">{r.descrizione}</b></span>
-            <span className="tiny muted nowrap">{r.utente} · {dataOra(r.data)}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}

@@ -57,11 +57,11 @@ export function EntraCome() {
             <h1 className="entra__titolo">Chi sei?</h1>
             <div className="entra__lista">
               {attivi.map((o) => (
-                <button key={o.id} className="entra__voce" onClick={() => { entra({ ruolo: 'operatore', operatoreId: o.id }); dopo(); }}>
+                <button key={o.id} className="entra__voce" onClick={() => { entra({ ruolo: o.ruolo === 'Amministratore' ? 'amministratore' : 'operatore', operatoreId: o.id }); dopo(); }}>
                   <span className="avatar" style={{ background: o.colore }}>{o.nome.split(/\s+/).map((p) => p[0]).slice(0, 2).join('')}</span>
                   <span className="grow">
                     <b>{o.nome}</b>
-                    <span>Il tuo nome firma i rilievi e le segnalazioni</span>
+                    <span>{o.ruolo}</span>
                   </span>
                   <ChevronRight size={18} />
                 </button>

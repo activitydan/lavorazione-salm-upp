@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3, ClipboardCheck, ClipboardList, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, Search, Settings, UserRound, Wrench,
+  BarChart3, ClipboardCheck, ClipboardList, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, Search, Settings, ShieldCheck, UserRound, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { esci, setUi, useStore } from '../data/store';
@@ -32,6 +32,7 @@ export const VOCI_COMPUTER: VoceMenu[] = [
   { path: '/anagrafe', label: 'Anagrafe', icon: UserRound, soloComputer: true },
   { path: '/report', label: 'Report', icon: BarChart3, soloComputer: true },
   { path: '/esportazioni', label: 'Esportazioni', icon: Download, soloComputer: true },
+  { path: '/amministrazione', label: 'Amministrazione', icon: ShieldCheck, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },
   { path: '/impostazioni', label: 'Impostazioni', icon: Settings, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },
 ];
 

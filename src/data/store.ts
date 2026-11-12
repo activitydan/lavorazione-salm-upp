@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { CONFIG_DEFAULT, FILTRI_VUOTI, UFFICIO } from '../config/defaults';
+import { CONFIG_DEFAULT, FILTRI_VUOTI, POSTO_IN_STRUTTURA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
 import { adessoISO, aggiungiGiorni, data, giorniTra, oggiISO, slug } from '../lib/format';
 import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
 import type {
-  AlertPersonale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione,
-  Operatore, Quadrante, Scheda, Sessione, StatoDef, StileMappa, Struttura, TipologiaDef, Verifica,
+  AlertPersonale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione, Operatore, Quadrante, Scheda, Sessione, StileMappa,
+  Struttura, Verifica,
 } from './types';
 
 export interface Toast {
@@ -47,7 +47,7 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 3;
+export const VERSIONE_DATI = 4;
 
 const DB_VUOTO: Database = {
   versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
@@ -119,6 +119,11 @@ async function caricaDemo(): Promise<Database> {
   return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], esportazioni: [] };
 }
 
+/** Stati e tipologie non si modificano: valgono sempre quelli di partenza. */
+function configFissa(c: ConfigScheda): ConfigScheda {
+  return { ...CONFIG_DEFAULT, ...c, stati: CONFIG_DEFAULT.stati, tipologie: CONFIG_DEFAULT.tipologie };
+}
+
 export async function avvia() {
   try {
     let [db, config, foto] = await Promise.all([
@@ -137,7 +142,7 @@ export async function avvia() {
     const dati = db ?? (await caricaDemo());
     setS({
       db: { ...DB_VUOTO, ...dati },
-      config: config ? { ...CONFIG_DEFAULT, ...config } : CONFIG_DEFAULT,
+      config: config ? configFissa(config) : CONFIG_DEFAULT,
       foto: foto ?? {},
       pronto: true,
     });
@@ -167,7 +172,7 @@ export function esportaBackup(): string {
 export function importaBackup(testo: string) {
   const b = JSON.parse(testo);
   if (!['CimiTera', 'SALM-APP', 'SALM-UP'].includes(b?.app) || !b.db || !b.config) throw new Error('File non riconosciuto come backup di CimiTera');
-  setS({ db: { ...DB_VUOTO, ...b.db }, config: { ...CONFIG_DEFAULT, ...b.config }, foto: b.foto ?? {} });
+  setS({ db: { ...DB_VUOTO, ...b.db }, config: configFissa(b.config), foto: b.foto ?? {} });
   toast('Backup importato');
 }
 
@@ -188,14 +193,14 @@ export function esci() {
 /** Nome di chi è entrato: firma lo storico, gli alert e il registro delle modifiche. */
 export function utenteCorrente(): string {
   const { sessione, db } = S();
-  if (sessione?.ruolo === 'operatore') return db.operatori.find((o) => o.id === sessione.operatoreId)?.nome ?? 'Operatore';
-  return UFFICIO;
+  const op = sessione?.operatoreId ? db.operatori.find((o) => o.id === sessione.operatoreId) : undefined;
+  return op?.nome ?? (sessione?.ruolo === 'operatore' ? 'Operatore' : UFFICIO);
 }
 
 /** Valore di "rilevatoDa" e "segnalataDa": l'id dell'operatore entrato, oppure 'ufficio'. */
 export function firmaCorrente(): string {
   const { sessione } = S();
-  return sessione?.ruolo === 'operatore' && sessione.operatoreId ? sessione.operatoreId : 'ufficio';
+  return sessione?.operatoreId ?? 'ufficio';
 }
 
 // ---------------------------------------------------------------------------
@@ -512,9 +517,13 @@ export function contaNelPoligono(poly: LatLng[], cimiteroId: string): number {
 }
 
 export function salvaOperatore(o: Operatore) {
+  const prima = S().db.operatori.find((x) => x.id === o.id);
   setDb((db) => ({
-    operatori: db.operatori.some((x) => x.id === o.id) ? db.operatori.map((x) => (x.id === o.id ? o : x)) : [...db.operatori, o],
+    operatori: prima ? db.operatori.map((x) => (x.id === o.id ? o : x)) : [...db.operatori, o],
   }));
+  if (!prima) registra(`Nuovo operatore: ${o.nome} (${o.ruolo})`);
+  else if (prima.attivo !== o.attivo) registra(`Operatore ${o.nome} ${o.attivo ? 'riattivato' : 'disattivato'}`);
+  else registra(`Operatore ${o.nome} modificato`);
 }
 
 export function creaStruttura(dati: {
@@ -525,14 +534,16 @@ export function creaStruttura(dati: {
   const n = db.strutture.length + 1;
   const sid = `STR-${String(n).padStart(3, '0')}-${Date.now().toString(36).slice(-3)}`;
   const maxCol = Math.max(...dati.facce.map((f) => f.colonne));
-  const lung = dati.tipo === 'colombaio' ? Math.max(4, maxCol * 0.9) : 5;
-  const larg = dati.tipo === 'colombaio' ? (dati.facce.length > 1 ? 2.6 : 1.2) : 4;
+  const cappella = dati.tipo === 'cappella';
+  const lung = cappella ? 5 : Math.max(4, maxCol * 0.9);
+  const larg = cappella ? 4 : dati.facce.length > 1 ? 2.6 : 1.2;
   const dLat = larg / 2 / 111320;
   const dLng = lung / 2 / (111320 * Math.cos((dati.lat * Math.PI) / 180));
   const impronta: LatLng[] = [
     [dati.lat - dLat, dati.lng - dLng], [dati.lat - dLat, dati.lng + dLng], [dati.lat + dLat, dati.lng + dLng], [dati.lat + dLat, dati.lng - dLng],
   ];
-  const tipoLabel = dati.tipo === 'colombaio' ? 'colombaio' : 'cappella';
+  // la cappella è una tomba di famiglia; colombaio, ossario e cinerario sono solo strutture
+  const tipoLabel = cappella ? 'tomba_famiglia' : TIPOLOGIA_STRUTTURA.id;
   let idx = 0;
   const base = prossimoId(dati.cimiteroId);
   const pref = base.slice(0, base.lastIndexOf('-') + 1);
@@ -552,7 +563,7 @@ export function creaStruttura(dati: {
       for (let col = 1; col <= f.colonne; col++) {
         idx++;
         loculi.push({
-          id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: 'loculo', stato: 'libero', lat: dati.lat, lng: dati.lng,
+          id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: POSTO_IN_STRUTTURA[dati.tipo], stato: 'libero', lat: dati.lat, lng: dati.lng,
           viale: dati.viale, quadranteId: dati.quadranteId, defunti: [], concessione: null,
           campi: { lampada_votiva: false },
           rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora,
@@ -576,6 +587,13 @@ export function registraEsportazione(tipo: string, righe: number) {
 // ---------------------------------------------------------------------------
 // Configurazione della scheda ("Scheda Pro")
 // ---------------------------------------------------------------------------
+
+/** Scrive una riga nel Registro modifiche (Amministrazione), senza toccare altro. */
+export function registra(descrizione: string) {
+  setS((s) => ({
+    config: { ...s.config, registro: [{ data: adessoISO(), utente: utenteCorrente(), descrizione }, ...s.config.registro].slice(0, 300) },
+  }));
+}
 
 export function setConfig(fn: (c: ConfigScheda) => Partial<ConfigScheda>, descrizione: string) {
   setS((s) => {
@@ -663,30 +681,6 @@ export function sostituisciOpzione(campoId: string, da: string, a: string | null
 
 export function salvaOpzioni(campoId: string, opzioni: Opzione[], descrizione: string) {
   modificaCampo(campoId, { opzioni }, descrizione);
-}
-
-export function usiStato(id: string): number {
-  return S().db.schede.filter((s) => s.stato === id).length;
-}
-
-export function usiTipologia(id: string): number {
-  return S().db.schede.filter((s) => s.tipologia === id).length;
-}
-
-export function salvaStati(stati: StatoDef[], descrizione: string) {
-  setConfig(() => ({ stati }), descrizione);
-}
-
-export function salvaTipologie(tipologie: TipologiaDef[], descrizione: string) {
-  setConfig(() => ({ tipologie }), descrizione);
-}
-
-export function riassegnaStato(da: string, a: string) {
-  setDb((db) => ({ schede: db.schede.map((s) => (s.stato === da ? { ...s, stato: a } : s)) }));
-}
-
-export function riassegnaTipologia(da: string, a: string) {
-  setDb((db) => ({ schede: db.schede.map((s) => (s.tipologia === da ? { ...s, tipologia: a } : s)) }));
 }
 
 export function salvaListaConfig(chiave: 'categorieManutenzione' | 'motiviVerifica', lista: Opzione[], descrizione: string) {

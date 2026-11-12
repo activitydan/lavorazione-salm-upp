@@ -135,7 +135,7 @@ function ModaleVerifica({ schedaId }: { schedaId?: string }) {
   const schede = useStore((s) => s.db.schede);
   const operatori = useStore((s) => s.db.operatori).filter((o) => o.attivo);
   const [scheda, setScheda] = useState<Scheda | undefined>(schedaId ? indiceSchede(schede).get(schedaId) : undefined);
-  const [operatoreId, setOperatoreId] = useState(operatori.find((o) => o.ruolo === 'Supervisore')?.id ?? operatori[0]?.id ?? '');
+  const [operatoreId, setOperatoreId] = useState(operatori[0]?.id ?? '');
   const [motivo, setMotivo] = useState(config.motiviVerifica[0]?.id ?? '');
   const [scadenza, setScadenza] = useState(aggiungiGiorni(oggiISO(), 14));
   const [note, setNote] = useState('');
@@ -159,7 +159,7 @@ function ModaleVerifica({ schedaId }: { schedaId?: string }) {
         <div className="grid-form">
           <Field label="Operatore">
             <select className="select" value={operatoreId} onChange={(e) => setOperatoreId(e.target.value)}>
-              {operatori.map((o) => <option key={o.id} value={o.id}>{o.nome} · {o.ruolo}</option>)}
+              {operatori.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </select>
           </Field>
           <Field label="Motivo">

@@ -1,3 +1,4 @@
+import { NOMI_STRUTTURA } from '../../config/defaults';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Grid3x3, Maximize2, Search, X } from 'lucide-react';
 import { apriParete, indiceSchede, loculiPerStruttura, seleziona, useStore } from '../../data/store';
@@ -8,7 +9,7 @@ import { href } from '../../router';
 import { FotoScheda } from '../scheda/Media';
 import { Dot, Progress, StatoBadge } from '../ui';
 
-// Griglia a parete di colombari e cappelle familiari: una griglia per ogni parete, file dal basso.
+// Griglia a parete delle strutture (colombari, cappelle, ossari, cinerari): una griglia per ogni parete, file dal basso.
 
 function Griglia({ struttura, loculi, coloreDi, evidenzia, selezionata, onSel }: {
   struttura: Struttura; loculi: Scheda[]; coloreDi: (s: Scheda) => string; evidenzia: Set<string> | null; selezionata: string | null; onSel: (id: string) => void;
@@ -114,7 +115,7 @@ function Contenuto({ v }: { v: { strutturaId: string; schedaId?: string } }) {
             <div>
               <h2>{struttura.nome}</h2>
               <p>
-                {struttura.tipo === 'colombaio' ? 'Colombaio' : 'Cappella familiare'} · {struttura.viale} · {occ.occupati} occupati su {occ.totale} posti
+                {NOMI_STRUTTURA[struttura.tipo]} · {struttura.viale} · {occ.occupati} occupati su {occ.totale} posti
               </p>
             </div>
           </div>

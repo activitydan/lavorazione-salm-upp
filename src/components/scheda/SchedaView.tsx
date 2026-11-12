@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ClipboardCheck, Crosshair, FileText, Grid3x3, History, MapPinned, Navigation, Pencil, Wrench } from 'lucide-react';
-import { STATI_MANUTENZIONE } from '../../config/defaults';
+import { NOMI_STRUTTURA, STATI_MANUTENZIONE } from '../../config/defaults';
 import {
   aggiornaCampo, aggiornaScheda, apriParete, apriModale, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
 } from '../../data/store';
@@ -266,7 +266,7 @@ function FragmentKV({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
-/** Riepilogo per cappelle e colombari: occupazione e mini-griglia delle pareti. */
+/** Riepilogo delle strutture: occupazione e mini-griglia delle pareti. */
 export function RiepilogoStruttura({ strutturaId }: { strutturaId: string }) {
   const db = useStore((s) => s.db);
   const config = useStore((s) => s.config);
@@ -276,7 +276,7 @@ export function RiepilogoStruttura({ strutturaId }: { strutturaId: string }) {
   const loculi = loculiPerStruttura(db.schede).get(strutturaId) ?? [];
   return (
     <section className="sez">
-      <h4 className="sez__t">{st.tipo === 'colombaio' ? 'Griglia del colombaio' : 'Posti nella cappella'}</h4>
+      <h4 className="sez__t">Posti a parete · {NOMI_STRUTTURA[st.tipo]}</h4>
       <div className="row row--between small">
         <span><b>{occ.occupati}</b> occupati · <b>{occ.liberi}</b> liberi su {occ.totale}</span>
         <span className="muted">{st.facce.length} {st.facce.length === 1 ? 'parete' : 'pareti'}</span>
