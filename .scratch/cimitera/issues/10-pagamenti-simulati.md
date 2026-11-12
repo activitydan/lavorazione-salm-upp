@@ -21,6 +21,8 @@ Dal ticket "Semplificazione di Ricerca": la pagina Esportazioni sparisce. L'Exce
 
 Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semplificazione-dashboard-mappa-scheda-qr.md): la sezione "Fatturazione e pagamenti" (con "Stato pagamenti") sparisce dalla scheda. La scheda mostra Concessione e Illuminazione votiva come riassunti in sola lettura con il loro stato; da decidere qui se e come quei riassunti mostrano la morosità.
 
+Dal ticket [Avvisi di scadenza inviati da DAT](11-avvisi-di-scadenza.md): il nome è "**lettera di scadenza**", solo per concessioni ed esumazioni o estumulazioni dovute, non per le utenze votive; "avviso" resta per l'avviso di pagamento. Ogni lettera (lettera di scadenza, avviso di pagamento, sollecito, diffida) passa dallo stesso invio tramite DAT: si sceglie da un elenco, nasce un **lotto** con un canale (Posta Certa, Raccomandata Certa o Notifica Certa; niente PEC), ogni invio ha un **esito** (consegnato, notificato, non consegnato) e chi non è stato raggiunto si reinvia o si stampa per l'affissione. La lettera di scadenza indica la tariffa del rinnovo ma non contiene un avviso di pagamento. La diffida di decadenza parte con Notifica Certa già scelta. In "Scadenze e pagamenti" c'è anche la linguetta "Invii DAT"; chi invia un lotto riceve un alert solo per gli invii non consegnati.
+
 ## Comments
 
 ### Giro 1 (2026-11-12)

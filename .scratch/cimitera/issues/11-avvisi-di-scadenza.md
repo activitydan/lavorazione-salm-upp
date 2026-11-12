@@ -1,7 +1,7 @@
 # Avvisi di scadenza inviati da DAT
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 03, 07, 08
 
@@ -51,3 +51,27 @@ Conflitto da sciogliere: nel ticket "Pagamenti simulati" Dan ha accettato anche 
 19. **Alert**: chi ha inviato il lotto riceve nella sua campanella un alert solo se ci sono invii non consegnati ("Lotto 12: 2 non consegnati"). Proposta: sì.
 20. **Diffida di decadenza**: quando si avvia la decadenza di una concessione, la diffida parte tramite DAT con Notifica Certa già scelta. Testo fisso. Proposta: sì.
 21. **Glossario**: entrano **Invio** (una lettera affidata a DAT per un destinatario, con il suo esito), **Lotto** (gli invii affidati a DAT in una volta, con lo stesso canale), **Esito** (consegnato, notificato, non consegnato) e **Notifica** (solo la consegna formale con il messo; la campanella mostra alert, non notifiche). "Da inviare" resta solo per il lavoro fatto senza rete: un invio DAT non ha mai quello stato. Proposta: sì.
+
+**Risposta di Dan**: sì a tutte. Con il nome "lettera di scadenza", il filtro del punto 4 diventa "Senza lettera".
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Nome**: **lettera di scadenza**, la lettera che il Comune manda tramite DAT per dire che una concessione sta per scadere o che una postazione va liberata, e cosa fare. "Avviso" resta solo per l'**avviso di pagamento** pagoPA (ticket "Pagamenti simulati"). Il titolo di questo ticket resta com'è.
+- **Per cosa**: concessioni in scadenza ed esumazioni o estumulazioni dovute (fosse a fine turno, concessioni chiuse con la postazione ancora occupata). Non per le utenze votive: l'abbonato riceve ogni anno l'avviso di pagamento del canone.
+- **Invio tramite DAT**: uno solo per tutte le lettere: lettere di scadenza, avvisi di pagamento, solleciti, diffide. Quali lettere di pagamento passano da DAT lo decide "Pagamenti simulati".
+- **Da dove parte**: dallo scadenzario di "Scadenze e pagamenti". Si spuntano una o più righe, "Invia tramite DAT", si sceglie il canale, si vede l'anteprima, si conferma: nasce un **lotto**. Niente invio automatico; filtro pronto "Senza lettera".
+- **Destinatari**: una lettera per concessione, al rappresentante o all'unico concessionario; per un ente, al legale rappresentante all'indirizzo dell'ente. Fossa a fine turno: il richiedente della pratica di inumazione, se c'è. Concessione chiusa con la postazione occupata: l'ultimo concessionario (il rappresentante). Se non c'è nessuno, la riga dice "Nessun destinatario". Se sulla postazione c'è un'utenza votiva attiva con un abbonato diverso, anche l'abbonato riceve la lettera, nello stesso lotto.
+- **Canali**: i servizi di DAT con i loro nomi: Posta Certa (proposta per le lettere di scadenza), Raccomandata Certa (ricevuta di ritorno), Notifica Certa (messo). Un canale per lotto. Niente PEC, app IO, SEND.
+- **Esiti**: In lavorazione → Spedito → Consegnato (posta e raccomandata), Notificato (messo) oppure Non consegnato, con il motivo (irreperibile, indirizzo errato, destinatario deceduto, rifiutato). Ogni esito ha la data e una prova finta da aprire: tracciamento, ricevuta di ritorno, relata di notifica.
+- **Non consegnato**: si corregge l'indirizzo e si reinvia, in un nuovo lotto e anche con un altro canale. Se un indirizzo non c'è, "Stampa per l'affissione": la lettera da attaccare sulla postazione, con la riga "Affissa il …" nello storico.
+- **Contenuto**: PDF A4, testo fisso per tipo, non modificabile nella demo. Per la concessione: stemma e ufficio del Comune, destinatario, oggetto ("Scadenza della concessione del loculo … – Cimitero …"), postazione e defunti, data di scadenza, come rinnovare (durata, entro quando, tariffa del rinnovo presa da Amministrazione, ufficio e contatti), cosa succede se non si rinnova, numero e data della lettera; in fondo "Una soluzione DAT | HYA Group". Per esumazioni ed estumulazioni: da quando si farà l'operazione, dove possono andare i resti (ossario comune, cinerario comune, altra postazione, fuori Comune), entro quando contattare l'ufficio, e che senza risposta i resti vanno nell'ossario comune.
+- **Pagamento**: la lettera di scadenza non contiene un avviso di pagamento; l'avviso nasce quando l'ufficio registra il rinnovo.
+- **Diffida di decadenza**: quando si avvia la decadenza di una concessione, la diffida parte tramite DAT con Notifica Certa già scelta. Testo fisso.
+- **Simulazione**: gli esiti arrivano da soli pochi secondi dopo la conferma, quasi tutti consegnati e circa uno su dieci non consegnato. Frase "Simulazione: nessuna lettera parte davvero" nella finestra di invio, etichetta "Simulato" su ogni lotto, filigrana "Fac-simile" sui PDF.
+- **Dove si vede**: in "Scadenze e pagamenti" la linguetta "Invii DAT" elenca i lotti (numero, data, canale, operatore, quanti consegnati, notificati e non consegnati, "Simulato"); dentro un lotto, i suoi invii con esito, data e prova. Nello scadenzario ogni riga mostra l'ultima lettera e il suo esito. Lo storico della concessione riceve la riga "Lettera di scadenza tramite DAT – consegnato il …".
+- **Alert**: chi ha inviato il lotto riceve nella sua campanella un alert solo se ci sono invii non consegnati ("Lotto 12: 2 non consegnati").
+- **Chi**: Operatore e Amministratore, solo dal computer.
+- **Dati finti**: qualche lotto dei mesi passati, con esiti misti.
+- **Glossario**: corretta "Lettera di scadenza"; nuove Invio, Lotto, Esito, Notifica. "Da inviare" resta solo per il lavoro fatto senza rete.

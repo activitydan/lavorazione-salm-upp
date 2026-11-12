@@ -97,8 +97,24 @@ Il documento pagoPA con cui il Comune chiede di pagare un importo per un solo mo
 _Avoid_: avviso (da solo), bollettino, bolletta
 
 **Lettera di scadenza**:
-La lettera, mandata tramite DAT con qualunque canale, che avvisa che una concessione o un'utenza votiva sta per scadere.
-_Avoid_: avviso di scadenza, avviso (da solo)
+La lettera, mandata tramite DAT, che avvisa che una concessione sta per scadere o che una postazione va liberata con un'esumazione o un'estumulazione dovuta, e dice cosa fare. Non riguarda le utenze votive.
+_Avoid_: avviso di scadenza, avviso (da solo), comunicazione
+
+**Invio**:
+Una lettera affidata a DAT per un solo destinatario, con il suo esito.
+_Avoid_: spedizione, plico, notifica (che è solo la consegna con il messo)
+
+**Lotto**:
+Gli invii affidati a DAT in una volta, tutti con lo stesso canale.
+_Avoid_: pacchetto, blocco, spedizione
+
+**Esito**:
+Come è finito un invio: consegnato, notificato o non consegnato, con la data e la prova.
+_Avoid_: stato di consegna, risultato, ricevuta (che è la prova)
+
+**Notifica**:
+La consegna formale di una lettera tramite il messo, con valore legale. I messaggi della campanella sono alert, non notifiche.
+_Avoid_: notificazione
 
 ## Ruoli
 
