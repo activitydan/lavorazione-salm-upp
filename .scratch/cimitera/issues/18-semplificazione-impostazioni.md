@@ -21,3 +21,5 @@ Da decidere:
 Gli spazi seguono [Regole degli spazi](12-regole-degli-spazi.md). Punto di partenza: [inventario-pagine.md](../inventario-pagine.md), sezione Impostazioni; [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.md) e l'aggiornamento in [Struttura del menu](06-struttura-del-menu.md).
 
 Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): Amministrazione riceve anche il canone votivo annuo per punto luce e il contributo di allaccio (demo 24 € e 15 €). Il campo "Lampada votiva" della scheda diventa calcolato e i campi "Canone lampada votiva" e "Codice utenza" spariscono: vanno tolti anche dai campi configurabili.
+
+Dal ticket [Semplificazione di Censimento e Nuovo rilievo](16-semplificazione-censimento-e-rilievo.md): nel Nuovo rilievo spariscono i flag "Tomba singola", "Cappella" e "Colombaio", perché ripetono la tipologia; da decidere qui se toglierli anche dai campi configurabili (e quindi da filtri e scheda). Censimento › Operatori diventa un elenco in sola lettura: "Nuovo operatore" e "Modifica" (nome, ruolo, attivo, telefono, email, colore sulla mappa) arrivano in Amministrazione.
