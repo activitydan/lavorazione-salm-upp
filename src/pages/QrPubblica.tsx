@@ -61,8 +61,7 @@ export function QrPubblica({ id }: { id: string }) {
         </div>
       )}
       <footer className="pub__foot">
-        <img src="./img/mascotte.jpg" alt="" />
-        <span>Powered by <b>REST IN GPS</b> · La mappa digitale del cimitero</span>
+        <span>Una soluzione <b>DAT | HYA Group</b></span>
       </footer>
     </div>
   );

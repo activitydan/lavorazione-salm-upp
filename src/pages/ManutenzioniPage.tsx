@@ -62,10 +62,9 @@ export function ManutenzioniPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Manutenzioni</h1>
-          <p>Segnalazioni arrivate dall'app di rilievo e dall'ufficio: pianifica, crea alert, chiudi con la foto aggiornata.</p>
         </div>
         <div className="page-head__actions">
-          <button className="btn" onClick={() => { scaricaExcel(`SALM-APP_manutenzioni_${oggi}`, [{ nome: 'Manutenzioni', righe: righeManutenzioni(db, config, cimitero.id) }]); registraEsportazione('Excel manutenzioni', manutenzioni.length); }}>
+          <button className="btn" onClick={() => { scaricaExcel(`CimiTera_manutenzioni_${oggi}`, [{ nome: 'Manutenzioni', righe: righeManutenzioni(db, config, cimitero.id) }]); registraEsportazione('Excel manutenzioni', manutenzioni.length); }}>
             <FileSpreadsheet size={16} />Excel
           </button>
           <button className="btn btn--primary" onClick={() => apriModale({ tipo: 'manutenzione' })}><Plus size={16} />Segnala manutenzione</button>

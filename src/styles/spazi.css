@@ -1,0 +1,134 @@
+/* Regole degli spazi (mappa CimiTera, ticket "Regole degli spazi su una pagina campione").
+   Valgono per tutte le pagine tranne la home, che resta lo standard da cui sono prese.
+   Scala delle distanze: 4, 8, 12, 16, 24. Fanno eccezione i margini di pagina (20 e 38), presi dalla home. */
+
+:root {
+  --sp-sopra: 20px;
+  --sp-lati: 38px;
+  --sp-sotto: 24px;
+  --sp-lati-tel: 16px;
+  --sp-riquadri: 16px; /* distanza tra i riquadri e margine interno */
+  --sp-testa: 14px; /* testata del riquadro, sopra e sotto */
+  --sp-piede: 12px;
+  --sp-riga: 10px; /* righe delle tabelle, sopra e sotto */
+  --sp-cella: 12px; /* celle, ai lati */
+}
+
+/* ---- margini di pagina: tutta la larghezza, come la home ---- */
+.page:not(.page--home) {
+  max-width: none;
+  margin: 0;
+  padding: var(--sp-sopra) var(--sp-lati) var(--sp-sotto);
+}
+@media (max-width: 760px) {
+  .page:not(.page--home) { padding: var(--sp-sopra) var(--sp-lati-tel) var(--sp-sotto); }
+}
+
+/* ---- intestazione: solo il titolo; pulsanti sulla stessa riga, linguette sotto ---- */
+.page:not(.page--home) .page-head { margin-bottom: 12px; align-items: center; }
+.page:not(.page--home) .page-head:not(:has(+ .tabs)) { margin-bottom: 16px; }
+.page:not(.page--home) .tabs { margin-bottom: 16px; scrollbar-width: none; }
+.page:not(.page--home) .tabs::-webkit-scrollbar { display: none; }
+
+/* ---- distanza tra i riquadri: 16 px ovunque ---- */
+.page:not(.page--home) :is(
+  .col.gap-16, .kpi-grid, .report-grid, .report-2col, .op-grid, .str-grid, .manut__grid, .anagrafe-stat,
+  .export-grid, .quad, .cal-wrap, .ricerca, .pro, .elenchi-grid, .scheda-estesa, .scheda-estesa__side, .griglia
+) { gap: var(--sp-riquadri); }
+
+/* riquadri affiancati alti uguali: non resta un buco sotto il più basso */
+.page:not(.page--home) :is(.report-2col, .griglia--2, .griglia--3) { align-items: stretch; }
+
+/* titoli fuori dai riquadri (es. "Operatori sul campo"): 16 sopra, 8 sotto */
+.page:not(.page--home) .section-title { margin: 16px 0 8px; }
+.page:not(.page--home) .section-title:first-child { margin-top: 0; }
+
+/* ---- margini interni dei riquadri ---- */
+.page:not(.page--home) :is(.card--pad, .kpi-card, .export-card, .str-card) { padding: var(--sp-riquadri); }
+.page:not(.page--home) .card__head { padding: var(--sp-testa) var(--sp-riquadri); }
+.page:not(.page--home) .card__body { padding: var(--sp-riquadri); }
+.page:not(.page--home) .card__foot { padding: var(--sp-piede) var(--sp-riquadri); }
+.page:not(.page--home) .pager { padding: var(--sp-piede) var(--sp-riquadri); }
+
+/* ---- tabelle: prima e ultima colonna allineate al titolo del riquadro ---- */
+.page:not(.page--home) .table :is(th, td) { padding: var(--sp-riga) var(--sp-cella); }
+.page:not(.page--home) .table :is(th, td):first-child { padding-left: var(--sp-riquadri); }
+.page:not(.page--home) .table :is(th, td):last-child { padding-right: var(--sp-riquadri); }
+
+/* ---- finestre e pannello laterale della scheda: stesse regole dei riquadri ---- */
+.modal__head { padding: var(--sp-testa) var(--sp-riquadri); }
+.modal__body { padding: var(--sp-riquadri); }
+.modal__foot { padding: var(--sp-piede) var(--sp-riquadri); }
+.drawer__head { padding: var(--sp-piede) var(--sp-riquadri); }
+.drawer__body { padding: var(--sp-riquadri); }
+.grid-form { gap: var(--sp-riquadri); }
+
+/* griglie generiche per le pagine nuove */
+.griglia { display: grid; gap: var(--sp-riquadri); }
+.griglia--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.griglia--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.griglia--lato { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+@media (max-width: 1100px) {
+  .griglia--2, .griglia--3, .griglia--lato { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- ingresso "Entra come" ---------- */
+.entra {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 16px;
+  background: radial-gradient(circle at 50% 30%, #ffffff, #e9eef4);
+}
+.entra__box { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px; }
+.entra__logo { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 8px; }
+.entra__logo .wordmark { align-items: center; }
+.entra__logo .wordmark__name { font-size: 30px; }
+.entra__titolo { font-size: 20px; text-align: center; }
+.entra__lista { display: flex; flex-direction: column; gap: 8px; }
+.entra__voce {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.entra__voce:hover { border-color: var(--blu); box-shadow: var(--shadow-1); }
+.entra__voce .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.entra__voce .grow > span { font-size: 13px; color: var(--muted); }
+.entra__voce > svg { color: var(--muted); flex: none; }
+.entra__ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.entra__nota { font-size: 12.5px; color: var(--muted); text-align: center; }
+.entra__firma { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+
+/* ---------- riquadro dell'utente in fondo al menu ---------- */
+.utente { position: relative; min-width: 0; }
+.utente__pop { left: 0; bottom: 44px; top: auto; width: 240px; color: var(--text); }
+.utente__chi { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+
+/* ---------- pagina del Cittadino ---------- */
+.pub__lista { display: flex; flex-direction: column; gap: 8px; }
+.pub__riga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  color: var(--text);
+}
+.pub__riga:hover { border-color: var(--blu); }
+.pub__riga .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pub__foot { justify-content: space-between; width: 100%; }

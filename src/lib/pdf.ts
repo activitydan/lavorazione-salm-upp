@@ -123,13 +123,13 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(17);
-    doc.text('SALM-', 35, 14);
+    doc.text('Cimi', 35, 14);
     doc.setTextColor(121, 170, 79);
-    doc.text('APP', 35 + doc.getTextWidth('SALM-'), 14);
+    doc.text('Tera', 35 + doc.getTextWidth('Cimi'), 14);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(200, 214, 230);
-    doc.text('POWERED BY REST IN GPS', 35.3, 19);
+    doc.text('UNA SOLUZIONE DAT | HYA GROUP', 35.3, 19);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(15);
     doc.setTextColor(255, 255, 255);
@@ -244,7 +244,7 @@ function piedi(doc: jsPDF) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...GRIGIO);
-    doc.text(`Generato con SALM-APP · powered by REST IN GPS · ${dataOra(new Date().toISOString().slice(0, 16))}`, 14, 291.5);
+    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group · ${dataOra(new Date().toISOString().slice(0, 16))}`, 14, 291.5);
     doc.text(`${i} / ${n}`, 196, 291.5, { align: 'right' });
   }
 }
@@ -256,7 +256,7 @@ export async function pdfScheda(s: Scheda, ctx: ContestoPdf) {
   doc.save(`${s.id}.pdf`);
 }
 
-export async function pdfSchede(lista: Scheda[], ctx: ContestoPdf, avanzamento?: (n: number) => void, nomeFile = `SALM-APP_schede_${oggiISO()}.pdf`) {
+export async function pdfSchede(lista: Scheda[], ctx: ContestoPdf, avanzamento?: (n: number) => void, nomeFile = `CimiTera_schede_${oggiISO()}.pdf`) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   for (let i = 0; i < lista.length; i++) {
     if (i > 0) doc.addPage();
@@ -296,8 +296,8 @@ export async function pdfEtichetteQr(lista: Scheda[], avanzamento?: (n: number) 
     doc.setTextColor(...GRIGIO);
     doc.setFontSize(6.8);
     doc.text(doc.splitTextToSize(s.viale, 32).slice(0, 1), x + 35, y + 25);
-    doc.text('SALM-APP', x + 35, y + 30.5);
+    doc.text('CimiTera', x + 35, y + 30.5);
     avanzamento?.(i + 1);
   }
-  doc.save(`SALM-APP_etichette_QR_${oggiISO()}.pdf`);
+  doc.save(`CimiTera_etichette_QR_${oggiISO()}.pdf`);
 }

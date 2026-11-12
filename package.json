@@ -1,8 +1,8 @@
 {
-  "name": "salm-app",
+  "name": "cimitera",
   "private": true,
   "version": "0.1.0",
-  "description": "SALM-APP — mappatura e gestione digitale del patrimonio cimiteriale (powered by REST IN GPS)",
+  "description": "CimiTera — gestione digitale del patrimonio cimiteriale. Una soluzione DAT | HYA Group",
   "type": "module",
   "scripts": {
     "dev": "vite",

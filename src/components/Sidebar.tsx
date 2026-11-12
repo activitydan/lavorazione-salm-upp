@@ -1,73 +1,149 @@
+import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3, ClipboardList, Download, LayoutDashboard, Search, Settings, UserRound, Wrench,
+  BarChart3, ClipboardCheck, ClipboardList, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, Search, Settings, UserRound, Wrench,
+  type LucideIcon,
 } from 'lucide-react';
-import { setUi, useStore } from '../data/store';
-import { useDatiCimitero } from '../data/selectors';
-import { href, useRotta, vai } from '../router';
+import { esci, setUi, useStore } from '../data/store';
+import { useDatiCimitero, useUtente } from '../data/selectors';
+import type { Ruolo } from '../data/types';
+import { useTelefono } from '../lib/schermo';
+import { href, useRotta } from '../router';
 import { Logo } from './Logo';
 import { CampanellaAlert } from './Topbar';
 
-// La Mappa non è nel menu: si apre da "Apri la mappa" sulla Dashboard (e dalla ricerca o dalla legenda)
-const VOCI = [
+export interface VoceMenu {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  /** chi vede la voce; assente = Operatore e Amministratore */
+  ruoli?: Ruolo[];
+  conteggio?: 'manutenzioni';
+  gruppo?: string;
+  /** la pagina si usa solo dal computer */
+  soloComputer?: boolean;
+}
+
+// Sul computer la Mappa non è nel menu: si apre da "Apri la mappa" sulla Dashboard.
+export const VOCI_COMPUTER: VoceMenu[] = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/censimento', label: 'Censimento', icon: ClipboardList },
   { path: '/ricerca', label: 'Ricerca', icon: Search },
-  { path: '/anagrafe', label: 'Anagrafe', icon: UserRound },
-  { path: '/manutenzioni', label: 'Manutenzioni', icon: Wrench },
-  { path: '/report', label: 'Report', icon: BarChart3 },
-  { path: '/esportazioni', label: 'Esportazioni', icon: Download },
+  { path: '/censimento', label: 'Censimento', icon: ClipboardList },
+  { path: '/manutenzioni', label: 'Manutenzioni', icon: Wrench, conteggio: 'manutenzioni' },
+  { path: '/anagrafe', label: 'Anagrafe', icon: UserRound, soloComputer: true },
+  { path: '/report', label: 'Report', icon: BarChart3, soloComputer: true },
+  { path: '/esportazioni', label: 'Esportazioni', icon: Download, soloComputer: true },
+  { path: '/impostazioni', label: 'Impostazioni', icon: Settings, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },
 ];
+
+// Sul telefono solo campo e consultazione, uguale per Operatore e Amministratore.
+export const VOCI_TELEFONO: VoceMenu[] = [
+  { path: '/mappa', label: 'Mappa', icon: MapIcon },
+  { path: '/ricerca', label: 'Ricerca', icon: Search },
+  { path: '/rilievo', label: 'Nuovo rilievo', icon: MapPinPlus },
+  { path: '/manutenzioni', label: 'Manutenzioni', icon: Wrench, conteggio: 'manutenzioni' },
+  { path: '/censimento?tab=verifiche', label: 'Verifiche', icon: ClipboardCheck },
+];
+
+function vocePer(path: string): VoceMenu | undefined {
+  return VOCI_COMPUTER.find((x) => x.path !== '/' && path.startsWith(x.path));
+}
+
+/** true se il ruolo può aprire la pagina (le voci senza "ruoli" sono di tutti). */
+export function paginaPermessa(path: string, ruolo: Ruolo): boolean {
+  const v = vocePer(path);
+  return !v?.ruoli || v.ruoli.includes(ruolo);
+}
+
+/** true se la pagina si usa solo dal computer (gestione e statistiche). */
+export function paginaSoloComputer(path: string): boolean {
+  return !!vocePer(path)?.soloComputer;
+}
+
+function RiquadroUtente({ chiudiMenu }: { chiudiMenu: () => void }) {
+  const utente = useUtente();
+  const [aperto, setAperto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const f = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setAperto(false);
+    document.addEventListener('mousedown', f);
+    return () => document.removeEventListener('mousedown', f);
+  }, []);
+  return (
+    <div ref={ref} className="utente">
+      <button className="user-chip" onClick={() => setAperto(!aperto)} title={`${utente.nome} · ${utente.etichettaRuolo}`} aria-haspopup="menu" aria-expanded={aperto}>
+        <span className="avatar avatar--sm" style={{ background: utente.colore }}>{utente.sigla}</span>
+        <span className="user-chip__txt">
+          <b>{utente.nome}</b>
+          <span>{utente.etichettaRuolo}</span>
+        </span>
+      </button>
+      {aperto && (
+        <div className="popover utente__pop" role="menu">
+          <div className="utente__chi">
+            <b>{utente.nome}</b>
+            <span className="small muted">{utente.etichettaRuolo}</span>
+          </div>
+          <button className="popover__item" role="menuitem" onClick={() => { setAperto(false); chiudiMenu(); esci(); }}>
+            <Repeat size={16} />
+            <span className="grow">Cambia ruolo</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Sidebar() {
   const rotta = useRotta();
+  const telefono = useTelefono();
+  const utente = useUtente();
   const aperta = useStore((s) => s.ui.menuMobile);
   const { manutenzioni } = useDatiCimitero();
   const aperte = manutenzioni.filter((m) => m.stato === 'aperta').length;
-  const attivo = (p: string) => (p === '/' ? rotta.path === '/' : rotta.path.startsWith(p));
   const chiudi = () => setUi({ menuMobile: false });
+
+  const voci = (telefono ? VOCI_TELEFONO : VOCI_COMPUTER).filter((v) => !v.ruoli || v.ruoli.includes(utente.ruolo));
+  const attivo = (v: VoceMenu) => {
+    const p = v.path.split('?')[0];
+    return p === '/' ? rotta.path === '/' : rotta.path.startsWith(p);
+  };
+  let gruppo: string | undefined;
 
   return (
     <>
       <div className={`sidebar-backdrop ${aperta ? 'is-open' : ''}`} onClick={chiudi} />
       <aside className={`sidebar ${aperta ? 'is-open' : ''}`} aria-label="Menu principale">
-        <a className="sidebar__brand" href={href('/')} onClick={chiudi}>
-          <Logo dark size={36} corto />
+        <a className="sidebar__brand" href={href(telefono ? '/mappa' : '/')} onClick={chiudi}>
+          <Logo dark size={36} />
         </a>
         <nav className="sidebar__nav">
-          {VOCI.map((v) => {
-            const conteggio = v.path === '/manutenzioni' ? aperte : 0;
+          {voci.map((v) => {
+            const conteggio = v.conteggio === 'manutenzioni' ? aperte : 0;
+            const titolo = v.gruppo && v.gruppo !== gruppo ? v.gruppo : null;
+            gruppo = v.gruppo;
             return (
-              <a
-                key={v.path}
-                href={href(v.path)}
-                className={`nav-item ${attivo(v.path) ? 'is-active' : ''}`}
-                onClick={chiudi}
-                title={conteggio ? `${v.label}: ${conteggio} aperte` : v.label}
-                aria-label={conteggio ? `${v.label}, ${conteggio} aperte` : undefined}
-              >
-                {/* numero sull'icona, come sulla campanella degli alert */}
-                <i className="nav-item__ico">
-                  <v.icon size={21} />
-                  {conteggio > 0 && <b className="icon-btn__dot" aria-hidden="true">{conteggio}</b>}
-                </i>
-                <span>{v.label}</span>
-              </a>
+              <div key={v.path} style={{ display: 'contents' }}>
+                {titolo && <div className="nav-sep">{titolo}</div>}
+                <a
+                  href={href(v.path)}
+                  className={`nav-item ${attivo(v) ? 'is-active' : ''}`}
+                  onClick={chiudi}
+                  title={conteggio ? `${v.label}: ${conteggio} aperte` : v.label}
+                  aria-label={conteggio ? `${v.label}, ${conteggio} aperte` : undefined}
+                >
+                  {/* numero sull'icona, come sulla campanella degli alert */}
+                  <i className="nav-item__ico">
+                    <v.icon size={21} />
+                    {conteggio > 0 && <b className="icon-btn__dot" aria-hidden="true">{conteggio}</b>}
+                  </i>
+                  <span>{v.label}</span>
+                </a>
+              </div>
             );
           })}
-          <div className="nav-sep">Configurazione</div>
-          <a href={href('/impostazioni')} className={`nav-item ${attivo('/impostazioni') ? 'is-active' : ''}`} onClick={chiudi} title="Impostazioni">
-            <Settings size={21} />
-            <span>Impostazioni</span>
-          </a>
         </nav>
         <div className="sidebar__foot">
-          <button className="user-chip" onClick={() => { chiudi(); vai('/impostazioni'); }} title="Ufficio Cimiteri · Amministratore">
-            <span className="avatar avatar--sm" style={{ background: '#0A2F55' }}>UC</span>
-            <span className="user-chip__txt">
-              <b>Ufficio Cimiteri</b>
-              <span>Amministratore</span>
-            </span>
-          </button>
+          <RiquadroUtente chiudiMenu={chiudi} />
           <CampanellaAlert nelMenu />
         </div>
       </aside>

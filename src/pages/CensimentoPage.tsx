@@ -29,7 +29,6 @@ export function CensimentoPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Gestione censimento</h1>
-          <p>Avanzamento, quadranti, operatori, controlli e griglie di colombari e cappelle.</p>
         </div>
         <div className="page-head__actions">
           <button className="btn" onClick={() => apriModale({ tipo: 'verifica' })}><ClipboardCheck size={16} />Assegna verifica</button>

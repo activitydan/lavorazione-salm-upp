@@ -165,10 +165,9 @@ export function Avatar({ nome, colore = '#1B5A8F', size }: { nome: string; color
   );
 }
 
-export function Empty({ titolo, testo, azione, mascotte }: { titolo: string; testo?: string; azione?: ReactNode; mascotte?: boolean }) {
+export function Empty({ titolo, testo, azione }: { titolo: string; testo?: string; azione?: ReactNode }) {
   return (
     <div className="empty">
-      {mascotte && <img src="./img/rest-in-gps.jpg" alt="" />}
       <h3>{titolo}</h3>
       {testo && <p>{testo}</p>}
       {azione}

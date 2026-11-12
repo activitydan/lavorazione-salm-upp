@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PRIORITA } from '../config/defaults';
+import { PRIORITA, UFFICIO } from '../config/defaults';
 import { aggiungiGiorni, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
 import { loculiPerStruttura, useStore } from './store';
 import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
@@ -7,6 +7,26 @@ import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, S
 // ---------------------------------------------------------------------------
 // Hook di comodo
 // ---------------------------------------------------------------------------
+
+/** Chi è entrato: ruolo, nome da mostrare, colore e sigla dell'avatar. */
+export function useUtente() {
+  const sessione = useStore((s) => s.sessione);
+  const operatori = useStore((s) => s.db.operatori);
+  return useMemo(() => {
+    const ruolo = sessione?.ruolo ?? 'amministratore';
+    const op = ruolo === 'operatore' ? operatori.find((o) => o.id === sessione?.operatoreId) : undefined;
+    const nome = op?.nome ?? (ruolo === 'operatore' ? 'Operatore' : UFFICIO);
+    return {
+      ruolo,
+      operatoreId: op?.id ?? null,
+      nome,
+      etichettaRuolo: ruolo === 'amministratore' ? 'Amministratore' : ruolo === 'operatore' ? 'Operatore' : 'Cittadino',
+      colore: op?.colore ?? '#0A2F55',
+      sigla: nome.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase(),
+      amministratore: ruolo === 'amministratore',
+    };
+  }, [sessione, operatori]);
+}
 
 export function useCimitero() {
   const cimiteri = useStore((s) => s.db.cimiteri);

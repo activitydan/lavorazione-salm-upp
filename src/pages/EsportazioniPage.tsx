@@ -21,7 +21,7 @@ export function EsportazioniPage() {
   const n = contaFiltriAttivi(filtri);
   const ctx = { config, db };
   const oggi = oggiISO();
-  const base = `SALM-APP_${cim?.codice ?? ''}`;
+  const base = `CimiTera_${cim?.codice ?? ''}`;
 
   const esegui = async (tipo: string, righe: number, fn: () => void | Promise<void>) => {
     setLavoro(tipo);
@@ -42,7 +42,6 @@ export function EsportazioniPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Esportazioni</h1>
-          <p>Excel dei filtri o dei totali, PDF multipli delle schede ed etichette QR da stampare.</p>
         </div>
       </div>
 

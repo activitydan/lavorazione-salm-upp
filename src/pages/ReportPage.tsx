@@ -18,7 +18,6 @@ export function ReportPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Report</h1>
-          <p>Anteprime pronte per l'ufficio: scadenze, posti liberi, lampade votive e pagamenti.</p>
         </div>
       </div>
       <Tabs value={vista} onChange={(v) => setQuery('vista', v)} tabs={[
@@ -103,7 +102,7 @@ function Scadenze() {
             <button className="btn btn--sm" disabled={!lista.length} onClick={() => creaAlert({ tipo: 'scadenze', priorita: 'media', titolo: `${lista.length} concessioni ${periodo === 'scadute' ? 'scadute' : 'in scadenza'}`, messaggio: 'Preparare le comunicazioni agli intestatari per il rinnovo.', data: oggi })}>
               <BellPlus size={14} />Crea alert
             </button>
-            <button className="btn btn--sm btn--primary" onClick={() => { scaricaExcel(`SALM-APP_scadenze_${oggi}`, [{ nome: 'Scadenze', righe: righeScadenze(lista, { config, db }) }]); registraEsportazione('Excel scadenze', lista.length); }}>
+            <button className="btn btn--sm btn--primary" onClick={() => { scaricaExcel(`CimiTera_scadenze_${oggi}`, [{ nome: 'Scadenze', righe: righeScadenze(lista, { config, db }) }]); registraEsportazione('Excel scadenze', lista.length); }}>
               <FileSpreadsheet size={14} />Excel
             </button>
           </div>
@@ -199,7 +198,7 @@ function Lampade() {
         <div className="grow">
           <b>Excel pronto per fatturare.</b> Codice utenza, intestatario, ubicazione, canone e stato pagamenti, con il totale in fondo.
         </div>
-        <button className="btn btn--success btn--sm" onClick={() => { scaricaExcel(`SALM-APP_lampade_votive_${oggi}`, [{ nome: 'Lampade votive', righe: righeLampadeVotive(lampade, { config, db }) }, { nome: 'Morosi', righe: righeLampadeVotive(morosi, { config, db }) }]); registraEsportazione('Excel lampade votive', lampade.length); }}>
+        <button className="btn btn--success btn--sm" onClick={() => { scaricaExcel(`CimiTera_lampade_votive_${oggi}`, [{ nome: 'Lampade votive', righe: righeLampadeVotive(lampade, { config, db }) }, { nome: 'Morosi', righe: righeLampadeVotive(morosi, { config, db }) }]); registraEsportazione('Excel lampade votive', lampade.length); }}>
           Scarica Excel
         </button>
       </div>

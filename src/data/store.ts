@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { CONFIG_DEFAULT, FILTRI_VUOTI, UTENTE_CORRENTE } from '../config/defaults';
+import { CONFIG_DEFAULT, FILTRI_VUOTI, UFFICIO } from '../config/defaults';
 import { adessoISO, oggiISO, slug } from '../lib/format';
 import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
 import type {
   AlertManuale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione,
-  Operatore, Quadrante, Scheda, StatoDef, StileMappa, Struttura, TipologiaDef, Verifica,
+  Operatore, Quadrante, Scheda, Sessione, StatoDef, StileMappa, Struttura, TipologiaDef, Verifica,
 } from './types';
 
 export interface Toast {
@@ -41,12 +41,23 @@ interface Stato {
   filtri: Filtri;
   ui: UiState;
   toasts: Toast[];
+  sessione: Sessione | null;
 }
 
 const DB_VUOTO: Database = {
   versione: 1, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], esportazioni: [],
 };
+
+const CHIAVE_SESSIONE = 'cimitera:sessione';
+function leggiSessione(): Sessione | null {
+  try {
+    const t = window.localStorage.getItem(CHIAVE_SESSIONE);
+    return t ? (JSON.parse(t) as Sessione) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const useStore = create<Stato>(() => ({
   pronto: false,
@@ -67,6 +78,7 @@ export const useStore = create<Stato>(() => ({
     modale: null,
   },
   toasts: [],
+  sessione: leggiSessione(),
 }));
 
 const S = () => useStore.getState();
@@ -117,14 +129,41 @@ export async function ripristinaDemo() {
 
 export function esportaBackup(): string {
   const { db, config, foto } = S();
-  return JSON.stringify({ app: 'SALM-APP', esportatoIl: adessoISO(), db, config, foto });
+  return JSON.stringify({ app: 'CimiTera', esportatoIl: adessoISO(), db, config, foto });
 }
 
 export function importaBackup(testo: string) {
   const b = JSON.parse(testo);
-  if ((b?.app !== 'SALM-APP' && b?.app !== 'SALM-UP') || !b.db || !b.config) throw new Error('File non riconosciuto come backup SALM-UP');
+  if (!['CimiTera', 'SALM-APP', 'SALM-UP'].includes(b?.app) || !b.db || !b.config) throw new Error('File non riconosciuto come backup di CimiTera');
   setS({ db: { ...DB_VUOTO, ...b.db }, config: { ...CONFIG_DEFAULT, ...b.config }, foto: b.foto ?? {} });
   toast('Backup importato');
+}
+
+// ---------------------------------------------------------------------------
+// Ingresso per ruolo (demo: senza password)
+// ---------------------------------------------------------------------------
+
+export function entra(sessione: Sessione) {
+  try { window.localStorage.setItem(CHIAVE_SESSIONE, JSON.stringify(sessione)); } catch { /* resta in memoria */ }
+  setS({ sessione });
+}
+
+export function esci() {
+  try { window.localStorage.removeItem(CHIAVE_SESSIONE); } catch { /* niente */ }
+  setS((s) => ({ sessione: null, ui: { ...s.ui, selezionata: null, pannello: false, menuMobile: false, modale: null } }));
+}
+
+/** Nome di chi è entrato: firma lo storico, gli alert e il registro delle modifiche. */
+export function utenteCorrente(): string {
+  const { sessione, db } = S();
+  if (sessione?.ruolo === 'operatore') return db.operatori.find((o) => o.id === sessione.operatoreId)?.nome ?? 'Operatore';
+  return UFFICIO;
+}
+
+/** Valore di "rilevatoDa" e "segnalataDa": l'id dell'operatore entrato, oppure 'ufficio'. */
+export function firmaCorrente(): string {
+  const { sessione } = S();
+  return sessione?.ruolo === 'operatore' && sessione.operatoreId ? sessione.operatoreId : 'ufficio';
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +261,7 @@ function setDb(fn: (db: Database) => Partial<Database>) {
 }
 
 function evento(azione: string) {
-  return { data: adessoISO(), utente: UTENTE_CORRENTE, azione };
+  return { data: adessoISO(), utente: utenteCorrente(), azione };
 }
 
 export function aggiornaScheda(id: string, patch: Partial<Scheda>, azione?: string) {
@@ -335,7 +374,7 @@ export function completaVerifica(id: string, esito: NonNullable<Verifica['esito'
 
 export function creaAlert(a: Omit<AlertManuale, 'id' | 'creatoDa'>) {
   const n = S().db.alert.length + 1;
-  const nuovo: AlertManuale = { ...a, id: `AL-${String(n).padStart(4, '0')}-${Date.now().toString(36).slice(-3)}`, creatoDa: UTENTE_CORRENTE };
+  const nuovo: AlertManuale = { ...a, id: `AL-${String(n).padStart(4, '0')}-${Date.now().toString(36).slice(-3)}`, creatoDa: utenteCorrente() };
   setDb((db) => ({ alert: [nuovo, ...db.alert] }));
   toast('Alert creato');
   return nuovo;
@@ -469,7 +508,7 @@ export function setConfig(fn: (c: ConfigScheda) => Partial<ConfigScheda>, descri
         ...s.config,
         ...patch,
         versione: s.config.versione + 1,
-        registro: [{ data: adessoISO(), utente: UTENTE_CORRENTE, descrizione }, ...s.config.registro].slice(0, 200),
+        registro: [{ data: adessoISO(), utente: utenteCorrente(), descrizione }, ...s.config.registro].slice(0, 200),
       },
     };
   });

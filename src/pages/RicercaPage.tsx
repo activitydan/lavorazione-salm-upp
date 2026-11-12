@@ -65,7 +65,7 @@ export function RicercaPage() {
 
   const excel = () => {
     const cols = colonneDisponibili(config).filter((c) => colonnePredefinite(config).includes(c.id));
-    scaricaExcel(`SALM-APP_ricerca_${oggiISO()}`, [{ nome: 'Schede', righe: righeSchede(lista, cols, ctx) }]);
+    scaricaExcel(`CimiTera_ricerca_${oggiISO()}`, [{ nome: 'Schede', righe: righeSchede(lista, cols, ctx) }]);
     registraEsportazione('Excel ricerca', lista.length);
   };
   const pdf = async () => {
@@ -87,7 +87,6 @@ export function RicercaPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Ricerca</h1>
-          <p>Filtri multipli su tutte le schede: gli stessi filtri valgono per la mappa e per le esportazioni.</p>
         </div>
         <div className="page-head__actions">
           <button className="btn ricerca__filtri-btn" onClick={() => setFiltriMobile(true)}><SlidersHorizontal size={16} />Filtri ({contaFiltriAttivi(filtri)})</button>

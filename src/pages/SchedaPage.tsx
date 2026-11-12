@@ -23,7 +23,7 @@ export function SchedaPage({ id }: { id: string }) {
   if (!s)
     return (
       <div className="page">
-        <Empty mascotte titolo={`Scheda ${id} non trovata`} testo="L'ID potrebbe essere errato o la scheda appartiene a un altro archivio." azione={<a className="btn" href={href('/ricerca')}>Vai alla ricerca</a>} />
+        <Empty titolo={`Scheda ${id} non trovata`} testo="L'ID potrebbe essere errato o la scheda appartiene a un altro archivio." azione={<a className="btn" href={href('/ricerca')}>Vai alla ricerca</a>} />
       </div>
     );
   const cim = cimiteri.find((c) => c.id === s.cimiteroId)!;

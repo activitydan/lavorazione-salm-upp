@@ -1,18 +1,23 @@
 import { lazy, Suspense, useEffect } from 'react';
+import { Map as MapIcon } from 'lucide-react';
+import { EntraCome } from './components/EntraCome';
 import { Modali, PannelloScheda } from './components/Modali';
-import { Sidebar } from './components/Sidebar';
+import { paginaPermessa, paginaSoloComputer, Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
-import { Toasts } from './components/ui';
+import { Empty, Toasts } from './components/ui';
 import { Mark, Wordmark } from './components/Logo';
 import { GrigliaParete } from './components/parete/GrigliaParete';
+import { useUtente } from './data/selectors';
 import { setUi, useStore } from './data/store';
-import { useRotta } from './router';
+import { useTelefono } from './lib/schermo';
+import { useRotta, vai } from './router';
 import { Dashboard } from './pages/Dashboard';
 import { MappaPage } from './pages/MappaPage';
 
 const RicercaPage = lazy(() => import('./pages/RicercaPage').then((m) => ({ default: m.RicercaPage })));
 const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ default: m.SchedaPage })));
 const QrPubblica = lazy(() => import('./pages/QrPubblica').then((m) => ({ default: m.QrPubblica })));
+const CittadinoPage = lazy(() => import('./pages/CittadinoPage').then((m) => ({ default: m.CittadinoPage })));
 const CensimentoPage = lazy(() => import('./pages/CensimentoPage').then((m) => ({ default: m.CensimentoPage })));
 const RilievoPage = lazy(() => import('./pages/RilievoPage').then((m) => ({ default: m.RilievoPage })));
 const AnagrafePage = lazy(() => import('./pages/AnagrafePage').then((m) => ({ default: m.AnagrafePage })));
@@ -23,6 +28,26 @@ const ImpostazioniPage = lazy(() => import('./pages/ImpostazioniPage').then((m) 
 
 function Pagina() {
   const r = useRotta();
+  const utente = useUtente();
+  const telefono = useTelefono();
+
+  if (!paginaPermessa(r.path, utente.ruolo))
+    return (
+      <div className="page">
+        <Empty titolo="Pagina riservata all'Amministratore" testo="Per aprirla cambia ruolo dal riquadro in fondo al menu." />
+      </div>
+    );
+  if (telefono && paginaSoloComputer(r.path))
+    return (
+      <div className="page">
+        <Empty
+          titolo="Questa pagina si usa dal computer"
+          testo="Sul telefono ci sono il lavoro sul campo e la consultazione: mappa, ricerca, rilievo, manutenzioni e verifiche."
+          azione={<button className="btn btn--primary" onClick={() => vai('/mappa')}><MapIcon size={16} />Vai alla Mappa</button>}
+        />
+      </div>
+    );
+
   switch (r.parti[0]) {
     case undefined:
       return <Dashboard />;
@@ -50,7 +75,7 @@ function Pagina() {
       return (
         <div className="page">
           <h1>Pagina non trovata</h1>
-          <p className="muted mt-8">L'indirizzo non corrisponde a nessuna sezione di SALM-APP.</p>
+          <p className="muted mt-8">L'indirizzo non corrisponde a nessuna sezione di CimiTera.</p>
         </div>
       );
   }
@@ -60,7 +85,7 @@ function Caricamento({ errore }: { errore?: string | null }) {
   return (
     <div className="splash">
       <Mark size={84} />
-      <Wordmark />
+      <Wordmark firma />
       {errore ? <p className="callout callout--danger">{errore}</p> : <div className="spinner" />}
     </div>
   );
@@ -69,12 +94,20 @@ function Caricamento({ errore }: { errore?: string | null }) {
 export function App() {
   const pronto = useStore((s) => s.pronto);
   const errore = useStore((s) => s.errore);
+  const sessione = useStore((s) => s.sessione);
+  const telefono = useTelefono();
   const r = useRotta();
 
   useEffect(() => {
     setUi({ menuMobile: false, parete: null, modale: null });
     if (r.parti[0] !== 'mappa' && r.parti[0] !== undefined) setUi({ pannello: false });
   }, [r.path]);
+
+  // sul telefono la pagina iniziale è la Mappa: la Dashboard ha le statistiche, che restano sul computer
+  const interno = !!sessione && sessione.ruolo !== 'cittadino';
+  useEffect(() => {
+    if (interno && telefono && r.path === '/') vai('/mappa');
+  }, [interno, telefono, r.path]);
 
   if (!pronto || errore) return <Caricamento errore={errore} />;
 
@@ -83,6 +116,16 @@ export function App() {
     return (
       <Suspense fallback={<Caricamento />}>
         <QrPubblica id={r.parti[1] ?? ''} />
+      </Suspense>
+    );
+
+  if (!sessione) return <EntraCome />;
+
+  // il Cittadino ha una sola pagina pubblica, senza menu
+  if (sessione.ruolo === 'cittadino')
+    return (
+      <Suspense fallback={<Caricamento />}>
+        <CittadinoPage />
       </Suspense>
     );
 

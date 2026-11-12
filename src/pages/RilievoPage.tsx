@@ -7,7 +7,7 @@ import { QrImmagine, ScegliFoto } from '../components/scheda/Media';
 import { EditorDefunti } from '../components/scheda/SchedaForm';
 import { Dot, Field, Icona, Switch } from '../components/ui';
 import {
-  aggiornaScheda, aggiungiFoto, apriParete, creaScheda, creaStruttura, loculiPerStruttura, prossimoId, seleziona, toast, useStore,
+  aggiornaScheda, aggiungiFoto, apriParete, creaScheda, creaStruttura, firmaCorrente, loculiPerStruttura, prossimoId, seleziona, toast, useStore,
 } from '../data/store';
 import { campiPer, descrizioneScheda, statoDef, tipologiaDef, useCimitero, useDatiCimitero } from '../data/selectors';
 import type { Defunto, Faccia, LatLng, Scheda, ValoreCampo } from '../data/types';
@@ -145,7 +145,7 @@ export function RilievoPage() {
       const s = creaScheda({
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
         defunti, concessione: null, campi: { ...b.campi, tomba_singola: b.campi.tomba_singola ?? (defunti.length === 1 && b.tipologia === 'tomba') },
-        rilevatoDa: 'ufficio', area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
+        rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
       });
       if (b.daFoto && defunti.length) aggiornaScheda(s.id, {}, 'Anagrafica letta dalla foto della lapide e controllata');
       setSalvata(s);
@@ -199,7 +199,7 @@ export function RilievoPage() {
         <div className="col gap-16" style={passo === 0 ? undefined : { display: 'none' }}>
           <h2>Fotografa la lapide</h2>
           <p className="muted small">
-            Inquadra la lapide intera, dritta e senza riflessi. SALM-APP legge nomi e date e prepara l'anagrafica: tu controlli e confermi. Sul telefono si apre direttamente la fotocamera.
+            Inquadra la lapide intera, dritta e senza riflessi. CimiTera legge nomi e date e prepara l'anagrafica: tu controlli e confermi. Sul telefono si apre direttamente la fotocamera.
           </p>
           {b.foto ? (
             <>

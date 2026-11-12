@@ -7,7 +7,7 @@ import {
 import { EditorLista, type Voce } from '../components/EditorLista';
 import { InputCampo } from '../components/scheda/Campi';
 import { Field, Icona, ICONE, Modal, Switch, Tabs } from '../components/ui';
-import { TIPI_CAMPO, UTENTE_CORRENTE } from '../config/defaults';
+import { TIPI_CAMPO, UFFICIO } from '../config/defaults';
 import {
   aggiungiCampo, eliminaCampo, esportaBackup, idCampoLibero, importaBackup, modificaCampo, riassegnaStato, riassegnaTipologia,
   ripristinaDemo, salvaListaConfig, salvaStati, salvaTipologie, salvaViali, setConfig, sostituisciOpzione, spostaCampo, toast,
@@ -34,7 +34,6 @@ export function ImpostazioniPage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Impostazioni</h1>
-          <p>Configura la scheda senza programmatori: flag, menu a tendina, stati e tipologie si aggiornano ovunque.</p>
         </div>
         <span className="badge badge--outline"><Save size={13} />Versione configurazione {config.versione} · salvataggio automatico</span>
       </div>
@@ -273,7 +272,7 @@ function AnteprimaScheda({ evidenzia }: { evidenzia?: string }) {
   return (
     <div className="anteprima">
       <div className="anteprima__phone">
-        <div className="anteprima__bar"><span className="wordmark__name" style={{ fontSize: 15, color: '#fff' }}>SALM-<span style={{ color: '#8bbd5e' }}>APP</span></span><span className="tiny" style={{ color: '#a9bcd2' }}>Rilievo</span></div>
+        <div className="anteprima__bar"><span className="wordmark__name" style={{ fontSize: 15, color: '#fff' }}>Cimi<span style={{ color: '#8bbd5e' }}>APP</span></span><span className="tiny" style={{ color: '#a9bcd2' }}>Rilievo</span></div>
         <div className="anteprima__body">
           <div className="row row--between"><b>Scheda {config.tipologie.find((t) => t.id === tip)?.label.toLowerCase()}</b>
             <select className="select select--sm" style={{ width: 'auto' }} value={tip} onChange={(e) => setTip(e.target.value)} aria-label="Tipologia dell'anteprima">
@@ -504,7 +503,7 @@ function Dati() {
     const blob = new Blob([esportaBackup()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `SALM-APP_backup_${oggiISO()}.json`;
+    a.download = `CimiTera_backup_${oggiISO()}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -518,7 +517,7 @@ function Dati() {
           <dt>Perimetro</dt><dd>{cim.fonteGeometria}</dd>
           <dt>Partenza censimento</dt><dd className="mono">{cim.puntoPartenza[0].toFixed(6)}, {cim.puntoPartenza[1].toFixed(6)} (punta sud)</dd>
           <dt>Schede</dt><dd>{numero(db.schede.filter((s) => s.cimiteroId === cim.id).length)}</dd>
-          <dt>Utente</dt><dd>{UTENTE_CORRENTE} · Amministratore</dd>
+          <dt>Utente</dt><dd>{UFFICIO} · Amministratore</dd>
         </dl>
       </section>
       <section className="card card--pad">

@@ -1,4 +1,4 @@
-// Pittogramma SALM-APP ridisegnato in vettoriale dal mockup del cliente:
+// Pittogramma di CimiTera, ridisegnato in vettoriale dal mockup del cliente:
 // segnaposto con cappella, su un terreno di tasselli verdi e blu (la mappa).
 
 function rombo(cx: number, cy: number, w: number, h: number, k = 0.84) {

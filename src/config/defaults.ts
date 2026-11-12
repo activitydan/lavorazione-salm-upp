@@ -103,7 +103,8 @@ export const FILTRI_VUOTI: Filtri = {
   campi: {},
 };
 
-export const UTENTE_CORRENTE = 'Ufficio Cimiteri';
+/** Nome con cui entra l'Amministratore. */
+export const UFFICIO = 'Ufficio Cimiteri';
 
 export const PRIORITA = [
   { id: 'bassa', label: 'Bassa', colore: '#7A8797' },

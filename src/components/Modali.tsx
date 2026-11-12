@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Camera, ClipboardCheck, Copy, Crosshair, Download, ExternalLink, Maximize2, Printer, Wrench, X } from 'lucide-react';
 import { PRIORITA } from '../config/defaults';
 import {
-  aggiornaScheda, aggiungiFoto, apriModale, creaManutenzione, creaVerifica, indiceSchede, seleziona, toast, useStore,
+  aggiornaScheda, aggiungiFoto, apriModale, creaManutenzione, creaVerifica, firmaCorrente, indiceSchede, seleziona, toast, useStore,
 } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { LatLng, Priorita, Scheda } from '../data/types';
@@ -93,7 +93,7 @@ function ModaleManutenzione({ schedaId }: { schedaId?: string }) {
     const fotoId = foto ? aggiungiFoto(foto) : undefined;
     const m = creaManutenzione({
       schedaId: scheda.id, cimiteroId: scheda.cimiteroId, categoria, priorita, descrizione: descrizione.trim(), fonte: 'Ufficio',
-      segnalataDa: 'ufficio', fotoProblemaId: fotoId,
+      segnalataDa: firmaCorrente(), fotoProblemaId: fotoId,
     });
     toast(`Segnalazione ${m.id} registrata`);
     chiudi();

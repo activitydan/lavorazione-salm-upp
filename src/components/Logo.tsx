@@ -1,28 +1,32 @@
 import { markDataUrl } from '../lib/brand';
 
+export const FIRMA = 'Una soluzione DAT | HYA Group';
+
 export function Mark({ size = 42, variante = 'chiaro' }: { size?: number; variante?: 'chiaro' | 'scuro' }) {
   return <img className="mark" src={markDataUrl(variante)} width={size} height={Math.round((size * 96) / 116)} alt="" />;
 }
 
-/** corto: solo "REST IN GPS" sotto il nome, come nel menu laterale. */
-export function Wordmark({ dark, small, corto }: { dark?: boolean; small?: boolean; corto?: boolean }) {
+/** firma: aggiunge "Una soluzione DAT | HYA Group" sotto il nome (schermata di caricamento e ingresso). */
+export function Wordmark({ dark, small, firma }: { dark?: boolean; small?: boolean; firma?: boolean }) {
   return (
     <span className={`wordmark ${dark ? 'wordmark--dark' : ''}`}>
       <span className="wordmark__name" style={small ? { fontSize: 19 } : undefined}>
-        SALM-<span className="wordmark__up">APP</span>
+        Cimi<span className="wordmark__up">Tera</span>
       </span>
-      <span className="wordmark__sub">
-        {!corto && 'POWERED BY '}<b>REST IN</b> <i>GPS</i>
-      </span>
+      {firma && (
+        <span className="wordmark__sub">
+          UNA SOLUZIONE <b>DAT</b> | <i>HYA GROUP</i>
+        </span>
+      )}
     </span>
   );
 }
 
-export function Logo({ dark, size = 42, corto }: { dark?: boolean; size?: number; corto?: boolean }) {
+export function Logo({ dark, size = 42, firma }: { dark?: boolean; size?: number; firma?: boolean }) {
   return (
-    <span className="row" style={{ gap: 10 }} aria-label="SALM-APP, powered by REST IN GPS">
+    <span className="row" style={{ gap: 10 }} aria-label="CimiTera">
       <Mark size={size} variante={dark ? 'scuro' : 'chiaro'} />
-      <Wordmark dark={dark} corto={corto} />
+      <Wordmark dark={dark} firma={firma} />
     </span>
   );
 }

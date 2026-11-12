@@ -83,7 +83,7 @@ export function anniTra(daISO: string, aISO: string): number {
   return anni;
 }
 
-/** "deceduto da 14 anni" — elaborazione automatica prevista da REST IN GPS. */
+/** "deceduto da 14 anni" — elaborazione automatica. */
 export function decedutoDa(d: Defunto, oggi = oggiISO()): string | null {
   if (!d.dataMorte) return null;
   const anni = anniTra(d.dataMorte, oggi);

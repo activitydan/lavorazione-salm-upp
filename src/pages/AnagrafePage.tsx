@@ -20,7 +20,6 @@ export function AnagrafePage() {
       <div className="page-head">
         <div className="page-head__title">
           <h1>Anagrafe</h1>
-          <p>Defunti registrati durante il censimento e intestatari delle concessioni.</p>
         </div>
       </div>
       <Tabs
@@ -56,7 +55,7 @@ function Defunti({ schede }: { schede: Scheda[] }) {
   const p = Math.min(pagina, pagine - 1);
   const righe = lista.slice(p * PER_PAGINA, (p + 1) * PER_PAGINA);
   const esporta = () => {
-    scaricaExcel(`SALM-APP_anagrafe_${oggi}`, [{
+    scaricaExcel(`CimiTera_anagrafe_${oggi}`, [{
       nome: 'Defunti',
       righe: lista.map(({ d, s }) => ({ Cognome: d.cognome, Nome: d.nome, Sesso: d.sesso ?? '', 'Data di nascita': data(d.dataNascita), 'Data di morte': data(d.dataMorte), Età: eta(d), 'ID scheda': s.id, Viale: s.viale })),
     }]);

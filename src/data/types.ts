@@ -1,4 +1,4 @@
-// Modello dati di SALM-APP.
+// Modello dati di CimiTera.
 // I dati del censimento (schede) sono separati dalla configurazione della scheda (ConfigScheda):
 // flag, menu a tendina e campi si cambiano dalla configurazione, senza toccare il codice.
 
@@ -306,3 +306,15 @@ export interface Filtri {
 }
 
 export type StileMappa = 'satellite' | 'planimetria';
+
+// ---------------------------------------------------------------------------
+// Ruoli e ingresso (demo: senza password)
+// ---------------------------------------------------------------------------
+
+export type Ruolo = 'cittadino' | 'operatore' | 'amministratore';
+
+/** Chi è entrato: l'Operatore sceglie il proprio nome, l'Amministratore entra come "Ufficio Cimiteri". */
+export interface Sessione {
+  ruolo: Ruolo;
+  operatoreId?: string;
+}
