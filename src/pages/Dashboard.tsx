@@ -37,7 +37,7 @@ export function Dashboard() {
   const defunti = useMemo(() => schede.reduce((t, s) => t + s.defunti.length, 0), [schede]);
   const recenti = useMemo(() => [...schede].sort((a, b) => b.rilevatoIl.localeCompare(a.rilevatoIl)).slice(0, 5), [schede]);
   const settimana = useMemo(() => schede.filter((s) => s.rilevatoIl.slice(0, 10) >= aggiungiGiorni(oggi, -7)).length, [schede, oggi]);
-  const urgenti = manutenzioni.filter((m) => m.stato !== 'risolta' && m.priorita === 'urgente').length;
+  const urgenti = manutenzioni.filter((m) => m.stato !== 'risolta' && m.stato !== 'annullata' && m.priorita === 'urgente').length;
   const letti = db.alertLetti;
 
   if (!cimitero) return null;
@@ -85,7 +85,7 @@ export function Dashboard() {
 
         <Widget titolo="Alert" icona={<Bell size={16} />} colore="#D9473F" className="bento__alert">
           <div className="alert-list">
-            {alert.length === 0 && <p className="small muted">Nessun alert attivo.</p>}
+            {alert.length === 0 && <p className="small muted">Nessun alert per te.</p>}
             {alert.map((a) => (
               <a key={a.id} className={`alert-item ${letti.includes(a.id) ? 'is-read' : ''}`} href={a.link ? href(a.link) : undefined} onClick={() => segnaLetti([a.id])}>
                 <span className={`alert-dot alert-dot--${a.livello}`} />
@@ -119,8 +119,8 @@ export function Dashboard() {
         <Widget titolo="Manutenzione" icona={<Wrench size={16} />} link="/manutenzioni" colore="#E07B22" className="bento__manut">
           <div className="mini-kpis">
             <a href={href('/manutenzioni?stato=aperta')}><b>{manutenzioni.filter((m) => m.stato === 'aperta').length}</b><span>aperte</span></a>
-            <a href={href('/manutenzioni?stato=pianificata')}><b>{manutenzioni.filter((m) => m.stato === 'pianificata').length}</b><span>pianificate</span></a>
-            <a href={href('/manutenzioni?stato=in_corso')}><b>{manutenzioni.filter((m) => m.stato === 'in_corso').length}</b><span>in corso</span></a>
+            <a href={href('/manutenzioni?stato=programmata')}><b>{manutenzioni.filter((m) => m.stato === 'programmata').length}</b><span>programmate</span></a>
+            <a href={href('/manutenzioni?stato=risolta')}><b>{manutenzioni.filter((m) => m.stato === 'risolta').length}</b><span>risolte</span></a>
             <a href={href('/manutenzioni')} className="is-danger"><b>{urgenti}</b><span>urgenti</span></a>
           </div>
         </Widget>

@@ -90,7 +90,7 @@ function ModaleManutenzione({ schedaId }: { schedaId?: string }) {
     if (!descrizione.trim()) return toast('Descrivi il problema', 'errore');
     const fotoId = foto ? aggiungiFoto(foto) : undefined;
     const m = creaManutenzione({
-      schedaId: scheda.id, cimiteroId: scheda.cimiteroId, categoria, priorita, descrizione: descrizione.trim(), fonte: 'Ufficio',
+      schedaId: scheda.id, cimiteroId: scheda.cimiteroId, categoria, priorita, descrizione: descrizione.trim(),
       segnalataDa: firmaCorrente(), fotoProblemaId: fotoId,
     });
     toast(`Segnalazione ${m.id} registrata`);

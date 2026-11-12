@@ -4,7 +4,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { esci, setUi, useStore } from '../data/store';
-import { useDatiCimitero, useUtente } from '../data/selectors';
+import { useUtente } from '../data/selectors';
 import type { Ruolo } from '../data/types';
 import { useTelefono } from '../lib/schermo';
 import { href, useRotta } from '../router';
@@ -98,8 +98,9 @@ export function Sidebar() {
   const telefono = useTelefono();
   const utente = useUtente();
   const aperta = useStore((s) => s.ui.menuMobile);
-  const { manutenzioni } = useDatiCimitero();
-  const aperte = manutenzioni.filter((m) => m.stato === 'aperta').length;
+  const manutenzioni = useStore((s) => s.db.manutenzioni);
+  // accanto a Manutenzioni: le mie, cioè quelle programmate e assegnate a me
+  const aperte = utente.operatoreId ? manutenzioni.filter((m) => m.stato === 'programmata' && m.operatoriIds?.includes(utente.operatoreId!)).length : 0;
   const chiudi = () => setUi({ menuMobile: false });
 
   const voci = (telefono ? VOCI_TELEFONO : VOCI_COMPUTER).filter((v) => !v.ruoli || v.ruoli.includes(utente.ruolo));
@@ -129,8 +130,8 @@ export function Sidebar() {
                   href={href(v.path)}
                   className={`nav-item ${attivo(v) ? 'is-active' : ''}`}
                   onClick={chiudi}
-                  title={conteggio ? `${v.label}: ${conteggio} aperte` : v.label}
-                  aria-label={conteggio ? `${v.label}, ${conteggio} aperte` : undefined}
+                  title={conteggio ? `${v.label}: ${conteggio} assegnate a te` : v.label}
+                  aria-label={conteggio ? `${v.label}, ${conteggio} assegnate a te` : undefined}
                 >
                   {/* numero sull'icona, come sulla campanella degli alert */}
                   <i className="nav-item__ico">

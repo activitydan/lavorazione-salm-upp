@@ -70,12 +70,6 @@ export const CONFIG_DEFAULT: ConfigScheda = {
     { id: 'cedimento', label: 'Cedimento strutturale' },
     { id: 'pulizia', label: 'Pulizia straordinaria' },
   ],
-  squadre: [
-    { id: 'squadra_edile', label: 'Squadra edile' },
-    { id: 'squadra_verde', label: 'Squadra verde' },
-    { id: 'elettricista', label: 'Elettricista lampade votive' },
-    { id: 'ditta_esterna', label: 'Ditta esterna' },
-  ],
   motiviVerifica: [
     { id: 'lapide_illeggibile', label: 'Lapide illeggibile' },
     { id: 'dati_incompleti', label: 'Dati anagrafici incompleti' },
@@ -112,10 +106,12 @@ export const PRIORITA = [
 
 export const STATI_MANUTENZIONE = [
   { id: 'aperta', label: 'Aperta', colore: '#D9473F' },
-  { id: 'pianificata', label: 'Pianificata', colore: '#2F6FB3' },
-  { id: 'in_corso', label: 'In corso', colore: '#E07B22' },
+  { id: 'programmata', label: 'Programmata', colore: '#2F6FB3' },
   { id: 'risolta', label: 'Risolta', colore: '#3F9A3C' },
+  { id: 'annullata', label: 'Annullata', colore: '#7A8797' },
 ] as const;
+
+export const MOTIVI_ANNULLAMENTO = ['Doppione', 'Segnalazione sbagliata'] as const;
 
 export const TIPI_CAMPO: { id: import('../data/types').TipoCampo; label: string; descrizione: string }[] = [
   { id: 'flag', label: 'Flag (sì / no)', descrizione: 'Un interruttore, es. Lampada votiva' },

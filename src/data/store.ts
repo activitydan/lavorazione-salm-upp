@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { CONFIG_DEFAULT, FILTRI_VUOTI, UFFICIO } from '../config/defaults';
-import { adessoISO, oggiISO, slug } from '../lib/format';
+import { adessoISO, aggiungiGiorni, data, giorniTra, oggiISO, slug } from '../lib/format';
 import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
 import type {
-  AlertManuale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione,
+  AlertPersonale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione,
   Operatore, Quadrante, Scheda, Sessione, StatoDef, StileMappa, Struttura, TipologiaDef, Verifica,
 } from './types';
 
@@ -47,7 +47,7 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 2;
+export const VERSIONE_DATI = 3;
 
 const DB_VUOTO: Database = {
   versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
@@ -93,10 +93,29 @@ const setS = useStore.setState;
 // Avvio e persistenza
 // ---------------------------------------------------------------------------
 
+/** Sposta in avanti tutte le date dei dati dimostrativi (non nascita e morte), così "oggi" resta dentro i dati. */
+function spostaDate(v: unknown, giorni: number, chiave = ''): unknown {
+  if (typeof v === 'string') {
+    if (chiave === 'dataNascita' || chiave === 'dataMorte') return v;
+    const m = /^(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}(?::\d{2})?)?$/.exec(v);
+    return m ? aggiungiGiorni(m[1], giorni) + (m[2] ?? '') : v;
+  }
+  if (Array.isArray(v)) return v.map((x) => spostaDate(x, giorni, chiave));
+  if (v && typeof v === 'object') {
+    const o: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v)) o[k] = spostaDate(x, giorni, k);
+    return o;
+  }
+  return v;
+}
+
 async function caricaDemo(): Promise<Database> {
   const r = await fetch('./demo/salmup-demo.json', { cache: 'no-cache' });
   if (!r.ok) throw new Error(`Dataset dimostrativo non trovato (${r.status})`);
-  const d = await r.json();
+  let d = await r.json();
+  // a settimane intere, per non spostare i giorni della settimana
+  const giorni = d.generatoIl ? Math.floor(giorniTra(d.generatoIl, oggiISO()) / 7) * 7 : 0;
+  if (giorni > 0) d = spostaDate(d, giorni);
   return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], esportazioni: [] };
 }
 
@@ -329,8 +348,42 @@ export function aggiungiFoto(dataUrl: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Manutenzioni
+// Alert personali (campanella)
 // ---------------------------------------------------------------------------
+
+let alertN = 0;
+
+/**
+ * Manda un alert nella campanella di ogni destinatario (id dell'operatore oppure 'ufficio'),
+ * tranne a chi sta facendo l'azione: nessuno riceve alert generali.
+ */
+export function avvisa(
+  destinatari: (string | undefined | null)[],
+  a: { livello?: AlertPersonale['livello']; titolo: string; messaggio: string; link?: string },
+) {
+  const io = firmaCorrente();
+  const chi = Array.from(new Set(destinatari.filter((d): d is string => !!d && d !== io)));
+  if (!chi.length) return;
+  const ora = adessoISO();
+  const nuovi: AlertPersonale[] = chi.map((destinatario) => ({
+    id: `AL-${Date.now().toString(36)}-${++alertN}`, destinatario, data: ora, livello: a.livello ?? 'info', titolo: a.titolo, messaggio: a.messaggio, link: a.link,
+  }));
+  setDb((db) => ({ alert: [...nuovi, ...db.alert].slice(0, 500) }));
+}
+
+export function segnaLetti(ids: string[]) {
+  setDb((db) => ({ alertLetti: Array.from(new Set([...db.alertLetti, ...ids])) }));
+}
+
+// ---------------------------------------------------------------------------
+// Manutenzioni: aperta -> programmata -> risolta, oppure annullata
+// ---------------------------------------------------------------------------
+
+const CHIUSE: Manutenzione['stato'][] = ['risolta', 'annullata'];
+
+function nomeCategoria(id: string): string {
+  return S().config.categorieManutenzione.find((c) => c.id === id)?.label ?? id;
+}
 
 export function creaManutenzione(m: Omit<Manutenzione, 'id' | 'segnalataIl' | 'stato'> & { stato?: Manutenzione['stato'] }) {
   const anno = new Date().getFullYear();
@@ -346,17 +399,47 @@ export function aggiornaManutenzione(id: string, patch: Partial<Manutenzione>) {
   setDb((db) => ({ manutenzioni: db.manutenzioni.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
 }
 
+/** Programma (o riprogramma) una manutenzione: una data e uno o più operatori. */
+export function programmaManutenzione(id: string, dataProgrammata: string, operatoriIds: string[]) {
+  const m = S().db.manutenzioni.find((x) => x.id === id);
+  if (!m || !operatoriIds.length) return;
+  const prima = m.operatoriIds ?? [];
+  const link = `/manutenzioni?id=${id}`;
+  const cosa = `${nomeCategoria(m.categoria)} · ${m.schedaId}`;
+  aggiornaManutenzione(id, { stato: 'programmata', dataProgrammata, operatoriIds });
+  avvisa(operatoriIds.filter((o) => !prima.includes(o)), { titolo: 'Manutenzione assegnata a te', messaggio: `${cosa}, il ${data(dataProgrammata)}`, link });
+  avvisa(prima.filter((o) => !operatoriIds.includes(o)), { titolo: 'Assegnazione tolta', messaggio: cosa, link });
+  if (m.dataProgrammata && m.dataProgrammata !== dataProgrammata)
+    avvisa(operatoriIds.filter((o) => prima.includes(o)), { livello: 'attenzione', titolo: 'Data della manutenzione cambiata', messaggio: `${cosa}: ora il ${data(dataProgrammata)}`, link });
+}
+
+/** Se la scheda non ha altre manutenzioni da fare, torna occupata o libera. */
+function liberaScheda(m: Manutenzione, azione: string, fotoId?: string) {
+  const altre = S().db.manutenzioni.some((x) => x.schedaId === m.schedaId && x.id !== m.id && !CHIUSE.includes(x.stato));
+  const s = schedaPerId(m.schedaId);
+  if (!s) return;
+  const patch: Partial<Scheda> = fotoId ? { fotoId } : {};
+  if (s.stato === 'da_manutenzionare' && !altre) patch.stato = s.defunti.length || s.strutturaId ? 'occupato' : 'libero';
+  aggiornaScheda(s.id, patch, azione);
+}
+
+export function annullaManutenzione(id: string, motivo: string) {
+  const m = S().db.manutenzioni.find((x) => x.id === id);
+  if (!m) return;
+  aggiornaManutenzione(id, { stato: 'annullata', annullataIl: oggiISO(), motivoAnnullamento: motivo });
+  liberaScheda(m, `Manutenzione ${id} annullata: ${motivo}`);
+  avvisa([...(m.operatoriIds ?? []), m.segnalataDa], {
+    livello: 'attenzione', titolo: 'Manutenzione annullata', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId} · ${motivo}`, link: `/manutenzioni?id=${id}`,
+  });
+}
+
+/** Per risolvere serve la foto, che diventa la foto della scheda. */
 export function risolviManutenzione(id: string, fotoId: string, note: string) {
   const m = S().db.manutenzioni.find((x) => x.id === id);
   if (!m) return;
   aggiornaManutenzione(id, { stato: 'risolta', risoltaIl: oggiISO(), fotoRisoluzione: fotoId, noteRisoluzione: note });
-  const altreAperte = S().db.manutenzioni.some((x) => x.schedaId === m.schedaId && x.id !== id && x.stato !== 'risolta');
-  const s = schedaPerId(m.schedaId);
-  if (s && s.stato === 'da_manutenzionare' && !altreAperte) {
-    aggiornaScheda(s.id, { stato: s.defunti.length || s.strutturaId ? 'occupato' : 'libero', fotoId }, `Manutenzione ${id} risolta, foto aggiornata`);
-  } else if (s) {
-    aggiornaScheda(s.id, { fotoId }, `Manutenzione ${id} risolta, foto aggiornata`);
-  }
+  liberaScheda(m, `Manutenzione ${id} risolta, foto aggiornata`, fotoId);
+  avvisa([m.segnalataDa], { titolo: 'Manutenzione risolta', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId}`, link: `/manutenzioni?id=${id}` });
 }
 
 // ---------------------------------------------------------------------------
@@ -369,6 +452,7 @@ export function creaVerifica(v: Omit<Verifica, 'id' | 'assegnataIl' | 'stato'>, 
   setDb((db) => ({ verifiche: [...db.verifiche, nuova] }));
   const op = S().db.operatori.find((o) => o.id === v.operatoreId);
   aggiornaScheda(v.schedaId, segnaDaVerificare ? { stato: 'da_verificare' } : {}, `Verifica ${nuova.id} assegnata a ${op?.nome ?? 'operatore'}`);
+  avvisa([v.operatoreId], { titolo: 'Verifica assegnata a te', messaggio: `${v.schedaId} · entro il ${data(v.scadenza)}`, link: '/censimento?tab=verifiche' });
   return nuova;
 }
 
@@ -379,26 +463,6 @@ export function completaVerifica(id: string, esito: NonNullable<Verifica['esito'
     verifiche: db.verifiche.map((x) => (x.id === id ? { ...x, stato: 'completata', esito, noteEsito, completataIl: oggiISO() } : x)),
   }));
   aggiornaScheda(v.schedaId, nuovoStato ? { stato: nuovoStato } : {}, `Verifica ${id} completata: ${esito}`);
-}
-
-// ---------------------------------------------------------------------------
-// Alert
-// ---------------------------------------------------------------------------
-
-export function creaAlert(a: Omit<AlertManuale, 'id' | 'creatoDa'>) {
-  const n = S().db.alert.length + 1;
-  const nuovo: AlertManuale = { ...a, id: `AL-${String(n).padStart(4, '0')}-${Date.now().toString(36).slice(-3)}`, creatoDa: utenteCorrente() };
-  setDb((db) => ({ alert: [nuovo, ...db.alert] }));
-  toast('Alert creato');
-  return nuovo;
-}
-
-export function eliminaAlert(id: string) {
-  setDb((db) => ({ alert: db.alert.filter((a) => a.id !== id) }));
-}
-
-export function segnaLetti(ids: string[]) {
-  setDb((db) => ({ alertLetti: Array.from(new Set([...db.alertLetti, ...ids])) }));
 }
 
 // ---------------------------------------------------------------------------
@@ -625,7 +689,7 @@ export function riassegnaTipologia(da: string, a: string) {
   setDb((db) => ({ schede: db.schede.map((s) => (s.tipologia === da ? { ...s, tipologia: a } : s)) }));
 }
 
-export function salvaListaConfig(chiave: 'categorieManutenzione' | 'squadre' | 'motiviVerifica', lista: Opzione[], descrizione: string) {
+export function salvaListaConfig(chiave: 'categorieManutenzione' | 'motiviVerifica', lista: Opzione[], descrizione: string) {
   setConfig(() => ({ [chiave]: lista }) as Partial<ConfigScheda>, descrizione);
 }
 

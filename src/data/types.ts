@@ -139,7 +139,7 @@ export interface Scheda {
 }
 
 export type Priorita = 'bassa' | 'media' | 'alta' | 'urgente';
-export type StatoManutenzione = 'aperta' | 'pianificata' | 'in_corso' | 'risolta';
+export type StatoManutenzione = 'aperta' | 'programmata' | 'risolta' | 'annullata';
 
 export interface Manutenzione {
   id: string;
@@ -149,15 +149,18 @@ export interface Manutenzione {
   priorita: Priorita;
   stato: StatoManutenzione;
   descrizione: string;
-  fonte: string;
+  /** chi l'ha registrata: id dell'operatore oppure 'ufficio' */
   segnalataDa: string;
   segnalataIl: string;
-  squadra?: string;
-  dataPianificata?: string;
+  /** operatori assegnati quando si programma: almeno uno */
+  operatoriIds?: string[];
+  dataProgrammata?: string;
   risoltaIl?: string;
   noteRisoluzione?: string;
   fotoProblemaId?: string;
   fotoRisoluzione?: string; // 'demo' oppure id della foto caricata
+  annullataIl?: string;
+  motivoAnnullamento?: string;
 }
 
 export interface Verifica {
@@ -174,16 +177,16 @@ export interface Verifica {
   note?: string;
 }
 
-export interface AlertManuale {
+/** Alert della campanella: è personale, arriva solo a chi ha aperto la cosa o a chi è assegnata. */
+export interface AlertPersonale {
   id: string;
-  tipo: string;
-  priorita: Priorita;
+  /** id dell'operatore oppure 'ufficio' (l'Amministratore) */
+  destinatario: string;
+  data: string;
+  livello: 'urgente' | 'attenzione' | 'info';
   titolo: string;
   messaggio: string;
-  data: string;
-  schedaId?: string;
-  manutenzioneId?: string;
-  creatoDa: string;
+  link?: string;
 }
 
 export interface VoceEsportazione {
@@ -204,7 +207,7 @@ export interface Database {
   schede: Scheda[];
   manutenzioni: Manutenzione[];
   verifiche: Verifica[];
-  alert: AlertManuale[];
+  alert: AlertPersonale[];
   alertLetti: string[];
   esportazioni: VoceEsportazione[];
 }
@@ -276,7 +279,6 @@ export interface ConfigScheda {
   sezioni: SezioneDef[];
   campi: CampoDef[];
   categorieManutenzione: Opzione[];
-  squadre: Opzione[];
   motiviVerifica: Opzione[];
   registro: VoceRegistro[];
 }

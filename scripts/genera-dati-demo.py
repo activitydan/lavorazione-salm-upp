@@ -695,13 +695,10 @@ DESCR = {
     "lapide_danneggiata": ["Lastra di marmo incrinata nell'angolo inferiore", "Lapide con frattura verticale, rischio distacco", "Cornice della lapide scheggiata"],
     "infiltrazioni": ["Macchie di umidità e infiltrazioni dalla copertura", "Efflorescenze saline sulla parete, probabile infiltrazione", "Gocciolamento dal solaio dopo le ultime piogge"],
     "lampada_guasta": ["Lampada votiva spenta, possibile guasto al portalampada", "Lampada votiva intermittente", "Cavo di alimentazione della lampada scoperto"],
-    "vegetazione": ["Vegetazione infestante sul manufatto", "Radici che sollevano la pavimentazione vicina", "Erbacce tra le lastre del basamento"],
-    "cedimento": ["Cedimento del basamento lato viale", "Fessurazione strutturale da monitorare", "Avvallamento del terreno davanti al manufatto"],
+    "vegetazione": ["Vegetazione infestante sulla postazione", "Radici che sollevano la pavimentazione vicina", "Erbacce tra le lastre del basamento"],
+    "cedimento": ["Cedimento del basamento lato viale", "Fessurazione strutturale da monitorare", "Avvallamento del terreno davanti alla postazione"],
     "pulizia": ["Pulizia straordinaria del prospetto", "Rimozione depositi e guano dalla copertura", "Pulizia dei vasi e del ripiano"],
 }
-SQUADRA_PER = {"lapide_danneggiata": "squadra_edile", "infiltrazioni": "ditta_esterna", "lampada_guasta": "elettricista",
-               "vegetazione": "squadra_verde", "cedimento": "ditta_esterna", "pulizia": "squadra_verde"}
-
 manutenzioni = []
 man_seq = 0
 
@@ -715,32 +712,50 @@ def nuova_manutenzione(s, stato, data_segn):
     prio = scegli({"bassa": 22, "media": 42, "alta": 26, "urgente": 10})
     if cat == "cedimento":
         prio = rng.choice(["alta", "urgente"])
+    # chi l'ha registrata: l'operatore del rilievo oppure l'ufficio (anche quando telefona un cittadino)
+    segnalata_da = s["rilevatoDa"] if rng.random() < 0.7 else "ufficio"
     mm = dict(id=f"MAN-2026-{man_seq:04d}", schedaId=s["id"], cimiteroId="ragusa-centro", categoria=cat, priorita=prio, stato=stato,
-              descrizione=rng.choice(DESCR[cat]), fonte=scegli({"App rilievo": 70, "Segnalazione cittadino": 18, "Ufficio": 12}),
-              segnalataDa=s["rilevatoDa"], segnalataIl=data_segn.isoformat())
-    if stato in ("pianificata", "in_corso", "risolta"):
-        mm["squadra"] = SQUADRA_PER[cat]
-    if stato in ("pianificata", "in_corso"):
-        mm["dataPianificata"] = (OGGI + dt.timedelta(days=rng.randint(-3 if stato == "in_corso" else 0, 24 if stato == "pianificata" else 2))).isoformat()
+              descrizione=rng.choice(DESCR[cat]), segnalataDa=segnalata_da, segnalataIl=data_segn.isoformat())
+    if stato in ("programmata", "risolta"):
+        mm["operatoriIds"] = rng.sample(OP_IDS, rng.choice([1, 1, 2]))
+    if stato == "programmata":
+        mm["dataProgrammata"] = (OGGI + dt.timedelta(days=rng.randint(0, 24))).isoformat()
     if stato == "risolta":
         risolta = min(OGGI - dt.timedelta(days=1), data_segn + dt.timedelta(days=rng.randint(3, 30)))
-        mm["dataPianificata"] = (risolta - dt.timedelta(days=rng.randint(0, 2))).isoformat()
+        mm["dataProgrammata"] = (risolta - dt.timedelta(days=rng.randint(0, 2))).isoformat()
         mm["risoltaIl"] = risolta.isoformat()
-        mm["noteRisoluzione"] = rng.choice(["Intervento completato, manufatto ripristinato", "Sostituito il componente danneggiato", "Pulizia e messa in sicurezza eseguite", "Ripristino eseguito dalla squadra"])
+        mm["noteRisoluzione"] = rng.choice(["Intervento completato, postazione ripristinata", "Sostituito il componente danneggiato", "Pulizia e messa in sicurezza eseguite", "Ripristino eseguito"])
         mm["fotoRisoluzione"] = "demo"
+    if stato == "annullata":
+        mm["annullataIl"] = min(OGGI, data_segn + dt.timedelta(days=rng.randint(1, 9))).isoformat()
+        mm["motivoAnnullamento"] = rng.choice(["Doppione", "Segnalazione sbagliata"])
     manutenzioni.append(mm)
     return mm
 
 
+OP_IDS = [o["id"] for o in OPERATORI]
 for s in schede:
     if s["stato"] == "da_manutenzionare":
-        st = scegli({"aperta": 50, "pianificata": 35, "in_corso": 15})
+        st = scegli({"aperta": 48, "programmata": 52})
         rilevato = dt.date.fromisoformat(s["rilevatoIl"][:10])
         segn = rilevato if st == "aperta" and rng.random() < 0.6 else min(OGGI, rilevato + dt.timedelta(days=rng.randint(0, 20)))
         nuova_manutenzione(s, st, segn)
-for s in rng.sample([s for s in schede if s["stato"] == "occupato" and s["rilevatoIl"] < "2026-09-01"], 28):
+vecchie = [s for s in schede if s["stato"] == "occupato" and s["rilevatoIl"] < "2026-09-01"]
+for s in rng.sample(vecchie, 28):
     rilevato = dt.date.fromisoformat(s["rilevatoIl"][:10])
     nuova_manutenzione(s, "risolta", rilevato + dt.timedelta(days=rng.randint(0, 10)))
+for s in rng.sample(vecchie, 5):
+    rilevato = dt.date.fromisoformat(s["rilevatoIl"][:10])
+    nuova_manutenzione(s, "annullata", rilevato + dt.timedelta(days=rng.randint(0, 10)))
+# ogni operatore ha almeno 3 manutenzioni programmate; qualcuna oggi e domani, per gli alert della campanella
+programmate = [mm for mm in manutenzioni if mm["stato"] == "programmata"]
+for i, oid in enumerate(OP_IDS):
+    sue = [mm for mm in programmate if oid in mm["operatoriIds"]]
+    for mm in rng.sample([x for x in programmate if oid not in x["operatoriIds"]], max(0, 3 - len(sue))):
+        mm["operatoriIds"].append(oid)
+    sue = [mm for mm in programmate if oid in mm["operatoriIds"]]
+    sue[0]["dataProgrammata"] = OGGI.isoformat()
+    sue[1]["dataProgrammata"] = (OGGI + dt.timedelta(days=1)).isoformat()
 manutenzioni.sort(key=lambda x: x["segnalataIl"])
 
 MOTIVI = {"lapide_illeggibile": 30, "dati_incompleti": 25, "gps_da_confermare": 20, "foto_non_nitida": 10, "discordanza_registro": 15}
@@ -763,14 +778,24 @@ for s in rng.sample([s for s in schede if s["stato"] == "occupato" and s["rileva
                           noteEsito=rng.choice(["Dati confermati con il registro", "Corretta la data di morte", "Corretto il viale di appartenenza", "Posizione GPS aggiustata"])))
 verifiche.sort(key=lambda v: v["assegnataIl"])
 
-col_ovest = next(s for s in schede if s.get("nomeManufatto") == "Colombario Ovest")
-alert = [
-    dict(id="AL-0001", tipo="manutenzione", priorita="alta", titolo="Infiltrazioni nel Colombario Ovest",
-         messaggio="Programmare l'impermeabilizzazione della copertura prima delle piogge autunnali.",
-         data="2026-10-08", schedaId=col_ovest["id"], creatoDa="Ufficio Cimiteri"),
-    dict(id="AL-0002", tipo="promemoria", priorita="media", titolo="Commemorazione dei defunti · 2 novembre",
-         messaggio="Verificare viali, accessi e lampade votive entro il 30 ottobre.", data="2026-10-10", creatoDa="Ufficio Cimiteri"),
-]
+# Alert personali: ognuno riceve solo ciò che ha aperto o che gli è assegnato
+alert = []
+def nuovo_alert(dest, titolo, messaggio, link, giorni_fa=0, livello="info"):
+    alert.append(dict(id=f"AL-{len(alert) + 1:04d}", destinatario=dest, data=f"{(OGGI - dt.timedelta(days=giorni_fa)).isoformat()}T{8 + len(alert) % 9:02d}:{(len(alert) * 7) % 60:02d}",
+                      livello=livello, titolo=titolo, messaggio=messaggio, link=link))
+
+CAT_LABEL = {"lapide_danneggiata": "Lapide danneggiata", "infiltrazioni": "Infiltrazioni d'acqua", "lampada_guasta": "Lampada votiva guasta",
+             "vegetazione": "Vegetazione infestante", "cedimento": "Cedimento strutturale", "pulizia": "Pulizia straordinaria"}
+def data_it(iso):
+    return f"{iso[8:10]}/{iso[5:7]}/{iso[0:4]}"
+for oid in OP_IDS:
+    for k, mm in enumerate([x for x in manutenzioni if x["stato"] == "programmata" and oid in x["operatoriIds"]][:3]):
+        nuovo_alert(oid, "Manutenzione assegnata a te", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']}, il {data_it(mm['dataProgrammata'])}", f"/manutenzioni?id={mm['id']}", giorni_fa=k + 1)
+for dest in OP_IDS + ["ufficio"]:
+    for k, mm in enumerate([x for x in manutenzioni if x["stato"] == "risolta" and x["segnalataDa"] == dest][-2:]):
+        nuovo_alert(dest, "Manutenzione risolta", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']}", f"/manutenzioni?id={mm['id']}", giorni_fa=k + 2)
+    for mm in [x for x in manutenzioni if x["stato"] == "annullata" and x["segnalataDa"] == dest][-1:]:
+        nuovo_alert(dest, "Manutenzione annullata", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']} · {mm['motivoAnnullamento']}", f"/manutenzioni?id={mm['id']}", giorni_fa=4, livello="attenzione")
 
 # ---------------------------------------------------------------------------
 # Uscita

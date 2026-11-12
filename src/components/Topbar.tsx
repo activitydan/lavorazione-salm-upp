@@ -5,6 +5,7 @@ import { descrizioneScheda, testoRicerca, useAlert, useCimitero, useDatiCimitero
 import type { StileMappa } from '../data/types';
 import { dataBreve, normalizza, numero } from '../lib/format';
 import { centroide } from '../lib/geo';
+import { useTelefono } from '../lib/schermo';
 import { useRotta, vai } from '../router';
 import { Seg, StatoBadge } from './ui';
 
@@ -199,13 +200,13 @@ export function CampanellaAlert({ nelMenu }: { nelMenu?: boolean }) {
       {aperto && (
         <div className="popover" style={nelMenu ? { left: 0, bottom: 44, top: 'auto', width: 380 } : { right: 0, width: 380 }}>
           <div className="row row--between" style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
-            <b>Alert</b>
+            <b>I tuoi alert</b>
             <button className="btn btn--ghost btn--xs" onClick={() => segnaLetti(alert.map((a) => a.id))} disabled={!nonLetti.length}>
               Segna tutti come letti
             </button>
           </div>
           <div style={{ maxHeight: 420, overflow: 'auto' }}>
-            {alert.length === 0 && <div className="small muted" style={{ padding: 16 }}>Nessun alert attivo.</div>}
+            {alert.length === 0 && <div className="small muted" style={{ padding: 16 }}>Nessun alert per te.</div>}
             {alert.map((a) => (
               <button key={a.id} className="popover__item alert-row" onClick={() => apri(a)} style={{ alignItems: 'flex-start', opacity: letti.includes(a.id) ? 0.6 : 1 }}>
                 <span className={`alert-dot alert-dot--${a.livello}`} />
@@ -216,11 +217,6 @@ export function CampanellaAlert({ nelMenu }: { nelMenu?: boolean }) {
                 </span>
               </button>
             ))}
-          </div>
-          <div style={{ padding: 10, borderTop: '1px solid var(--border)' }}>
-            <button className="btn btn--sm btn--block" onClick={() => { setAperto(false); vai('/?alert=1'); }}>
-              Apri il centro alert
-            </button>
           </div>
         </div>
       )}
@@ -242,6 +238,7 @@ export function SceltaStileMappa() {
 export function Topbar() {
   const rotta = useRotta();
   const home = rotta.path === '/';
+  const telefono = useTelefono();
   return (
     <header className="topbar">
       <button className="icon-btn hamburger" onClick={() => setUi({ menuMobile: true })} aria-label="Apri il menu">
@@ -255,6 +252,7 @@ export function Topbar() {
         </div>
       )}
       <div className="grow" />
+      {telefono && <CampanellaAlert />}
       {home && (
         <button className="btn btn--success topbar__new" onClick={() => vai('/rilievo')}>
           <Plus size={16} />

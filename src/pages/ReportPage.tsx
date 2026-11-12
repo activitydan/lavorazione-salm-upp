@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { BellPlus, CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon } from 'lucide-react';
+import { CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon } from 'lucide-react';
 import { Barre, Ciambella, Dot, Progress, Tabs } from '../components/ui';
-import { creaAlert, registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
+import { registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
 import { conta, descrizioneScheda, statoConcessione, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
 import type { Scheda } from '../data/types';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
@@ -95,9 +95,6 @@ function Scadenze() {
         <div className="card__head">
           <h3>{lista.length} concessioni {periodo === 'scadute' ? 'scadute' : `in scadenza entro ${periodo} ${periodo === '1' ? 'mese' : 'mesi'}`}</h3>
           <div className="row gap-4">
-            <button className="btn btn--sm" disabled={!lista.length} onClick={() => creaAlert({ tipo: 'scadenze', priorita: 'media', titolo: `${lista.length} concessioni ${periodo === 'scadute' ? 'scadute' : 'in scadenza'}`, messaggio: 'Preparare le comunicazioni agli intestatari per il rinnovo.', data: oggi })}>
-              <BellPlus size={14} />Crea alert
-            </button>
             <button className="btn btn--sm btn--primary" onClick={() => { scaricaExcel(`CimiTera_scadenze_${oggi}`, [{ nome: 'Scadenze', righe: righeScadenze(lista, { config, db }) }]); registraEsportazione('Excel scadenze', lista.length); }}>
               <FileSpreadsheet size={14} />Excel
             </button>

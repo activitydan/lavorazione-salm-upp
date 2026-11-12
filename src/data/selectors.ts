@@ -271,7 +271,7 @@ export function occupazioneStruttura(schede: Scheda[], strutturaId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Alert: calcolati dai dati + creati a mano
+// Alert della campanella: personali
 // ---------------------------------------------------------------------------
 
 export interface AlertItem {
@@ -281,58 +281,42 @@ export interface AlertItem {
   messaggio: string;
   data: string;
   link?: string;
-  schedaId?: string;
-  manuale?: boolean;
 }
 
-export function calcolaAlert(db: Database, config: ConfigScheda, cimiteroId: string, oggi = oggiISO()): AlertItem[] {
-  const schede = schedeDelCimitero(db.schede, cimiteroId);
-  const out: AlertItem[] = [];
-
-  const scadute = schede.filter((s) => statoConcessione(s, oggi)?.stato === 'scaduta');
-  if (scadute.length)
-    out.push({ id: `conc-scadute-${scadute.length}`, livello: 'urgente', titolo: `${scadute.length} concessioni scadute`, messaggio: 'Da rinnovare o da avviare la procedura di decadenza.', data: oggi, link: '/report?vista=scadenze&periodo=scadute' });
-  const entro30 = schede.filter((s) => {
-    const c = statoConcessione(s, oggi);
-    return c?.stato === 'in_scadenza' && c.giorni <= 30;
-  });
-  if (entro30.length)
-    out.push({ id: `conc-30-${entro30.length}`, livello: 'attenzione', titolo: `${entro30.length} concessioni scadono entro 30 giorni`, messaggio: 'Avvisare gli intestatari per il rinnovo.', data: oggi, link: '/report?vista=scadenze&periodo=1' });
-
-  const manut = db.manutenzioni.filter((m) => m.cimiteroId === cimiteroId && m.stato !== 'risolta');
-  for (const m of manut.filter((x) => x.priorita === 'urgente'))
-    out.push({ id: `man-urg-${m.id}`, livello: 'urgente', titolo: `Manutenzione urgente · ${labelLista(config.categorieManutenzione, m.categoria)}`, messaggio: `${m.schedaId}: ${m.descrizione}`, data: m.segnalataIl, link: `/manutenzioni?id=${m.id}`, schedaId: m.schedaId });
+/**
+ * Gli alert di una persona (id dell'operatore oppure 'ufficio'): quelli che ha ricevuto,
+ * più quelli calcolati su ciò che le è assegnato. Nessuno riceve alert generali.
+ */
+export function alertPersonali(db: Database, config: ConfigScheda, chi: string, oggi = oggiISO()): AlertItem[] {
+  const out: AlertItem[] = db.alert.filter((a) => a.destinatario === chi).map((a) => ({ id: a.id, livello: a.livello, titolo: a.titolo, messaggio: a.messaggio, data: a.data, link: a.link }));
   const domani = aggiungiGiorni(oggi, 1);
-  for (const m of manut.filter((x) => x.dataPianificata && x.dataPianificata >= oggi && x.dataPianificata <= domani))
-    out.push({ id: `man-pian-${m.id}-${m.dataPianificata}`, livello: 'info', titolo: `Intervento ${m.dataPianificata === oggi ? 'oggi' : 'domani'} · ${labelLista(config.squadre, m.squadra)}`, messaggio: `${labelLista(config.categorieManutenzione, m.categoria)} su ${m.schedaId}`, data: m.dataPianificata!, link: `/manutenzioni?id=${m.id}`, schedaId: m.schedaId });
-
-  const idsCim = new Set(schede.map((s) => s.id));
-  const verScadute = db.verifiche.filter((v) => v.stato === 'aperta' && v.scadenza < oggi && idsCim.has(v.schedaId));
-  if (verScadute.length)
-    out.push({ id: `ver-scadute-${verScadute.length}`, livello: 'attenzione', titolo: `${verScadute.length} verifiche oltre la scadenza`, messaggio: 'Controlli assegnati e non ancora chiusi.', data: oggi, link: '/censimento?tab=verifiche' });
-
-  const morosi = schede.filter((s) => s.campi.stato_pagamenti === 'moroso' && s.campi.lampada_votiva === true);
-  if (morosi.length)
-    out.push({ id: `morosi-${morosi.length}`, livello: 'info', titolo: `${morosi.length} utenze lampade votive morose`, messaggio: 'Elenco pronto per i solleciti in Report.', data: oggi, link: '/report?vista=lampade' });
-
-  for (const a of db.alert) {
-    const s = a.schedaId ? schede.find((x) => x.id === a.schedaId) : undefined;
-    if (a.schedaId && !s) continue;
+  for (const m of db.manutenzioni) {
+    if (m.stato !== 'programmata' || !m.dataProgrammata || !m.operatoriIds?.includes(chi)) continue;
+    if (m.dataProgrammata !== oggi && m.dataProgrammata !== domani) continue;
+    const eOggi = m.dataProgrammata === oggi;
     out.push({
-      id: a.id, livello: a.priorita === 'urgente' || a.priorita === 'alta' ? 'urgente' : a.priorita === 'media' ? 'attenzione' : 'info',
-      titolo: a.titolo, messaggio: a.messaggio, data: a.data, schedaId: a.schedaId, manuale: true,
-      link: a.manutenzioneId ? `/manutenzioni?id=${a.manutenzioneId}` : a.schedaId ? `/scheda/${a.schedaId}` : undefined,
+      id: `man-${m.id}-${m.dataProgrammata}-${chi}`, livello: eOggi ? 'attenzione' : 'info', titolo: `Manutenzione di ${eOggi ? 'oggi' : 'domani'}`,
+      messaggio: `${labelLista(config.categorieManutenzione, m.categoria)} · ${m.schedaId}`, data: m.dataProgrammata, link: `/manutenzioni?id=${m.id}`,
     });
   }
+  const mie = db.verifiche.filter((v) => v.stato === 'aperta' && v.operatoreId === chi);
+  const inRitardo = mie.filter((v) => v.scadenza < oggi).length;
+  const vicine = mie.filter((v) => v.scadenza === oggi || v.scadenza === domani).length;
+  if (inRitardo)
+    out.push({ id: `ver-ritardo-${chi}-${inRitardo}`, livello: 'urgente', titolo: inRitardo === 1 ? 'Una tua verifica è in ritardo' : `${inRitardo} tue verifiche sono in ritardo`, messaggio: 'Controlli assegnati a te e non ancora chiusi.', data: oggi, link: '/censimento?tab=verifiche' });
+  if (vicine)
+    out.push({ id: `ver-vicine-${chi}-${oggi}-${vicine}`, livello: 'attenzione', titolo: vicine === 1 ? 'Una tua verifica scade oggi o domani' : `${vicine} tue verifiche scadono oggi o domani`, messaggio: 'Chiudile dalla voce Verifiche.', data: oggi, link: '/censimento?tab=verifiche' });
   const peso = { urgente: 0, attenzione: 1, info: 2 };
-  return out.sort((a, b) => peso[a.livello] - peso[b.livello] || b.data.localeCompare(a.data));
+  return out.sort((a, b) => b.data.slice(0, 10).localeCompare(a.data.slice(0, 10)) || peso[a.livello] - peso[b.livello] || b.data.localeCompare(a.data));
 }
 
+/** Gli alert di chi è entrato. */
 export function useAlert(): AlertItem[] {
   const db = useStore((s) => s.db);
   const config = useStore((s) => s.config);
-  const id = useStore((s) => s.cimiteroId);
-  return useMemo(() => calcolaAlert(db, config, id), [db, config, id]);
+  const utente = useUtente();
+  const chi = utente.operatoreId ?? 'ufficio';
+  return useMemo(() => alertPersonali(db, config, chi), [db, config, chi]);
 }
 
 export function descrizioneScheda(s: Scheda): string {
@@ -342,6 +326,7 @@ export function descrizioneScheda(s: Scheda): string {
   return s.numeroPosto ? `${s.area ?? ''} · ${s.numeroPosto}`.trim() : 'Posto libero';
 }
 
+/** Le manutenzioni ancora da fare: né risolte né annullate. */
 export function manutenzioniAperte(m: Manutenzione[]): Manutenzione[] {
-  return m.filter((x) => x.stato !== 'risolta');
+  return m.filter((x) => x.stato !== 'risolta' && x.stato !== 'annullata');
 }

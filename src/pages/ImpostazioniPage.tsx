@@ -459,7 +459,7 @@ function Elenchi() {
   const config = useStore((s) => s.config);
   const db = useStore((s) => s.db);
   const cim = useCimitero();
-  const lista = (chiave: 'categorieManutenzione' | 'squadre' | 'motiviVerifica', titolo: string, testo: string, nome: string, usi: (id: string) => number) => (
+  const lista = (chiave: 'categorieManutenzione' | 'motiviVerifica', titolo: string, testo: string, nome: string, usi: (id: string) => number) => (
     <section className="card card--pad">
       <h3>{titolo}</h3>
       <p className="small muted mb-16">{testo}</p>
@@ -476,7 +476,6 @@ function Elenchi() {
   return (
     <div className="elenchi-grid">
       {lista('categorieManutenzione', 'Categorie di manutenzione', 'Tipi di problema che l’operatore può segnalare.', 'categoria', (id) => db.manutenzioni.filter((m) => m.categoria === id).length)}
-      {lista('squadre', 'Squadre di intervento', 'Chi esegue le manutenzioni in calendario.', 'squadra', (id) => db.manutenzioni.filter((m) => m.squadra === id).length)}
       {lista('motiviVerifica', 'Motivi di verifica', 'Perché una scheda viene assegnata per un controllo.', 'motivo', (id) => db.verifiche.filter((v) => v.motivo === id).length)}
       <section className="card card--pad">
         <h3>Viali · {cim.breve}</h3>

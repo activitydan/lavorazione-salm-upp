@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { campiPer, conta, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
-import type { CampoDef, ConfigScheda, Database, Scheda } from '../data/types';
+import type { CampoDef, ConfigScheda, Database, Manutenzione, Scheda } from '../data/types';
 import { anniTra, cognomeNome, data, oggiISO } from './format';
 
 export type Riga = Record<string, string | number | null>;
@@ -141,12 +141,12 @@ export function righeScadenze(schede: Scheda[], ctx: { config: ConfigScheda; db:
     });
 }
 
-export function righeManutenzioni(db: Database, config: ConfigScheda, cimiteroId: string): Riga[] {
-  return db.manutenzioni
-    .filter((m) => m.cimiteroId === cimiteroId)
-    .map((m) => ({
-      ID: m.id, Scheda: m.schedaId, Categoria: labelLista(config.categorieManutenzione, m.categoria), Priorità: m.priorita, Stato: m.stato.replace('_', ' '),
-      Descrizione: m.descrizione, Fonte: m.fonte, 'Segnalata il': data(m.segnalataIl), Squadra: labelLista(config.squadre, m.squadra),
-      Pianificata: data(m.dataPianificata), 'Risolta il': data(m.risoltaIl), 'Note risoluzione': m.noteRisoluzione ?? '',
-    }));
+export function righeManutenzioni(lista: Manutenzione[], db: Database, config: ConfigScheda): Riga[] {
+  const nome = (id?: string) => (id === 'ufficio' ? 'Ufficio Cimiteri' : db.operatori.find((o) => o.id === id)?.nome ?? '');
+  return lista.map((m) => ({
+    ID: m.id, Scheda: m.schedaId, Categoria: labelLista(config.categorieManutenzione, m.categoria), Priorità: m.priorita, Stato: m.stato,
+    Descrizione: m.descrizione, 'Segnalata da': nome(m.segnalataDa), 'Segnalata il': data(m.segnalataIl),
+    'Programmata il': data(m.dataProgrammata), Operatori: (m.operatoriIds ?? []).map(nome).join(', '),
+    'Risolta il': data(m.risoltaIl), 'Note risoluzione': m.noteRisoluzione ?? '', 'Annullata il': data(m.annullataIl), 'Motivo annullamento': m.motivoAnnullamento ?? '',
+  }));
 }
