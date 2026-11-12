@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { PRIORITA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
 import { aggiungiGiorni, aggiungiMesi, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
 import { concessioneDi, nomiConcessionari } from './concessioni';
+import { haLampada } from './utenze';
 import { loculiPerStruttura, useStore } from './store';
 import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
 
@@ -175,7 +176,7 @@ export function statoConcessione(s: Scheda, oggi = oggiISO()): StatoConcessione 
 // ---------------------------------------------------------------------------
 
 function testoScheda(s: Scheda): string {
-  const parti = [s.id, s.nomeManufatto ?? '', concessioneScheda(s)?.concessionario ?? '', String(s.campi.codice_utenza ?? '')];
+  const parti = [s.id, s.nomeManufatto ?? '', concessioneScheda(s)?.concessionario ?? ''];
   for (const d of s.defunti) parti.push(`${d.nome} ${d.cognome}`, `${d.cognome} ${d.nome}`);
   return normalizza(parti.join(' | '));
 }
@@ -201,6 +202,7 @@ export function contaFiltriAttivi(f: Filtri): number {
   n += f.viali.length ? 1 : 0;
   if (f.strutture !== 'tutte') n++;
   if (f.concessione !== 'tutte') n++;
+  if (f.lampada !== 'tutte') n++;
   for (const v of Object.values(f.campi)) if (filtroCampoAttivo(v)) n++;
   return n;
 }
@@ -247,6 +249,7 @@ export function filtraSchede(schede: Scheda[], f: Filtri, config: ConfigScheda, 
       if (f.concessione === 'in_scadenza' && sc?.stato !== 'in_scadenza') return false;
       if (f.concessione === 'scadute' && sc?.stato !== 'scaduta') return false;
     }
+    if (f.lampada !== 'tutte' && haLampada(s.id) !== (f.lampada === 'si')) return false;
     for (const c of campi) {
       const fv = f.campi[c.id];
       const v = s.campi[c.id];

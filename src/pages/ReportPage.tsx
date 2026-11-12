@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
-import { CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon } from 'lucide-react';
-import { Barre, Ciambella, Dot, Progress, Tabs } from '../components/ui';
+import { CalendarClock, Euro, FileSpreadsheet } from 'lucide-react';
+import { Barre, Ciambella, Dot, Tabs } from '../components/ui';
 import { registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
 import { concessioneScheda, conta, descrizioneScheda, statoConcessione, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
 import type { Scheda } from '../data/types';
-import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
-import { aggiungiMesi, data, euro, numero, oggiISO, percentuale } from '../lib/format';
+import { righeScadenze, scaricaExcel } from '../lib/excel';
+import { aggiungiMesi, data, numero, oggiISO, percentuale } from '../lib/format';
 import { setQuery, useRotta, vai } from '../router';
 
-type Vista = 'scadenze' | 'lampade' | 'pagamenti';
+type Vista = 'scadenze' | 'pagamenti';
 
 export function ReportPage() {
   const rotta = useRotta();
@@ -22,11 +22,9 @@ export function ReportPage() {
       </div>
       <Tabs value={vista} onChange={(v) => setQuery('vista', v)} tabs={[
         { id: 'scadenze', label: 'Scadenze concessioni', icon: <CalendarClock size={16} /> },
-        { id: 'lampade', label: 'Lampade votive', icon: <Lightbulb size={16} /> },
         { id: 'pagamenti', label: 'Pagamenti', icon: <Euro size={16} /> },
       ]} />
       {vista === 'scadenze' && <Scadenze />}
-      {vista === 'lampade' && <Lampade />}
       {vista === 'pagamenti' && <Pagamenti />}
     </div>
   );
@@ -119,56 +117,6 @@ function Scadenze() {
           { label: pag?.label ?? 'Pagamenti', v: (s) => (pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '') },
         ]} />
       </section>
-    </div>
-  );
-}
-
-function Lampade() {
-  const schede = useSchedeCimitero();
-  const config = useStore((s) => s.config);
-  const db = useStore((s) => s.db);
-  const lampade = useMemo(() => schede.filter((s) => s.campi.lampada_votiva === true), [schede]);
-  const canone = lampade.reduce((t, s) => t + (typeof s.campi.canone_lampada === 'number' ? s.campi.canone_lampada : 24), 0);
-  const morosi = lampade.filter((s) => s.campi.stato_pagamenti === 'moroso');
-  const perViale = Object.entries(conta(lampade, (s) => s.viale)).sort((a, b) => b[1] - a[1]);
-  const oggi = oggiISO();
-  return (
-    <div className="report-grid">
-      <div className="kpi-grid">
-        <div className="card kpi-card"><span className="kpi-card__icon" style={{ background: '#fff7e0', color: '#B8860B' }}><Lightbulb size={20} /></span><span className="kpi"><span className="kpi__label">Lampade attive</span><span className="kpi__value">{numero(lampade.length)}</span><span className="kpi__sub">{percentuale(lampade.length, schede.filter((s) => s.defunti.length).length)}% dei posti occupati</span></span></div>
-        <div className="card kpi-card"><span className="kpi-card__icon" style={{ background: '#eef6e7', color: '#3F9A3C' }}><Euro size={20} /></span><span className="kpi"><span className="kpi__label">Canone annuo</span><span className="kpi__value">{euro(canone)}</span></span></div>
-        <div className="card kpi-card"><span className="kpi-card__icon" style={{ background: '#fdeeed', color: '#D9473F' }}><Euro size={20} /></span><span className="kpi"><span className="kpi__label">Utenze morose</span><span className="kpi__value" style={{ color: '#D9473F' }}>{morosi.length}</span><span className="kpi__sub">{euro(morosi.reduce((t, s) => t + (typeof s.campi.canone_lampada === 'number' ? s.campi.canone_lampada : 24), 0))} da incassare</span></span></div>
-      </div>
-      <div className="callout callout--ok">
-        <FileSpreadsheet size={18} />
-        <div className="grow">
-          <b>Excel pronto per fatturare.</b> Codice utenza, intestatario, ubicazione, canone e stato pagamenti, con il totale in fondo.
-        </div>
-        <button className="btn btn--success btn--sm" onClick={() => { scaricaExcel(`CimiTera_lampade_votive_${oggi}`, [{ nome: 'Lampade votive', righe: righeLampadeVotive(lampade, { config, db }) }, { nome: 'Morosi', righe: righeLampadeVotive(morosi, { config, db }) }]); registraEsportazione('Excel lampade votive', lampade.length); }}>
-          Scarica Excel
-        </button>
-      </div>
-      <div className="report-2col">
-        <section className="card">
-          <div className="card__head"><h3>Lampade per viale</h3></div>
-          <div className="card__body bar-list">
-            {perViale.map(([v, n]) => (
-              <div key={v} className="bar-list__row"><span className="ellipsis">{v}</span><Progress value={n} max={perViale[0][1]} colore="#E9BE1F" small /><span className="num">{n}</span></div>
-            ))}
-          </div>
-        </section>
-        <section className="card">
-          <div className="card__head">
-            <h3>Utenze morose</h3>
-            <button className="btn btn--sm" onClick={() => { resetFiltri({ campi: { lampada_votiva: 'si', stato_pagamenti: ['moroso'] } }); vai('/mappa'); }}><MapIcon size={14} />Sulla mappa</button>
-          </div>
-          <TabellaSchede lista={morosi} colonne={[
-            { label: 'Codice', v: (s) => String(s.campi.codice_utenza ?? '') },
-            { label: 'Intestatario', v: (s) => String(s.campi.intestatario_utenza ?? '') },
-            { label: 'Canone', num: true, v: (s) => euro(typeof s.campi.canone_lampada === 'number' ? s.campi.canone_lampada : 24) },
-          ]} />
-        </section>
-      </div>
     </div>
   );
 }

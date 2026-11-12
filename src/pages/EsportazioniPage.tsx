@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { CalendarClock, Filter, Lightbulb } from 'lucide-react';
+import { CalendarClock, Filter } from 'lucide-react';
 import { registraEsportazione, useStore } from '../data/store';
 import { concessioneScheda, contaFiltriAttivi, statoConcessione, useCimitero, useSchedeCimitero, useSchedeFiltrate } from '../data/selectors';
-import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
+import { righeScadenze, scaricaExcel } from '../lib/excel';
 import { numero, oggiISO } from '../lib/format';
 import { href } from '../router';
 
@@ -47,13 +47,6 @@ export function EsportazioniPage() {
       </div>
 
       <div className="export-grid mt-16">
-        <ExportCard icona={<Lightbulb size={22} />} colore="#B8860B" titolo="Lampade votive per la fatturazione" testo="Un clic: utenze con codice, intestatario, canone e stato pagamenti, totale in fondo e foglio dei morosi."
-          bottone="Scarica Excel" disabilitato={!!lavoro}
-          onClick={() => {
-            const l = filtrate.filter((s) => s.campi.lampada_votiva === true);
-            esegui('Excel lampade votive', l.length, () => scaricaExcel(`${base}_lampade_votive_${oggi}`, [{ nome: 'Lampade votive', righe: righeLampadeVotive(l, ctx) }, { nome: 'Morosi', righe: righeLampadeVotive(l.filter((s) => s.campi.stato_pagamenti === 'moroso'), ctx) }]));
-          }} />
-
         <ExportCard icona={<CalendarClock size={22} />} colore="#8E5BB5" titolo="Scadenze concessioni" testo="Concessioni scadute o in scadenza nei prossimi 6 mesi, ordinate per data."
           bottone="Scarica Excel" disabilitato={!!lavoro}
           onClick={() => {

@@ -12,7 +12,7 @@ import {
 import { campiPer, descrizioneScheda, statoDef, tipologiaDef, useCimitero, useDatiCimitero } from '../data/selectors';
 import type { Defunto, Faccia, LatLng, Scheda, Struttura, ValoreCampo } from '../data/types';
 import { NOMI_STRUTTURA, TIPOLOGIA_STRUTTURA } from '../config/defaults';
-import { decedutoDa, nomeCompleto } from '../lib/format';
+import { decedutoDa, nomeCompleto, oggiISO } from '../lib/format';
 import { quadranteDi, vialePiuVicino } from '../lib/geo';
 import { precaricaMotore } from '../lib/ocr';
 import { riduciFoto } from '../lib/photo';
@@ -39,6 +39,8 @@ interface Bozza {
   nomeManufatto: string;
   facce: Faccia[];
   campi: Record<string, ValoreCampo>;
+  /** "C'è una lampada accesa?": null finché l'operatore non risponde */
+  lampadaAccesa: boolean | null;
   note: string;
 }
 
@@ -63,6 +65,7 @@ export function RilievoPage() {
     nomeManufatto: '',
     facce: [{ nome: 'Parete sinistra', righe: 3, colonne: 2 }, { nome: 'Parete destra', righe: 3, colonne: 2 }],
     campi: {},
+    lampadaAccesa: null,
     note: '',
   });
   const [b, setB] = useState<Bozza>(iniziale);
@@ -153,6 +156,7 @@ export function RilievoPage() {
       const s = creaScheda({
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
         defunti, campi: { ...b.campi },
+        ...(b.lampadaAccesa !== null && defunti.length ? { lampadaAccesa: b.lampadaAccesa, lampadaVistaIl: oggiISO() } : {}),
         rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
       });
       if (b.daFoto && defunti.length) aggiornaScheda(s.id, {}, 'Anagrafica letta dalla foto della lapide e controllata');
@@ -389,6 +393,11 @@ export function RilievoPage() {
                 </div>
               );
             })}
+            {!contenitore && b.stato !== 'libero' && (
+              <Field label="C'è una lampada accesa?" hint="Se è accesa e non c'è un'utenza, l'ufficio la trova tra le lampade da controllare">
+                <Seg light value={b.lampadaAccesa === null ? '' : b.lampadaAccesa ? 'si' : 'no'} onChange={(v) => set({ lampadaAccesa: v === 'si' })} options={[{ id: 'si', label: 'Sì' }, { id: 'no', label: 'No' }]} />
+              </Field>
+            )}
             <Field label="Note"><textarea className="textarea" value={b.note} onChange={(e) => set({ note: e.target.value })} placeholder="Annotazioni per l'ufficio" /></Field>
           </div>
         )}

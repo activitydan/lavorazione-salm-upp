@@ -156,6 +156,48 @@ export interface Concessione {
   storico: EventoConcessione[];
 }
 
+// ---------------------------------------------------------------------------
+// Illuminazione votiva
+// ---------------------------------------------------------------------------
+
+/** Chi ha un'utenza votiva e ne paga il canone; non è per forza il concessionario. */
+export interface Abbonato extends Soggetto {
+  /** solo se è diverso dall'indirizzo di residenza */
+  indirizzoBolletta?: string;
+  legameDefunto?: string;
+}
+
+export type StatoUtenza = 'da_allacciare' | 'attiva' | 'sospesa' | 'cessata';
+export type MotivoCessazione = 'disdetta' | 'morosita' | 'fine_concessione' | 'defunto_spostato';
+
+export interface EventoUtenza {
+  data: string;
+  azione: string;
+  operatore: string;
+}
+
+/** Il contratto di illuminazione votiva su una postazione, per un defunto o per tutta una tomba di famiglia. */
+export interface UtenzaVotiva {
+  id: string;
+  numero: string;
+  cimiteroId: string;
+  dataContratto: string;
+  schedaId: string;
+  /** assente quando l'utenza vale per tutta la tomba di famiglia */
+  defunto?: { nome: string; cognome: string };
+  abbonato: Abbonato;
+  /** 1 di norma; più di 1 solo nelle tombe di famiglia */
+  puntiLuce: number;
+  allacciataIl?: string;
+  stato: StatoUtenza;
+  sospesaIl?: string;
+  /** disdetta registrata: vale dal 1° gennaio dell'anno dopo */
+  disdettaDal?: string;
+  cessataIl?: string;
+  motivoCessazione?: MotivoCessazione;
+  storico: EventoUtenza[];
+}
+
 /** Regole del Comune (Amministrazione): valgono per i nuovi contratti e addebiti. */
 export interface RegoleComune {
   concessioni: {
@@ -163,6 +205,12 @@ export interface RegoleComune {
     durataRinnovo: number;
     sogliaInScadenzaMesi: number;
     tariffe: Record<TipoConcessione, { nuova: number; rinnovo: number }>;
+  };
+  illuminazione: {
+    /** canone annuo per punto luce */
+    canonePuntoLuce: number;
+    /** contributo di allaccio, una volta sola */
+    allaccio: number;
   };
 }
 
@@ -205,6 +253,9 @@ export interface Scheda {
   storico?: EventoStorico[];
   /** spento su richiesta della famiglia: il Cittadino non trova i defunti di questa scheda (assente = visibile) */
   visibilePubblico?: boolean;
+  /** "C'è una lampada accesa?": cosa ha visto l'operatore sul campo, e quando */
+  lampadaAccesa?: boolean;
+  lampadaVistaIl?: string;
 }
 
 export type Priorita = 'bassa' | 'media' | 'alta' | 'urgente';
@@ -285,6 +336,7 @@ export interface Database {
   operatori: Operatore[];
   schede: Scheda[];
   concessioni: Concessione[];
+  utenze: UtenzaVotiva[];
   regole: RegoleComune;
   manutenzioni: Manutenzione[];
   verifiche: Verifica[];
@@ -388,6 +440,8 @@ export interface Filtri {
   viali: string[];
   strutture: 'tutte' | 'colombari' | 'cappelle';
   concessione: 'tutte' | 'in_scadenza' | 'scadute' | 'senza';
+  /** il flag "Lampada votiva" lo calcola CimiTera dall'utenza attiva */
+  lampada: 'tutte' | 'si' | 'no';
   campi: Record<string, FiltroCampo>;
 }
 

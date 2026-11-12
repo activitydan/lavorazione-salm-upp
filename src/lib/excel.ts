@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { campiPer, concessioneScheda, conta, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
 import type { CampoDef, ConfigScheda, Database, Manutenzione, Scheda } from '../data/types';
+import { haLampada } from '../data/utenze';
 import { anniTra, cognomeNome, data, oggiISO } from './format';
 
 export type Riga = Record<string, string | number | null>;
@@ -76,25 +77,6 @@ export function righeSchede(schede: Scheda[], colonne: ColonnaExport[], ctx: { c
   return schede.map((s) => Object.fromEntries(colonne.map((c) => [c.label, c.valore(s, ctx)])));
 }
 
-export function righeLampadeVotive(schede: Scheda[], ctx: { config: ConfigScheda; db: Database }): Riga[] {
-  const pag = ctx.config.campi.find((c) => c.id === 'stato_pagamenti');
-  const righe: Riga[] = schede
-    .filter((s) => s.campi.lampada_votiva === true)
-    .sort((a, b) => String(a.campi.codice_utenza ?? '').localeCompare(String(b.campi.codice_utenza ?? '')))
-    .map((s) => ({
-      'Codice utenza': String(s.campi.codice_utenza ?? ''),
-      Intestatario: String(s.campi.intestatario_utenza ?? concessioneScheda(s)?.concessionario ?? ''),
-      'ID scheda': s.id,
-      'Defunto / postazione': descrizioneScheda(s),
-      Ubicazione: `${s.viale}${s.posizione ? ` · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : ''}`,
-      'Canone €/anno': typeof s.campi.canone_lampada === 'number' ? s.campi.canone_lampada : 24,
-      'Stato pagamenti': pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : String(s.campi.stato_pagamenti ?? ''),
-    }));
-  const totale = righe.reduce((t, r) => t + Number(r['Canone €/anno'] ?? 0), 0);
-  righe.push({ 'Codice utenza': 'TOTALE', Intestatario: `${righe.length} utenze`, 'ID scheda': '', 'Defunto / postazione': '', Ubicazione: '', 'Canone €/anno': totale, 'Stato pagamenti': '' });
-  return righe;
-}
-
 export function fogliTotali(schede: Scheda[], ctx: { config: ConfigScheda; db: Database }): Foglio[] {
   const { config, db } = ctx;
   const perStato = conta(schede, (s) => s.stato);
@@ -107,7 +89,7 @@ export function fogliTotali(schede: Scheda[], ctx: { config: ConfigScheda; db: D
         const qs = schede.filter((s) => s.quadranteId === q.id);
         const riga: Riga = { Quadrante: q.nome, Censite: qs.length, Stimate: q.stimaManufatti, 'Avanzamento %': q.stimaManufatti ? Math.round((qs.length / q.stimaManufatti) * 100) : null };
         for (const st of config.stati) riga[st.label] = qs.filter((s) => s.stato === st.id).length;
-        riga['Lampade votive'] = qs.filter((s) => s.campi.lampada_votiva === true).length;
+        riga['Lampade votive'] = qs.filter((s) => haLampada(s.id)).length;
         return riga;
       }),
     },

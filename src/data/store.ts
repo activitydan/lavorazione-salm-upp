@@ -30,7 +30,7 @@ interface UiState {
 }
 
 export type Modale =
-  | { tipo: 'manutenzione'; schedaId?: string }
+  | { tipo: 'manutenzione'; schedaId?: string; categoria?: string }
   | { tipo: 'verifica'; schedaId?: string }
   | { tipo: 'gps'; schedaId: string };
 
@@ -51,10 +51,10 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 6;
+export const VERSIONE_DATI = 7;
 
 const DB_VUOTO: Database = {
-  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], regole: REGOLE_DEFAULT,
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], regole: REGOLE_DEFAULT,
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
@@ -150,7 +150,7 @@ export async function avvia() {
     }
     const dati = db ?? (await caricaDemo());
     setS({
-      db: { ...DB_VUOTO, ...dati },
+      db: { ...DB_VUOTO, ...dati, regole: { ...REGOLE_DEFAULT, ...(dati.regole ?? {}) } },
       config: config ? configFissa(config) : CONFIG_DEFAULT,
       foto: foto ?? {},
       pronto: true,
@@ -619,7 +619,7 @@ export function creaStruttura(dati: {
         loculi.push({
           id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: POSTO_IN_STRUTTURA[dati.tipo], stato: 'libero', lat: dati.lat, lng: dati.lng,
           viale: dati.viale, quadranteId: dati.quadranteId, defunti: [],
-          campi: { lampada_votiva: false },
+          campi: {},
           rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora,
           posizione: { strutturaId: sid, faccia: fi, fila, colonna: col }, storico: [evento('Posto generato con la struttura')],
         });

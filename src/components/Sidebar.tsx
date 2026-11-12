@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3, ClipboardCheck, ClipboardList, CloudOff, Download, LayoutDashboard, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Settings, ShieldCheck, Wrench,
+  BarChart3, ClipboardCheck, ClipboardList, CloudOff, Download, LayoutDashboard, Lightbulb, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Settings, ShieldCheck, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { esci, setRete, setUi, useStore } from '../data/store';
@@ -31,6 +31,7 @@ export const VOCI_COMPUTER: VoceMenu[] = [
   { path: '/censimento', label: 'Censimento', icon: ClipboardList },
   { path: '/manutenzioni', label: 'Manutenzioni', icon: Wrench, conteggio: 'manutenzioni' },
   { path: '/concessioni', label: 'Concessioni', icon: ScrollText, soloComputer: true },
+  { path: '/illuminazione-votiva', label: 'Illuminazione votiva', icon: Lightbulb, soloComputer: true },
   { path: '/report', label: 'Report', icon: BarChart3, soloComputer: true },
   { path: '/esportazioni', label: 'Esportazioni', icon: Download, soloComputer: true },
   { path: '/amministrazione', label: 'Amministrazione', icon: ShieldCheck, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },

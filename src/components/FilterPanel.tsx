@@ -181,6 +181,11 @@ export function FilterPanel({ risultati, totale, onChiudi }: { risultati: number
             options={[{ id: 'tutte', label: 'Tutte' }, { id: 'in_scadenza', label: 'Entro 6 mesi' }, { id: 'scadute', label: 'Scadute' }, { id: 'senza', label: 'Senza' }]} />
         </Field>
 
+        <Field label="Lampada votiva">
+          <Seg small light value={f.lampada} onChange={(v) => setFiltri({ lampada: v })}
+            options={[{ id: 'tutte', label: 'Tutte' }, { id: 'si', label: 'Con lampada' }, { id: 'no', label: 'Senza' }]} />
+        </Field>
+
         <Field label="Via / viale">
           <select className="select select--sm" value="" onChange={(e) => e.target.value && setFiltri({ viali: toggle(f.viali, e.target.value) })}>
             <option value="">Aggiungi un viale…</option>
@@ -197,9 +202,6 @@ export function FilterPanel({ risultati, totale, onChiudi }: { risultati: number
 
         {altri.map((c) => <FiltroCampoDinamico key={c.id} campo={c} />)}
 
-        <p className="tiny muted">
-          I filtri dei campi personalizzati compaiono qui quando in Impostazioni → Scheda Pro un campo ha “Mostra nei filtri”.
-        </p>
       </div>
     </div>
   );

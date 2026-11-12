@@ -2,6 +2,7 @@
 // La scadenza si calcola dalla decorrenza e dalla regola applicata, mai dalla data di morte.
 import { aggiungiMesi, data, giorniTra, oggiISO } from '../lib/format';
 import { aggiornaDb, leggiStato, registra, toast, utenteCorrente } from './store';
+import { chiudiUtenzePerConcessione } from './utenze';
 import type { Concessionario, Concessione, MotivoChiusura, RegoleComune, Scheda, Soggetto, TipoConcessione } from './types';
 
 export const NOMI_TIPO_CONCESSIONE: Record<TipoConcessione, string> = {
@@ -160,8 +161,11 @@ export function avviaDecadenza(id: string, atto?: string) {
 /** Chiude il contratto con un motivo. Le postazioni ancora occupate restano da liberare. */
 export function chiudiConcessione(id: string, motivo: MotivoChiusura, atto?: string) {
   const azione = { rinunciata: 'Rinuncia', decaduta: 'Decadenza', revocata: 'Revoca', scaduta: 'Chiusura per scadenza', estinta: 'Estinzione' }[motivo];
+  const c = leggiStato().db.concessioni.find((x) => x.id === id);
   cambia(id, () => ({ stato: 'chiusa', motivoChiusura: motivo, chiusaIl: oggiISO() }), azione, atto);
-  toast(`Concessione chiusa: ${NOMI_MOTIVO[motivo].toLowerCase()}`);
+  // fine automatica: le utenze votive delle sue schede cessano
+  const n = c ? chiudiUtenzePerConcessione(c.schedeIds) : 0;
+  toast(`Concessione chiusa: ${NOMI_MOTIVO[motivo].toLowerCase()}${n ? ` · ${n === 1 ? 'una utenza votiva cessata' : `${n} utenze votive cessate`}` : ''}`);
 }
 
 export function salvaAventiDiritto(id: string, aventiDiritto: NonNullable<Concessione['aventiDiritto']>) {

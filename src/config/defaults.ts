@@ -24,7 +24,6 @@ export const CONFIG_DEFAULT: ConfigScheda = {
     { id: 'manufatto', label: 'Postazione' },
   ],
   campi: [
-    { id: 'lampada_votiva', label: 'Lampada votiva', tipo: 'flag', sezione: 'flag', icona: 'lampada', inFiltri: true, inTabella: true, inExport: true, inPopup: true, inApp: true },
     {
       id: 'stato_pagamenti', label: 'Stato pagamenti', tipo: 'select', sezione: 'fatturazione',
       opzioni: [
@@ -33,11 +32,7 @@ export const CONFIG_DEFAULT: ConfigScheda = {
         { id: 'in_verifica', label: 'In verifica', colore: '#E9BE1F' },
       ],
       inFiltri: true, inTabella: true, inExport: true, inPopup: false, inApp: false,
-      aiuto: 'Situazione dei pagamenti di concessione e lampada votiva',
     },
-    { id: 'canone_lampada', label: 'Canone lampada votiva', tipo: 'importo', sezione: 'fatturazione', unita: '€/anno', inFiltri: false, inTabella: false, inExport: true, inPopup: false, inApp: false },
-    { id: 'codice_utenza', label: 'Codice utenza', tipo: 'testo', sezione: 'fatturazione', inFiltri: false, inTabella: false, inExport: true, inPopup: false, inApp: false },
-    { id: 'intestatario_utenza', label: 'Intestatario utenza', tipo: 'testo', sezione: 'fatturazione', inFiltri: false, inTabella: false, inExport: true, inPopup: false, inApp: false },
     {
       id: 'materiale', label: 'Materiale lapide', tipo: 'select', sezione: 'manufatto',
       opzioni: [
@@ -102,6 +97,8 @@ export const REGOLE_DEFAULT: RegoleComune = {
       nicchia_cineraria: { nuova: 420, rinnovo: 130 },
     },
   },
+  // come a Ragusa: 24 € l'anno per punto luce, 15 € di allaccio
+  illuminazione: { canonePuntoLuce: 24, allaccio: 15 },
 };
 
 export const FILTRI_VUOTI: Filtri = {
@@ -115,6 +112,7 @@ export const FILTRI_VUOTI: Filtri = {
   viali: [],
   strutture: 'tutte',
   concessione: 'tutte',
+  lampada: 'tutte',
   campi: {},
 };
 

@@ -20,6 +20,7 @@ const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ defaul
 const CittadinoPage = lazy(() => import('./pages/CittadinoPage').then((m) => ({ default: m.CittadinoPage })));
 const CensimentoPage = lazy(() => import('./pages/CensimentoPage').then((m) => ({ default: m.CensimentoPage })));
 const RilievoPage = lazy(() => import('./pages/RilievoPage').then((m) => ({ default: m.RilievoPage })));
+const IlluminazionePage = lazy(() => import('./pages/IlluminazionePage').then((m) => ({ default: m.IlluminazionePage })));
 const ConcessioniPage = lazy(() => import('./pages/ConcessioniPage').then((m) => ({ default: m.ConcessioniPage })));
 const ManutenzioniPage = lazy(() => import('./pages/ManutenzioniPage').then((m) => ({ default: m.ManutenzioniPage })));
 const ReportPage = lazy(() => import('./pages/ReportPage').then((m) => ({ default: m.ReportPage })));
@@ -64,6 +65,8 @@ function Pagina() {
       return <RilievoPage />;
     case 'concessioni':
       return <ConcessioniPage />;
+    case 'illuminazione-votiva':
+      return <IlluminazionePage />;
     case 'manutenzioni':
       return <ManutenzioniPage />;
     case 'report':

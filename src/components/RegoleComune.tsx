@@ -3,6 +3,7 @@ import { Save } from 'lucide-react';
 import { NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, salvaRegoleConcessioni } from '../data/concessioni';
 import { useStore } from '../data/store';
 import type { RegoleComune } from '../data/types';
+import { salvaRegoleIlluminazione } from '../data/utenze';
 import { Field } from './ui';
 
 /** Numero intero o con i centesimi in un campo dei moduli. */
@@ -60,11 +61,26 @@ function RegoleConcessioni() {
   );
 }
 
+function RegoleIlluminazione() {
+  const salvate = useStore((s) => s.db.regole.illuminazione);
+  const [b, setB] = useState<RegoleComune['illuminazione']>(salvate);
+  const modificato = JSON.stringify(b) !== JSON.stringify(salvate);
+  return (
+    <RiquadroRegole titolo="Illuminazione votiva" modificato={modificato} onSalva={() => salvaRegoleIlluminazione(b)}>
+      <div className="grid-form">
+        <Field label="Canone annuo per punto luce (€)"><CampoNumero euro valore={b.canonePuntoLuce} onChange={(n) => setB({ ...b, canonePuntoLuce: n })} /></Field>
+        <Field label="Contributo di allaccio (€)"><CampoNumero euro valore={b.allaccio} onChange={(n) => setB({ ...b, allaccio: n })} /></Field>
+      </div>
+    </RiquadroRegole>
+  );
+}
+
 /** Regole del Comune: un riquadro per voce del menu. Le fasi dei modelli aggiungono qui i loro riquadri. */
 export function RegoleDelComune() {
   return (
     <div className="col gap-16">
       <RegoleConcessioni />
+      <RegoleIlluminazione />
     </div>
   );
 }

@@ -808,6 +808,109 @@ for s in schede:
     s.pop("concessione", None)
 
 # ---------------------------------------------------------------------------
+# Illuminazione votiva: un'utenza per ogni postazione con la lampada
+# ---------------------------------------------------------------------------
+LEGAMI = ["coniuge", "figlio", "figlia", "fratello", "sorella", "nipote"]
+utenze = []
+ut_seq = {}
+con_lampada = set()
+
+
+def numero_utenza(anno):
+    ut_seq[anno] = ut_seq.get(anno, 0) + 1
+    return f"LV-{anno}/{ut_seq[anno]:04d}"
+
+
+def evento_ut(d, azione):
+    return dict(data=d.isoformat(), azione=azione, operatore="Ufficio Cimiteri")
+
+
+for s in schede:
+    if not s["campi"].get("lampada_votiva"):
+        continue
+    con_lampada.add(s["id"])
+    c = per_scheda.get(s["id"])
+    defunto = s["defunti"][0] if s["defunti"] else None
+    # chi paga: spesso il concessionario, a volte un altro parente
+    if c and c["concessionari"][0]["tipo"] == "persona" and rng.random() < 0.7:
+        abbonato = {k: v for k, v in c["concessionari"][0].items() if k != "rappresentante"}
+    else:
+        abbonato = persona_concessionario(defunto["cognome"] if defunto and rng.random() < 0.75 else rng.choice(COGNOMI))
+    abbonato = dict(abbonato)
+    if defunto:
+        abbonato["legameDefunto"] = rng.choice(LEGAMI)
+    if rng.random() < 0.08:
+        abbonato["indirizzoBolletta"] = indirizzo().replace("97100 Ragusa", rng.choice(["95100 Catania", "00100 Roma", "20100 Milano", "97015 Modica"]))
+    primo = dt.date.fromisoformat(defunto["dataMorte"]) if defunto and defunto.get("dataMorte") else dt.date(rng.randint(1990, 2020), 3, 1)
+    contratto = max(dt.date(1975, 1, 1), primo + dt.timedelta(days=rng.randint(10, 200)))
+    if contratto > OGGI - dt.timedelta(days=5):
+        contratto = OGGI - dt.timedelta(days=rng.randint(5, 40))
+    allaccio = contratto + dt.timedelta(days=rng.randint(3, 25))
+    punti = rng.choice([1, 2, 2, 3]) if s.get("strutturaId") else (rng.choice([1, 1, 2]) if s["tipologia"] == "tomba_famiglia" else 1)
+    u = dict(id=f"ut-{len(utenze) + 1:05d}", numero=numero_utenza(contratto.year), cimiteroId="ragusa-centro", dataContratto=contratto.isoformat(),
+             schedaId=s["id"], abbonato=abbonato, puntiLuce=punti, stato="attiva", allacciataIl=allaccio.isoformat(),
+             storico=[evento_ut(contratto, "Contratto firmato"), evento_ut(allaccio, "Allaccio eseguito")])
+    # l'utenza è per un defunto; nelle tombe di famiglia può valere per tutta la tomba
+    if defunto and not (s["tipologia"] == "tomba_famiglia" and rng.random() < 0.6):
+        u["defunto"] = dict(nome=defunto["nome"], cognome=defunto["cognome"])
+    if allaccio > OGGI:
+        u["stato"] = "da_allacciare"
+        u.pop("allacciataIl")
+        u["storico"] = u["storico"][:1]
+    utenze.append(u)
+
+attive = [u for u in utenze if u["stato"] == "attiva" and u["dataContratto"] < "2025-01-01"]
+scelte_ut = rng.sample(attive, 70)
+for u in scelte_ut[:26]:  # sospese per morosità: luce spenta finché non si paga
+    d = OGGI - dt.timedelta(days=rng.randint(20, 300))
+    u["stato"] = "sospesa"
+    u["sospesaIl"] = d.isoformat()
+    u["storico"].append(evento_ut(d, "Sospesa per morosità"))
+for u in scelte_ut[26:40]:  # cessate per disdetta
+    d = dt.date(rng.randint(2019, 2026), 1, 1)
+    u.update(stato="cessata", cessataIl=d.isoformat(), motivoCessazione="disdetta")
+    u["storico"].append(evento_ut(d - dt.timedelta(days=rng.randint(20, 200)), "Disdetta registrata"))
+    u["storico"].append(evento_ut(d, "Cessata: disdetta"))
+for u in scelte_ut[40:44]:  # cessate per morosità
+    d = OGGI - dt.timedelta(days=rng.randint(60, 700))
+    u.update(stato="cessata", cessataIl=d.isoformat(), motivoCessazione="morosita")
+    u["storico"].append(evento_ut(d, "Cessata: morosità"))
+for u in scelte_ut[44:50]:  # disdetta registrata: vale dal 1° gennaio
+    u["disdettaDal"] = dt.date(OGGI.year + 1, 1, 1).isoformat()
+    u["storico"].append(evento_ut(OGGI - dt.timedelta(days=rng.randint(5, 90)), "Disdetta registrata"))
+for u in scelte_ut[50:66]:  # volture
+    d = OGGI - dt.timedelta(days=rng.randint(40, 1500))
+    vecchio = u["abbonato"]
+    nuovo = persona_concessionario(vecchio.get("cognome") or rng.choice(COGNOMI))
+    nuovo["legameDefunto"] = rng.choice(LEGAMI)
+    u["abbonato"] = nuovo
+    motivo = rng.choice(["decesso del precedente abbonato", "consenso del precedente abbonato"])
+    u["storico"].append(evento_ut(d, f"Voltura da {vecchio.get('nome', '')} {vecchio.get('cognome', '')} a {nuovo['nome']} {nuovo['cognome']} ({motivo})"))
+recenti_ut = sorted([u for u in utenze if u["stato"] == "attiva"], key=lambda u: u["dataContratto"])[-6:]
+for u in recenti_ut:  # contratti appena firmati: la luce non è ancora accesa
+    d = OGGI - dt.timedelta(days=rng.randint(2, 12))
+    u["dataContratto"] = d.isoformat()
+    u["numero"] = numero_utenza(d.year)
+    u["storico"] = [evento_ut(d, "Contratto firmato"), evento_ut(d, "Allaccio eseguito")]
+    u["stato"] = "da_allacciare"
+    u.pop("allacciataIl", None)
+    u["storico"] = u["storico"][:1]
+# fine automatica: quando la concessione si chiude, l'utenza cessa
+for u in utenze:
+    c = per_scheda.get(u["schedaId"])
+    if c and c["stato"] == "chiusa" and u["stato"] != "cessata":
+        u.update(stato="cessata", cessataIl=c["chiusaIl"], motivoCessazione="fine_concessione")
+        u["storico"].append(evento_ut(dt.date.fromisoformat(c["chiusaIl"]), "Cessata: fine della concessione"))
+# lampade viste accese sul campo, senza un'utenza: l'ufficio le controlla
+senza = [s for s in schede if s["id"] not in con_lampada and s["defunti"] and s["tipologia"] in ("loculo", "fossa", "tomba_famiglia")]
+for s in rng.sample(senza, 14):
+    s["lampadaAccesa"] = True
+    s["lampadaVistaIl"] = s["rilevatoIl"][:10]
+for s in schede:
+    for chiave in ("lampada_votiva", "canone_lampada", "codice_utenza", "intestatario_utenza"):
+        s["campi"].pop(chiave, None)
+
+# ---------------------------------------------------------------------------
 # Manutenzioni e verifiche
 # ---------------------------------------------------------------------------
 CAT_PER = {
@@ -835,7 +938,7 @@ def nuova_manutenzione(s, stato, data_segn):
     global man_seq
     man_seq += 1
     cat = scegli(CAT_PER.get(s["tipologia"], CAT_PER["tomba"]))
-    if cat == "lampada_guasta" and not s["campi"].get("lampada_votiva"):
+    if cat == "lampada_guasta" and s["id"] not in con_lampada:
         cat = "lapide_danneggiata" if s["tipologia"] in ("loculo", "fossa", "celletta_ossario", "nicchia_cineraria") else "pulizia"
     prio = scegli({"bassa": 22, "media": 42, "alta": 26, "urgente": 10})
     if cat == "cedimento":
@@ -955,7 +1058,7 @@ aree_out = [dict(id=f"a-{i + 1}", cimiteroId="ragusa-centro", nome=a["nome"], ti
 dataset = dict(
     versione=1, generatoIl=OGGI.isoformat(), avviso="Dati dimostrativi: nominativi, date e stati sono inventati.",
     cimiteri=cimiteri, quadranti=quadranti, viali=viali, aree=aree_out, strutture=strutture, operatori=OPERATORI,
-    schede=schede, concessioni=concessioni, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
+    schede=schede, concessioni=concessioni, utenze=utenze, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
 )
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -970,6 +1073,6 @@ print("defunti:", sum(len(s["defunti"]) for s in schede))
 print("concessioni:", len(concessioni), dict(Counter(c["stato"] for c in concessioni)), "| per tipo:", dict(Counter(c["tipo"] for c in concessioni)))
 print("concessioni in scadenza 6 mesi:", sum(1 for c in concessioni if c["stato"] != "chiusa" and OGGI.isoformat() <= c["scadenza"] <= (OGGI + dt.timedelta(days=183)).isoformat()))
 print("concessioni scadute:", sum(1 for c in concessioni if c["stato"] != "chiusa" and c["scadenza"] < OGGI.isoformat()))
-print("lampade votive:", sum(1 for s in schede if s["campi"].get("lampada_votiva")))
+print("utenze votive:", len(utenze), dict(Counter(u["stato"] for u in utenze)), "| lampade da controllare:", sum(1 for s in schede if s.get("lampadaAccesa")))
 print("manutenzioni:", dict(Counter(mm["stato"] for mm in manutenzioni)), "| verifiche:", dict(Counter(v["stato"] for v in verifiche)))
 print("ultima scheda:", schede[-1]["id"], schede[-1]["rilevatoIl"])

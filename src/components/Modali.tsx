@@ -76,11 +76,11 @@ function CercaScheda({ valore, onScegli }: { valore?: Scheda; onScegli: (s: Sche
   );
 }
 
-function ModaleManutenzione({ schedaId }: { schedaId?: string }) {
+function ModaleManutenzione({ schedaId, categoriaIniziale }: { schedaId?: string; categoriaIniziale?: string }) {
   const config = useStore((s) => s.config);
   const schede = useStore((s) => s.db.schede);
   const [scheda, setScheda] = useState<Scheda | undefined>(schedaId ? indiceSchede(schede).get(schedaId) : undefined);
-  const [categoria, setCategoria] = useState(config.categorieManutenzione[0]?.id ?? '');
+  const [categoria, setCategoria] = useState(categoriaIniziale ?? config.categorieManutenzione[0]?.id ?? '');
   const [priorita, setPriorita] = useState<Priorita>('media');
   const [descrizione, setDescrizione] = useState('');
   const [foto, setFoto] = useState<string | null>(null);
@@ -222,7 +222,7 @@ export function Modali() {
   if (!m) return null;
   switch (m.tipo) {
     case 'manutenzione':
-      return <ModaleManutenzione schedaId={m.schedaId} />;
+      return <ModaleManutenzione schedaId={m.schedaId} categoriaIniziale={m.categoria} />;
     case 'verifica':
       return <ModaleVerifica schedaId={m.schedaId} />;
     case 'gps':

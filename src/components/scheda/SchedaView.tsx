@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClipboardCheck, Crosshair, FileText, Grid3x3, History, MapPinned, Navigation, Pencil, Wrench } from 'lucide-react';
+import { ClipboardCheck, Crosshair, FileText, Grid3x3, History, Lightbulb, MapPinned, Navigation, Pencil, Wrench } from 'lucide-react';
 import { NOMI_STRUTTURA, STATI_MANUTENZIONE } from '../../config/defaults';
 import {
   aggiornaCampo, aggiornaScheda, apriParete, apriModale, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
@@ -8,13 +8,15 @@ import {
   campiPer, concessioneScheda, descrizioneScheda, labelLista, occupazioneStruttura, prioritaDef, statoConcessione, statoDef, valoreLeggibile,
 } from '../../data/selectors';
 import type { Scheda } from '../../data/types';
-import { anniVita, data, dataBreve, dataOra, decedutoDa, eta, nomeCompleto } from '../../lib/format';
+import { anniVita, data, dataBreve, dataOra, decedutoDa, eta, nomeCompleto, oggiISO } from '../../lib/format';
 import { formatCoord, googleMapsIndicazioni } from '../../lib/geo';
 import { pdfScheda } from '../../lib/pdf';
 import { useTelefono } from '../../lib/schermo';
 import { href, useRotta, vai } from '../../router';
 import { DaInviare } from '../StrisciaRete';
-import { Dot, Progress, Switch, TipologiaBadge } from '../ui';
+import { Dot, Progress, Seg, Switch, TipologiaBadge } from '../ui';
+import { nomeSoggetto } from '../../data/concessioni';
+import { CLASSE_STATO_UTENZA, NOMI_STATO_UTENZA, statoUtenza, utenzeDi } from '../../data/utenze';
 import { InputCampo, ValoreOpzione } from './Campi';
 import { FotoScheda } from './Media';
 import { SchedaForm } from './SchedaForm';
@@ -34,6 +36,8 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
   const verifiche = db.verifiche.filter((v) => v.schedaId === s.id);
   const conc = statoConcessione(s);
   const concVista = concessioneScheda(s);
+  const utenze = utenzeDi(s.id);
+  const lampada = utenze.some((u) => u.stato === 'attiva');
   const telefono = useTelefono();
   const flag = campiPer(config, s.tipologia, (c) => c.tipo === 'flag');
 
@@ -84,6 +88,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
           {flag.map((c) => (
             <InputCampo key={c.id} campo={c} valore={s.campi[c.id]} compatto onChange={(v) => aggiornaCampo(s.id, c.id, v, c.label)} />
           ))}
+          {lampada && <span className="flag-pubblico" style={{ cursor: 'default' }} title="Lo calcola CimiTera dall'utenza attiva"><Lightbulb size={14} color="#B8860B" />Lampada votiva</span>}
           <label className="flag-pubblico" title="Se è spento, il Cittadino non trova i defunti di questa scheda">
             <Switch small on={s.visibilePubblico !== false} label="Visibile al pubblico"
               onChange={(v) => aggiornaScheda(s.id, { visibilePubblico: v }, `Visibile al pubblico: ${v ? 'sì' : 'no'}`)} />
@@ -168,6 +173,34 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
             <dd>{data(concVista.scadenza)}</dd>
           </dl>
           {!telefono && <a className="btn btn--xs mt-8" href={href(`/concessioni?id=${concVista.id}`)}>Apri in Concessioni</a>}
+        </section>
+      )}
+
+      {s.tipologia !== 'struttura' && (s.defunti.length > 0 || utenze.length > 0) && (
+        <section className="sez">
+          <h4 className="sez__t">Illuminazione votiva</h4>
+          {utenze.map((u) => (
+            <dl className="kv" key={u.id}>
+              <dt>Utenza</dt>
+              <dd>{u.numero} <span className={`badge badge--sm ${CLASSE_STATO_UTENZA[statoUtenza(u)]}`}>{NOMI_STATO_UTENZA[statoUtenza(u)]}</span></dd>
+              <dt>Abbonato</dt>
+              <dd>{nomeSoggetto(u.abbonato)}</dd>
+              <dt>Punti luce</dt>
+              <dd>{u.puntiLuce}{u.defunto ? ` · per ${u.defunto.nome} ${u.defunto.cognome}` : ''}</dd>
+            </dl>
+          ))}
+          {!utenze.length && <p className="small muted">Nessuna utenza.</p>}
+          <div className="row row--wrap gap-8 mt-8">
+            <span className="small strong">C'è una lampada accesa?</span>
+            <Seg small light value={s.lampadaAccesa === true ? 'si' : s.lampadaAccesa === false ? 'no' : ''}
+              onChange={(v) => aggiornaScheda(s.id, { lampadaAccesa: v === 'si', lampadaVistaIl: oggiISO() }, `Lampada vista ${v === 'si' ? 'accesa' : 'spenta'}`)}
+              options={[{ id: 'si', label: 'Sì' }, { id: 'no', label: 'No' }]} />
+          </div>
+          {lampada && s.lampadaAccesa === false && (
+            <button className="btn btn--sm mt-8" onClick={() => apriModale({ tipo: 'manutenzione', schedaId: s.id, categoria: 'lampada_guasta' })}><Wrench size={14} />Segnala guasto</button>
+          )}
+          {!lampada && s.lampadaAccesa === true && <p className="small mt-8" style={{ color: '#a85710' }}>Lampada accesa senza un'utenza attiva: l'ufficio la trova tra le lampade da controllare.</p>}
+          {!telefono && utenze.length > 0 && <a className="btn btn--xs mt-8" href={href(`/illuminazione-votiva?id=${utenze[0].id}`)}>Apri in Illuminazione votiva</a>}
         </section>
       )}
 
