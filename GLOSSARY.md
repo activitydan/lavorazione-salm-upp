@@ -80,6 +80,10 @@ _Avoid_: impresa funebre, pompe funebri, onoranze funebri
 Il periodo dopo il quale una fossa in campo comune si libera con l'esumazione ordinaria.
 _Avoid_: rotazione (da sola), scadenza (che riguarda le concessioni)
 
+**Manutenzione**:
+Un problema da riparare su una postazione (lapide danneggiata, infiltrazioni, lampada votiva guasta…), dalla segnalazione alla foto dopo il lavoro.
+_Avoid_: ticket, intervento, guasto (da solo)
+
 **Da inviare**:
 Lo stato di un rilievo, una segnalazione o una verifica fatta sul telefono senza rete e non ancora arrivata all'ufficio.
 _Avoid_: non sincronizzato, offline, in coda

@@ -34,3 +34,15 @@ Oggi Manutenzioni ha: in alto "Excel" (scarica tutte le manutenzioni, anche quel
 8. **Esporta.** Proposta: "Excel" diventa "Esporta" e scarica l'Excel dell'elenco con i filtri attivi, scrivendo quante sono ("Esporta 77"). Solo sul computer.
 9. **Chi l'ha segnalata.** Proposta: sparisce il campo "fonte" (App rilievo, Ufficio, Segnalazione cittadino); resta "Segnalata da", cioè l'operatore che l'ha registrata. Il Cittadino non usa l'app per segnalare: se telefona, l'ufficio registra la segnalazione. Le 11 segnalazioni finte del cittadino diventano dell'ufficio.
 10. **Manutenzione nel glossario.** Proposta: "Un problema da riparare su una postazione (lapide danneggiata, infiltrazioni, lampada votiva guasta…), dalla segnalazione alla foto dopo il lavoro." Da evitare: ticket, intervento, guasto (da solo).
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e dieci le proposte. "Manutenzione" è entrata nel glossario.
+
+### 2026-11-12 · secondo giro di domande, in attesa delle risposte di Dan
+
+11. **Alert.** Proposta: agli operatori assegnati arrivano nuova assegnazione (o assegnazione tolta), manutenzione di oggi o di domani, data cambiata, annullata. A chi l'ha segnalata arrivano risolta e annullata. Una segnalazione nuova non manda alert a nessuno, nemmeno se urgente: le urgenti stanno in cima all'elenco e alla lista da programmare.
+12. **Numero nel menu.** Proposta: il numero accanto a Manutenzioni conta le mie manutenzioni non risolte (assegnate a me), non più tutte le aperte. Vale anche sul telefono.
+13. **Elenco sul telefono.** Proposta: interruttore "Mie / Tutte", che parte da "Mie"; card piccole (foto a sinistra, categoria, scheda e viale, priorità, data); 25 per pagina; in alto "Segnala" e "Vedi sulla mappa". Niente Calendario né Esporta.
+14. **Azioni sul telefono.** Proposta: nel dettaglio solo Apri scheda e Risolvi, con la foto scattata sul posto. Programma e Annulla solo sul computer.
+15. **Dati finti.** Proposta: le 16 "in corso" diventano programmate; ogni programmata ha uno o due operatori; 5 annullate con il motivo; ogni operatore finto ha almeno 3 manutenzioni assegnate, così la campanella di chi entra ha qualcosa.
