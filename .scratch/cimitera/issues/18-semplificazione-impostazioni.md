@@ -68,3 +68,20 @@ Amministrazione
 14. **Agenzie funebri.** Proposta: tabella con nome, partita IVA, telefono, email e numero di pratiche; "Nuova agenzia" in alto, "Modifica" sulla riga; si disattiva come gli operatori. Dati finti: una decina di agenzie.
 15. **Registro modifiche.** Proposta: passa in Amministrazione e registra le modifiche fatte in tutte e due le pagine (campi, elenchi, operatori, agenzie, regole), con chi le ha fatte e quando.
 16. **Collegamenti esterni** (ANPR, protocollo, contabilità). Proposta: non si mostrano nell'app, perché un riquadro che non fa nulla è superfluo; stanno nella risposta al cliente tra le cose che richiedono accordi esterni. Nella mappa il punto passa in "Out of scope".
+
+### 2026-11-12 · risposte di Dan al primo giro
+
+Sì a tutte e sedici le proposte (detto nella sessione del ticket [Divisione in fasi](20-divisione-in-fasi.md): "dici sì a tutto e chiudilo").
+
+Cosa cambia per le note arrivate nel frattempo:
+
+- punto 4: le squadre le ha già tolte il ticket [Manutenzioni](17-semplificazione-manutenzioni.md), quindi Elenchi contiene categorie di manutenzione, motivi di verifica e viali;
+- punto 10: con "un riquadro per voce del menu", le tariffe delle concessioni (nuova e rinnovo, per tipo) vanno nel riquadro Concessioni, e i tre termini di 30 giorni del ticket [Pagamenti simulati](10-pagamenti-simulati.md) (per pagare, dopo il sollecito, dopo la diffida) in un riquadro "Scadenze e pagamenti".
+
+### 2026-11-12 · secondo giro, in attesa della risposta di Dan
+
+Nei dati finti oggi ci sono 1.050 loculi, 715 tombe (426 con il flag "Tomba singola", un defunto ciascuna e una concessione; le altre in media 2,5 defunti), 58 cappelle e 5 colombari (ognuno è anche una struttura con la griglia a parete), 28 "Vuota" e 2 "In costruzione". Nessuna celletta ossario né nicchia cineraria. Nel rilievo, scegliere "Vuota" mette già lo stato Libero e "In costruzione" lo stato Inaccessibile.
+
+17. **Le tipologie di oggi.** Proposta: Tomba diventa tomba di famiglia, tranne le tombe singole, che diventano fosse in campo comune (senza concessione, con il turno). Cappella diventa tomba di famiglia e resta una struttura con la griglia a parete. Colombaio non è un tipo di postazione: resta solo una struttura, e i suoi posti a parete sono loculi. "Vuota" e "In costruzione" non sono tipi ma stati: diventano Libero e Inaccessibile, e nei dati finti le 28 vuote diventano fosse libere e le 2 in costruzione tombe di famiglia inaccessibili. Nei dati finti si aggiungono un ossario e un cinerario a parete, con cellette e nicchie.
+18. **Struttura nel glossario.** Proposta: "La costruzione con più posti a parete, come un colombaio o una cappella; i suoi posti si vedono in una griglia." Da evitare: manufatto contenitore, edificio.
+19. **In quale fase.** Proposta: i flag Tomba singola, Cappella e Colombaio escono dai campi configurabili nella fase 4, insieme al rilievo che li toglie. Stati e tipologie diventano fissi, con il passaggio ai cinque tipi, nella fase 6, quando sparisce la linguetta Tipologie.
