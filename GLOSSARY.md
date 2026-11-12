@@ -96,6 +96,18 @@ _Avoid_: canone (che si paga ogni anno), costo, prezzo
 Il documento pagoPA con cui il Comune chiede di pagare un importo per un solo motivo: una concessione, un'utenza votiva per un anno o una pratica.
 _Avoid_: avviso (da solo), bollettino, bolletta
 
+**Moroso**:
+Chi ha almeno un avviso di pagamento scaduto.
+_Avoid_: insolvente, inadempiente, debitore
+
+**Sollecito**:
+La lettera che ricorda un avviso di pagamento scaduto e dà un nuovo termine per pagarlo.
+_Avoid_: promemoria, richiamo, secondo avviso
+
+**Diffida**:
+La lettera formale che dà un ultimo termine per mettersi in regola prima di una conseguenza, come la sospensione di un'utenza votiva o la decadenza di una concessione.
+_Avoid_: intimazione, messa in mora, ultimo avviso
+
 **Lettera di scadenza**:
 La lettera, mandata tramite DAT, che avvisa che una concessione sta per scadere o che una postazione va liberata con un'esumazione o un'estumulazione dovuta, e dice cosa fare. Non riguarda le utenze votive.
 _Avoid_: avviso di scadenza, avviso (da solo), comunicazione
