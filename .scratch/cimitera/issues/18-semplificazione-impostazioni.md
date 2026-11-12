@@ -1,7 +1,7 @@
 # Semplificazione di Impostazioni e Amministrazione
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 06, 09, 12
 
@@ -85,3 +85,46 @@ Nei dati finti oggi ci sono 1.050 loculi, 715 tombe (426 con il flag "Tomba sing
 17. **Le tipologie di oggi.** Proposta: Tomba diventa tomba di famiglia, tranne le tombe singole, che diventano fosse in campo comune (senza concessione, con il turno). Cappella diventa tomba di famiglia e resta una struttura con la griglia a parete. Colombaio non è un tipo di postazione: resta solo una struttura, e i suoi posti a parete sono loculi. "Vuota" e "In costruzione" non sono tipi ma stati: diventano Libero e Inaccessibile, e nei dati finti le 28 vuote diventano fosse libere e le 2 in costruzione tombe di famiglia inaccessibili. Nei dati finti si aggiungono un ossario e un cinerario a parete, con cellette e nicchie.
 18. **Struttura nel glossario.** Proposta: "La costruzione con più posti a parete, come un colombaio o una cappella; i suoi posti si vedono in una griglia." Da evitare: manufatto contenitore, edificio.
 19. **In quale fase.** Proposta: i flag Tomba singola, Cappella e Colombaio escono dai campi configurabili nella fase 4, insieme al rilievo che li toglie. Stati e tipologie diventano fissi, con il passaggio ai cinque tipi, nella fase 6, quando sparisce la linguetta Tipologie.
+
+### 2026-11-12 · risposta di Dan al secondo giro
+
+"Sì, chiudi il 18": sì alle proposte 17, 18 e 19. "Struttura" è entrata nel glossario.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Criterio**: Amministrazione contiene le persone e le regole del Comune; Impostazioni contiene i campi della scheda e gli elenchi di voci. Tutte e due solo per l'Amministratore e solo sul computer.
+
+**Impostazioni**
+
+- **Intestazione**: solo il titolo, senza frase e senza badge della versione. In alto a destra il pulsante "Backup", che apre una finestra con Scarica il backup, Importa un backup, Ripristina i dati dimostrativi.
+- **Linguette**: "Campi della scheda" (prima "Scheda Pro · campi") ed "Elenchi". Spariscono Stati, Tipologie, "Cimitero e dati" (con il riquadro del cimitero e il riquadro "Configurazione") e Registro modifiche, che passa in Amministrazione.
+- **Campi della scheda**: tre colonne, elenco dei campi per sezione, modifica, anteprima del telefono. Spariscono il riquadro di spiegazione e la riga "Chiave nei dati". Quattro interruttori: Nel rilievo, Nei filtri, Colonna in Ricerca, Obbligatorio ("Nelle esportazioni" e "Nel popup della mappa" spariscono). Un campo con dati si può solo archiviare; "Elimina" c'è solo per i campi senza dati.
+- **Campi predefiniti**: restano Materiale lapide e Condizione lapide, nella sezione "Postazione". Escono Lampada votiva (calcolata dall'utenza; il filtro in Ricerca resta, fisso), Tomba singola, Cappella e Colombaio (spariscono anche da filtri e scheda) e la sezione "Fatturazione e pagamenti" (Stato pagamenti, Canone lampada votiva, Codice utenza, Intestatario utenza).
+- **Elenchi**: categorie di manutenzione, motivi di verifica, viali del cimitero scelto. Le squadre non ci sono più (ticket [Manutenzioni](17-semplificazione-manutenzioni.md)).
+- **Stati e tipologie**: fissi, non si modificano. Gli stati sono i cinque di oggi (Occupato, Libero, Da verificare, Da manutenzionare, Inaccessibile). Le tipologie sono i cinque tipi di postazione del glossario: loculo, tomba di famiglia, celletta ossario, nicchia cineraria, fossa in campo comune.
+
+**Tipologie di oggi**
+
+- Tomba diventa tomba di famiglia; le tombe singole diventano fosse in campo comune, senza concessione e con il turno.
+- Cappella diventa tomba di famiglia e resta una struttura con la griglia a parete.
+- Colombaio non è un tipo di postazione: resta solo una struttura, e i suoi posti a parete sono loculi.
+- "Vuota" e "In costruzione" diventano gli stati Libero e Inaccessibile. Nei dati finti le 28 vuote diventano fosse libere e le 2 in costruzione tombe di famiglia inaccessibili.
+- Nei dati finti si aggiungono un ossario e un cinerario a parete, con cellette e nicchie.
+
+**Amministrazione**
+
+- **Linguette**: Operatori, Agenzie funebri, Regole del Comune, Registro modifiche.
+- **Operatori**: tabella con nome, ruolo, contatti, quadranti, alert aperti, cose da fare, attivo; "Nuovo operatore" in alto, "Modifica" sulla riga. Una riga apre il pannello laterale con i suoi alert (gli stessi della sua campanella) e le sue cose da fare (operazioni programmate, verifiche aperte, manutenzioni assegnate); ogni voce apre la sua pagina.
+- **Ruolo**: Operatore o Amministratore, come nel glossario. Spariscono Rilevatore, Rilevatrice, Supervisore e Manutentore.
+- **Togliere un operatore**: si disattiva, non si cancella. Non compare più in "Entra come" né nelle assegnazioni; il suo nome resta su rilievi, pratiche e registro.
+- **Agenzie funebri**: tabella con nome, partita IVA, telefono, email e numero di pratiche; "Nuova agenzia" in alto, "Modifica" sulla riga; si disattivano come gli operatori. Dati finti: una decina.
+- **Regole del Comune**: un riquadro per voce del menu. Concessioni: durata per tipo, durata del rinnovo, soglia "in scadenza", tariffe di nuova concessione e rinnovo per tipo. Campo comune: turno. Operazioni cimiteriali: tariffa per tipo. Illuminazione votiva: canone per punto luce, allaccio. Scadenze e pagamenti: giorni per pagare, dopo il sollecito e dopo la diffida (30 nella demo). Sotto durate e importi una sola riga: "Vale per i nuovi contratti e addebiti".
+- **Registro modifiche**: le modifiche fatte in tutte e due le pagine (campi, elenchi, operatori, agenzie, regole), con chi e quando.
+
+**Altro**
+
+- **Collegamenti esterni** (ANPR, protocollo, contabilità): non si mostrano nell'app. Nella risposta al cliente restano tra le cose che richiedono accordi esterni; [risposta-al-cliente.md](../risposta-al-cliente.md) non cambia. Nella mappa passano in "Out of scope".
+- **Fasi** ([Divisione in fasi](20-divisione-in-fasi.md)): i flag Tomba singola, Cappella e Colombaio escono dai campi configurabili nella fase 4. La fase 6 fa le Impostazioni, gli stati e le tipologie fissi con il passaggio ai cinque tipi, e Amministrazione con Operatori e Registro modifiche. "Regole del Comune" nasce nella fase 8 e cresce nelle 9, 10 e 13; Agenzie funebri arriva nella 10. Dettaglio nell'aggiornamento del ticket 20.
+- **Glossario**: entra "Struttura".

@@ -12,6 +12,10 @@ _Avoid_: manufatto
 Postazione con più posti, data in concessione a una famiglia; comprende cappelle e mausolei.
 _Avoid_: cappella gentilizia
 
+**Struttura**:
+La costruzione con più posti a parete, come un colombaio o una cappella; i suoi posti si vedono in una griglia.
+_Avoid_: manufatto contenitore, edificio
+
 **Scheda**:
 Il documento che descrive una postazione, identificato da un codice univoco.
 _Avoid_: record
