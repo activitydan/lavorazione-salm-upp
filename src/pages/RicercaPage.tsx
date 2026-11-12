@@ -10,7 +10,8 @@ import type { Riga } from '../lib/excel';
 import { aggiungiGiorni, data, eta, nomeCompleto, normalizza, numero, oggiISO } from '../lib/format';
 import { fotoUrl } from '../lib/photo';
 import { useTelefono } from '../lib/schermo';
-import { setQuery, useRotta, vai } from '../router';
+import { NOMI_DESTINAZIONE } from '../data/pratiche';
+import { href, setQuery, useRotta, vai } from '../router';
 
 type Vista = 'schede' | 'defunti';
 type Ordine = 'id' | 'nome' | 'morte' | 'stato' | 'viale' | 'tipologia';
@@ -70,6 +71,12 @@ export function RicercaPage() {
     }
     return out.sort((a, b) => `${a.d.cognome} ${a.d.nome}`.localeCompare(`${b.d.cognome} ${b.d.nome}`));
   }, [filtrate, filtri.nominativo]);
+  // i defunti che un'operazione ha portato fuori dalle postazioni restano trovabili, con il posto dove sono ora
+  const altrove = useMemo(() => {
+    const parole = normalizza(filtri.nominativo).split(/\s+/).filter(Boolean);
+    if (!parole.length) return [];
+    return db.defuntiAltrove.filter((x) => parole.every((p) => normalizza(nomeCompleto(x.defunto)).includes(p)));
+  }, [db.defuntiAltrove, filtri.nominativo]);
   const righeDefunti = paginaDi(defunti, pagina);
   const nomeStruttura = (s: Scheda) => db.strutture.find((x) => x.id === s.posizione?.strutturaId)?.nome;
   const ubicazione = (s: Scheda) => `${s.viale}${nomeStruttura(s) ? ` · ${nomeStruttura(s)}` : ''}${s.posizione ? ` · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : ''}`;
@@ -246,7 +253,18 @@ export function RicercaPage() {
                   ))}
                 </tbody>
               </table>
-              {!righeDefunti.length && <div className="empty"><h3>Nessun defunto corrisponde ai filtri</h3><p>Prova ad allargare la ricerca o azzera i filtri.</p></div>}
+              {!righeDefunti.length && !altrove.length && <div className="empty"><h3>Nessun defunto corrisponde ai filtri</h3><p>Prova ad allargare la ricerca o azzera i filtri.</p></div>}
+              {altrove.length > 0 && (
+                <div className="ricerca__altrove">
+                  <b className="small">Non più in una postazione</b>
+                  {altrove.map((x, i) => (
+                    <a key={i} className="mini-row" href={href(`/operazioni?id=${x.praticaId}`)}>
+                      <span className="grow"><b>{nomeCompleto(x.defunto)}</b><span className="small muted"> · {data(x.defunto.dataNascita)} – {data(x.defunto.dataMorte)}</span></span>
+                      <span className="small">Ora: {NOMI_DESTINAZIONE[x.destinazione].toLowerCase()} · dal {data(x.data)}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <BarraPagine pagina={pagina} totale={totale} perPagina={PER_PAGINA} onPagina={setPagina} />

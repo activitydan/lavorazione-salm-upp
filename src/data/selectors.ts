@@ -326,6 +326,15 @@ export function alertPersonali(db: Database, config: ConfigScheda, chi: string, 
       messaggio: `${labelLista(config.categorieManutenzione, m.categoria)} · ${m.schedaId}`, data: m.dataProgrammata, link: `/manutenzioni?id=${m.id}`,
     });
   }
+  for (const p of db.pratiche) {
+    if (p.stato !== 'programmata' || !p.dataOra || !p.operatoriIds?.includes(chi)) continue;
+    const g = p.dataOra.slice(0, 10);
+    if (g !== oggi && g !== domani) continue;
+    out.push({
+      id: `pr-${p.id}-${p.dataOra}-${chi}`, livello: g === oggi ? 'attenzione' : 'info', titolo: `Operazione di ${g === oggi ? 'oggi' : 'domani'} alle ${p.dataOra.slice(11, 16)}`,
+      messaggio: `${p.tipo.charAt(0).toUpperCase()}${p.tipo.slice(1)} · ${nomeCompleto(p.defunto)} · ${p.schedaId}`, data: g, link: `/operazioni?id=${p.id}`,
+    });
+  }
   const mie = db.verifiche.filter((v) => v.stato === 'aperta' && v.operatoreId === chi);
   const inRitardo = mie.filter((v) => v.scadenza < oggi).length;
   const vicine = mie.filter((v) => v.scadenza === oggi || v.scadenza === domani).length;

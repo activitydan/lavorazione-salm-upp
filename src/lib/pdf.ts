@@ -266,3 +266,53 @@ export async function pdfSchede(lista: Scheda[], ctx: ContestoPdf, avanzamento?:
   piedi(doc);
   doc.save(nomeFile);
 }
+
+/** Registro delle operazioni cimiteriali in PDF: una riga per pratica eseguita. */
+export async function pdfRegistro(titolo: string, righe: string[][], anno: string) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+  const colonne: [string, number][] = [['N.', 10], ['Data', 22], ['Pratica', 28], ['Operazione', 44], ['Defunto', 62], ['Postazione', 34], ['Esito', 70]];
+  const testata = () => {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...NAVY);
+    doc.text(titolo, 14, 14);
+    doc.setFontSize(8);
+    doc.setTextColor(...GRIGIO);
+    let x = 14;
+    for (const [nome, w] of colonne) {
+      doc.text(nome.toUpperCase(), x, 23);
+      x += w;
+    }
+    doc.setDrawColor(200, 208, 218);
+    doc.line(14, 25, 283, 25);
+  };
+  testata();
+  let y = 31;
+  doc.setFont('helvetica', 'normal');
+  for (const riga of righe) {
+    if (y > 192) {
+      doc.addPage();
+      testata();
+      y = 31;
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.setFontSize(8.5);
+    doc.setTextColor(...TESTO);
+    let x = 14;
+    riga.forEach((cella, i) => {
+      doc.text(String(doc.splitTextToSize(cella ?? '', colonne[i][1] - 2)[0] ?? ''), x, y);
+      x += colonne[i][1];
+    });
+    y += 6;
+  }
+  if (!righe.length) doc.text('Nessuna operazione eseguita.', 14, y);
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(...GRIGIO);
+    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group · ${dataOra(new Date().toISOString().slice(0, 16))}`, 14, 203);
+    doc.text(`${i} / ${n}`, 283, 203, { align: 'right' });
+  }
+  doc.save(`CimiTera_registro_operazioni_${anno}.pdf`);
+}

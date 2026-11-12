@@ -51,10 +51,10 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 7;
+export const VERSIONE_DATI = 8;
 
 const DB_VUOTO: Database = {
-  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], regole: REGOLE_DEFAULT,
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], pratiche: [], agenzie: [], defuntiAltrove: [], regole: REGOLE_DEFAULT,
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
@@ -123,8 +123,20 @@ async function caricaDemo(): Promise<Database> {
   if (!r.ok) throw new Error(`Dataset dimostrativo non trovato (${r.status})`);
   let d = await r.json();
   // a settimane intere, per non spostare i giorni della settimana
-  const giorni = d.generatoIl ? Math.floor(giorniTra(d.generatoIl, oggiISO()) / 7) * 7 : 0;
+  const distanza = d.generatoIl ? Math.max(0, giorniTra(d.generatoIl, oggiISO())) : 0;
+  const giorni = Math.floor(distanza / 7) * 7;
   if (giorni > 0) d = spostaDate(d, giorni);
+  // ciò che è programmato si riallinea a oggi anche per i giorni che avanzano, saltando la domenica
+  const resto = distanza - giorni;
+  if (resto > 0) {
+    const avanti = (iso: string) => {
+      let g = aggiungiGiorni(iso.slice(0, 10), resto);
+      if (new Date(`${g}T12:00:00`).getDay() === 0) g = aggiungiGiorni(g, 1);
+      return g + iso.slice(10);
+    };
+    for (const p of d.pratiche ?? []) if (p.stato === 'programmata' && p.dataOra) p.dataOra = avanti(p.dataOra);
+    for (const m of d.manutenzioni ?? []) if (m.stato === 'programmata' && m.dataProgrammata) m.dataProgrammata = avanti(m.dataProgrammata);
+  }
   return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], daInviare: [], esportazioni: [] };
 }
 

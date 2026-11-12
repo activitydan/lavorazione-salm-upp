@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, Navigation, Search } from 'lucide-react';
 import { FIRMA, Logo } from '../components/Logo';
 import { CemeteryMap } from '../components/map/CemeteryMap';
 import { useSenzaRete, useStore } from '../data/store';
+import { NOMI_DESTINAZIONE } from '../data/pratiche';
 import type { Defunto, Scheda } from '../data/types';
 import { data, decedutoDa, nomeCompleto, normalizza } from '../lib/format';
 import { googleMapsIndicazioni } from '../lib/geo';
@@ -40,6 +41,12 @@ export function CittadinoPage() {
     }
     return out.slice(0, 40);
   }, [q, db.schede]);
+  // defunti spostati da un'operazione: si dice dove sono ora, senza la posizione sulla mappa
+  const altrove = useMemo(() => {
+    const parole = normalizza(q).split(/\s+/).filter(Boolean);
+    if (parole.join('').length < 3) return [];
+    return db.defuntiAltrove.filter((x) => parole.every((p) => normalizza(nomeCompleto(x.defunto)).includes(p))).slice(0, 10);
+  }, [q, db.defuntiAltrove]);
 
   const cimitero = (s: Scheda) => db.cimiteri.find((c) => c.id === s.cimiteroId);
   const struttura = (s: Scheda) => db.strutture.find((x) => x.id === (s.posizione?.strutturaId ?? s.strutturaId));
@@ -101,7 +108,20 @@ export function CittadinoPage() {
             />
           </div>
           {trovati === null && q.trim() !== '' && <p className="small muted">Scrivi almeno tre lettere.</p>}
-          {trovati !== null && trovati.length === 0 && <p className="small muted">Nessun defunto trovato con questo nome.</p>}
+          {trovati !== null && trovati.length === 0 && altrove.length === 0 && <p className="small muted">Nessun defunto trovato con questo nome.</p>}
+          {altrove.length > 0 && (
+            <div className="pub__lista">
+              {altrove.map((x, i) => (
+                <div key={i} className="pub__riga" style={{ cursor: 'default' }}>
+                  <span className="grow">
+                    <b>{nomeCompleto(x.defunto)}</b>
+                    <span className="small muted">{anno(x.defunto.dataNascita)} – {anno(x.defunto.dataMorte)}</span>
+                    <span className="small">Si trova ora: {NOMI_DESTINAZIONE[x.destinazione].toLowerCase()}. Per sapere come arrivarci chiedi all'ufficio del cimitero.</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           {trovati !== null && trovati.length > 0 && (
             <div className="pub__lista">
               {trovati.map((t) => (

@@ -198,6 +198,80 @@ export interface UtenzaVotiva {
   storico: EventoUtenza[];
 }
 
+// ---------------------------------------------------------------------------
+// Operazioni cimiteriali
+// ---------------------------------------------------------------------------
+
+export type TipoOperazione = 'inumazione' | 'tumulazione' | 'esumazione' | 'estumulazione' | 'traslazione';
+export type StatoPratica = 'aperta' | 'programmata' | 'eseguita' | 'annullata';
+export type DestinazioneResti = 'ossario_comune' | 'cinerario_comune' | 'campo_comune' | 'fuori_comune' | 'altra_postazione';
+
+/** Chi chiede al Comune una pratica; non è per forza il concessionario. */
+export interface Richiedente {
+  nome: string;
+  codiceFiscale: string;
+  telefono?: string;
+  email?: string;
+  legameDefunto?: string;
+}
+
+/** L'impresa che cura il funerale e segue le pratiche per conto della famiglia. */
+export interface AgenziaFunebre {
+  id: string;
+  nome: string;
+  partitaIva: string;
+  telefono: string;
+  email: string;
+  /** un'agenzia non si cancella: si disattiva */
+  attiva: boolean;
+}
+
+/** Il fascicolo di una sola operazione cimiteriale su un solo defunto. */
+export interface Pratica {
+  id: string;
+  numero: string;
+  cimiteroId: string;
+  tipo: TipoOperazione;
+  /** solo per esumazione ed estumulazione */
+  straordinaria?: boolean;
+  oggetto: 'salma' | 'resti' | 'ceneri';
+  /** avviata dall'ufficio: senza richiedente e senza tariffa */
+  dUfficio: boolean;
+  richiedente?: Richiedente;
+  defunto: Defunto;
+  /** la postazione dove si fa l'operazione; nella traslazione è quella di partenza */
+  schedaId: string;
+  schedaArrivoId?: string;
+  agenziaId?: string;
+  stato: StatoPratica;
+  apertaIl: string;
+  /** chi l'ha aperta: id dell'operatore oppure 'ufficio' */
+  apertaDa: string;
+  /** programmata: data e ora, con almeno un operatore */
+  dataOra?: string;
+  operatoriIds?: string[];
+  eseguitaIl?: string;
+  /** esumazione ed estumulazione: dove vanno i resti */
+  esitoResti?: { destinazione: DestinazioneResti; schedaId?: string };
+  annullataIl?: string;
+  motivoAnnullamento?: string;
+  tariffa?: number;
+  /** l'unico documento della pratica: l'attestazione di pagamento */
+  pagamento?: { pagata: boolean; data?: string; numero?: string };
+  /** traslazione di un defunto con l'utenza votiva */
+  utenzaVotiva?: 'sposta' | 'chiudi';
+  note?: string;
+}
+
+/** Un defunto che un'operazione ha portato fuori dalle postazioni: resta trovabile, con il posto dove si trova ora. */
+export interface DefuntoAltrove {
+  defunto: Defunto;
+  daSchedaId: string;
+  destinazione: DestinazioneResti;
+  praticaId: string;
+  data: string;
+}
+
 /** Regole del Comune (Amministrazione): valgono per i nuovi contratti e addebiti. */
 export interface RegoleComune {
   concessioni: {
@@ -211,6 +285,13 @@ export interface RegoleComune {
     canonePuntoLuce: number;
     /** contributo di allaccio, una volta sola */
     allaccio: number;
+  };
+  campoComune: {
+    /** anni dopo i quali una fossa si libera con l'esumazione ordinaria */
+    turnoAnni: number;
+  };
+  operazioni: {
+    tariffe: Record<TipoOperazione, number>;
   };
 }
 
@@ -337,6 +418,9 @@ export interface Database {
   schede: Scheda[];
   concessioni: Concessione[];
   utenze: UtenzaVotiva[];
+  pratiche: Pratica[];
+  agenzie: AgenziaFunebre[];
+  defuntiAltrove: DefuntoAltrove[];
   regole: RegoleComune;
   manutenzioni: Manutenzione[];
   verifiche: Verifica[];

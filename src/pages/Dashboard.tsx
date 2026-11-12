@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
-import { ArrowRight, Bell, ClipboardList, Maximize2, Wrench } from 'lucide-react';
+import { ArrowRight, CalendarDays, ClipboardList, Maximize2, Wrench } from 'lucide-react';
 import { CemeteryMap } from '../components/map/CemeteryMap';
 import { SceltaStileMappa } from '../components/Topbar';
 import { Avatar, Ciambella, Dot, StatoBadge } from '../components/ui';
-import { resetFiltri, segnaLetti, seleziona, setFiltri, useStore } from '../data/store';
-import { conta, descrizioneScheda, useAlert, useCimitero, useDatiCimitero, useSchedeCimitero } from '../data/selectors';
-import { aggiungiGiorni, dataBreve, dataOra, numero, oggiISO, percentuale } from '../lib/format';
+import { resetFiltri, seleziona, setFiltri, useStore } from '../data/store';
+import { conta, descrizioneScheda, useCimitero, useDatiCimitero, useSchedeCimitero } from '../data/selectors';
+import { COLORI_OPERAZIONE, NOMI_OPERAZIONE } from '../data/pratiche';
+import { aggiungiGiorni, dataOra, nomeCompleto, numero, oggiISO, percentuale } from '../lib/format';
 import { href, vai } from '../router';
 
 function Widget({ titolo, icona, link, linkLabel = 'Apri', children, className, colore = '#1B5A8F' }: {
@@ -29,7 +30,8 @@ export function Dashboard() {
   const db = useStore((s) => s.db);
   const stileMappa = useStore((s) => s.ui.stileMappa);
   const { quadranti, strutture, viali, aree, manutenzioni } = useDatiCimitero();
-  const alert = useAlert();
+  const domani = aggiungiGiorni(oggiISO(), 1);
+  const agenda = useMemo(() => db.pratiche.filter((p) => p.stato === 'programmata' && p.dataOra && p.cimiteroId === cimitero?.id && (p.dataOra.startsWith(oggiISO()) || p.dataOra.startsWith(domani))).sort((a, b) => a.dataOra!.localeCompare(b.dataOra!)), [db.pratiche, cimitero?.id, domani]);
   const oggi = oggiISO();
 
   const stimate = quadranti.reduce((t, x) => t + x.stimaManufatti, 0);
@@ -38,7 +40,6 @@ export function Dashboard() {
   const recenti = useMemo(() => [...schede].sort((a, b) => b.rilevatoIl.localeCompare(a.rilevatoIl)).slice(0, 5), [schede]);
   const settimana = useMemo(() => schede.filter((s) => s.rilevatoIl.slice(0, 10) >= aggiungiGiorni(oggi, -7)).length, [schede, oggi]);
   const urgenti = manutenzioni.filter((m) => m.stato !== 'risolta' && m.stato !== 'annullata' && m.priorita === 'urgente').length;
-  const letti = db.alertLetti;
 
   if (!cimitero) return null;
   const vaiMappa = (patch: Parameters<typeof setFiltri>[0]) => {
@@ -83,17 +84,17 @@ export function Dashboard() {
           </div>
         </section>
 
-        <Widget titolo="Alert" icona={<Bell size={16} />} colore="#D9473F" className="bento__alert">
+        <Widget titolo="Agenda di oggi" icona={<CalendarDays size={16} />} colore="#2F6FB3" link="/operazioni?tab=agenda" linkLabel="Apri l'agenda" className="bento__alert">
           <div className="alert-list">
-            {alert.length === 0 && <p className="small muted">Nessun alert per te.</p>}
-            {alert.map((a) => (
-              <a key={a.id} className={`alert-item ${letti.includes(a.id) ? 'is-read' : ''}`} href={a.link ? href(a.link) : undefined} onClick={() => segnaLetti([a.id])}>
-                <span className={`alert-dot alert-dot--${a.livello}`} />
+            {agenda.length === 0 && <p className="small muted">Nessuna operazione oggi e domani.</p>}
+            {agenda.map((p) => (
+              <a key={p.id} className="alert-item" href={href(`/operazioni?id=${p.id}`)}>
+                <span className="alert-dot" style={{ background: COLORI_OPERAZIONE[p.tipo] }} />
                 <span className="grow">
-                  <b>{a.titolo}</b>
-                  <span className="small muted">{a.messaggio}</span>
+                  <b>{p.dataOra!.slice(11, 16)} · {NOMI_OPERAZIONE[p.tipo]} · {nomeCompleto(p.defunto)}</b>
+                  <span className="small muted">{p.schedaId} · {(p.operatoriIds ?? []).map((id) => db.operatori.find((o) => o.id === id)?.nome).filter(Boolean).join(', ')}</span>
                 </span>
-                <span className="tiny faint nowrap">{dataBreve(a.data)}</span>
+                <span className="tiny faint nowrap">{p.dataOra!.startsWith(oggi) ? 'oggi' : 'domani'}</span>
               </a>
             ))}
           </div>

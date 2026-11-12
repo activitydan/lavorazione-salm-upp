@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Save } from 'lucide-react';
 import { NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, salvaRegoleConcessioni } from '../data/concessioni';
+import { NOMI_OPERAZIONE, TIPI_OPERAZIONE, salvaRegoleOperazioni } from '../data/pratiche';
 import { useStore } from '../data/store';
 import type { RegoleComune } from '../data/types';
 import { salvaRegoleIlluminazione } from '../data/utenze';
@@ -75,12 +76,42 @@ function RegoleIlluminazione() {
   );
 }
 
+function RegoleOperazioni() {
+  const turno = useStore((s) => s.db.regole.campoComune);
+  const operazioni = useStore((s) => s.db.regole.operazioni);
+  const [t, setT] = useState(turno);
+  const [o, setO] = useState(operazioni);
+  const modificato = JSON.stringify([t, o]) !== JSON.stringify([turno, operazioni]);
+  return (
+    <>
+      <RiquadroRegole titolo="Campo comune" modificato={modificato} onSalva={() => salvaRegoleOperazioni(t, o)}>
+        <div className="grid-form">
+          <Field label="Turno della fossa in campo comune (anni)" hint="Dopo il turno la fossa si libera con l'esumazione ordinaria">
+            <CampoNumero min={1} valore={t.turnoAnni} onChange={(n) => setT({ turnoAnni: n })} />
+          </Field>
+        </div>
+      </RiquadroRegole>
+      <RiquadroRegole titolo="Operazioni cimiteriali" modificato={modificato} onSalva={() => salvaRegoleOperazioni(t, o)}>
+        <div className="grid-form grid-form--3">
+          {TIPI_OPERAZIONE.map((tipo) => (
+            <Field key={tipo} label={`${NOMI_OPERAZIONE[tipo]} (€)`}>
+              <CampoNumero euro valore={o.tariffe[tipo]} onChange={(n) => setO({ tariffe: { ...o.tariffe, [tipo]: n } })} />
+            </Field>
+          ))}
+        </div>
+        <p className="small muted">Le pratiche d'ufficio non hanno tariffa.</p>
+      </RiquadroRegole>
+    </>
+  );
+}
+
 /** Regole del Comune: un riquadro per voce del menu. Le fasi dei modelli aggiungono qui i loro riquadri. */
 export function RegoleDelComune() {
   return (
     <div className="col gap-16">
       <RegoleConcessioni />
       <RegoleIlluminazione />
+      <RegoleOperazioni />
     </div>
   );
 }

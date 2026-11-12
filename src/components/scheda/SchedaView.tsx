@@ -16,6 +16,7 @@ import { href, useRotta, vai } from '../../router';
 import { DaInviare } from '../StrisciaRete';
 import { Dot, Progress, Seg, Switch, TipologiaBadge } from '../ui';
 import { nomeSoggetto } from '../../data/concessioni';
+import { STATI_PRATICA, nomeOperazione, praticheDi } from '../../data/pratiche';
 import { CLASSE_STATO_UTENZA, NOMI_STATO_UTENZA, statoUtenza, utenzeDi } from '../../data/utenze';
 import { InputCampo, ValoreOpzione } from './Campi';
 import { FotoScheda } from './Media';
@@ -37,6 +38,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
   const conc = statoConcessione(s);
   const concVista = concessioneScheda(s);
   const utenze = utenzeDi(s.id);
+  const pratiche = praticheDi(s.id);
   const lampada = utenze.some((u) => u.stato === 'attiva');
   const telefono = useTelefono();
   const flag = campiPer(config, s.tipologia, (c) => c.tipo === 'flag');
@@ -201,6 +203,28 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
           )}
           {!lampada && s.lampadaAccesa === true && <p className="small mt-8" style={{ color: '#a85710' }}>Lampada accesa senza un'utenza attiva: l'ufficio la trova tra le lampade da controllare.</p>}
           {!telefono && utenze.length > 0 && <a className="btn btn--xs mt-8" href={href(`/illuminazione-votiva?id=${utenze[0].id}`)}>Apri in Illuminazione votiva</a>}
+        </section>
+      )}
+
+      {pratiche.length > 0 && (
+        <section className="sez">
+          <h4 className="sez__t">Pratiche ({pratiche.length})</h4>
+          <div className="col">
+            {pratiche.map((p) => {
+              const st = STATI_PRATICA.find((x) => x.id === p.stato)!;
+              const riga = (
+                <>
+                  <FileText size={15} color={st.colore} />
+                  <span className="grow">
+                    <b>{nomeOperazione(p)}</b>
+                    <span className="small muted"> · {nomeCompleto(p.defunto)} · {dataBreve((p.dataOra ?? p.apertaIl).slice(0, 10))}</span>
+                  </span>
+                  <span className="badge badge--sm" style={{ background: `${st.colore}1a`, color: st.colore }}>{st.label}</span>
+                </>
+              );
+              return telefono ? <div key={p.id} className="mini-row">{riga}</div> : <a key={p.id} className="mini-row" href={href(`/operazioni?id=${p.id}`)}>{riga}</a>;
+            })}
+          </div>
         </section>
       )}
 

@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Bell, ClipboardCheck, FileClock, Pencil, Plus, Scale, Users, Wrench, X } from 'lucide-react';
+import { Bell, Building2, ClipboardCheck, FileClock, Pencil, Plus, Scale, Users, Wrench, X } from 'lucide-react';
 import { RegoleDelComune } from '../components/RegoleComune';
 import { Avatar, Field, Modal, Seg, Switch, Tabs } from '../components/ui';
 import { salvaOperatore, toast, useStore } from '../data/store';
 import { alertPersonali, labelLista } from '../data/selectors';
-import type { Operatore } from '../data/types';
-import { data, dataOra } from '../lib/format';
+import { NOMI_OPERAZIONE, salvaAgenzia } from '../data/pratiche';
+import type { AgenziaFunebre, Operatore } from '../data/types';
+import { data, dataOra, nomeCompleto } from '../lib/format';
 import { href, setQuery, useRotta } from '../router';
 
-type Tab = 'operatori' | 'regole' | 'registro';
+type Tab = 'operatori' | 'agenzie' | 'regole' | 'registro';
 const COLORI = ['#2F6FB3', '#8E5BB5', '#1E8C8C', '#C0487A', '#5E9A3A', '#E07B22', '#4F5FB8', '#B8860B', '#D9473F', '#0A2F55'];
 
 /** Amministrazione: le persone e le regole del Comune. Solo per l'Amministratore, solo sul computer. */
@@ -17,6 +18,7 @@ export function AmministrazionePage() {
   const tab = (rotta.query.get('tab') as Tab) ?? 'operatori';
   const operatori = useStore((s) => s.db.operatori);
   const registro = useStore((s) => s.config.registro);
+  const agenzie = useStore((s) => s.db.agenzie);
   return (
     <div className="page">
       <div className="page-head">
@@ -26,10 +28,12 @@ export function AmministrazionePage() {
       </div>
       <Tabs value={tab} onChange={(t) => setQuery('tab', t === 'operatori' ? null : t)} tabs={[
         { id: 'operatori', label: 'Operatori', icon: <Users size={16} />, count: operatori.filter((o) => o.attivo).length },
+        { id: 'agenzie', label: 'Agenzie funebri', icon: <Building2 size={16} />, count: agenzie.filter((a) => a.attiva).length },
         { id: 'regole', label: 'Regole del Comune', icon: <Scale size={16} /> },
         { id: 'registro', label: 'Registro modifiche', icon: <FileClock size={16} />, count: registro.length },
       ]} />
       {tab === 'operatori' && <Operatori />}
+      {tab === 'agenzie' && <Agenzie />}
       {tab === 'regole' && <RegoleDelComune />}
       {tab === 'registro' && <Registro />}
     </div>
@@ -76,11 +80,12 @@ export function useCoseDaFare(operatoreId: string) {
   const config = useStore((s) => s.config);
   const verifiche = db.verifiche.filter((v) => v.stato === 'aperta' && v.operatoreId === operatoreId).sort((a, b) => a.scadenza.localeCompare(b.scadenza));
   const manutenzioni = db.manutenzioni.filter((m) => m.stato === 'programmata' && m.operatoriIds?.includes(operatoreId)).sort((a, b) => (a.dataProgrammata ?? '').localeCompare(b.dataProgrammata ?? ''));
-  return { db, config, verifiche, manutenzioni, totale: verifiche.length + manutenzioni.length };
+  const operazioni = db.pratiche.filter((p) => p.stato === 'programmata' && p.operatoriIds?.includes(operatoreId)).sort((a, b) => (a.dataOra ?? '').localeCompare(b.dataOra ?? ''));
+  return { db, config, verifiche, manutenzioni, operazioni, totale: verifiche.length + manutenzioni.length + operazioni.length };
 }
 
 function PannelloOperatore({ o, onChiudi }: { o: Operatore; onChiudi: () => void }) {
-  const { db, config, verifiche, manutenzioni } = useCoseDaFare(o.id);
+  const { db, config, verifiche, manutenzioni, operazioni } = useCoseDaFare(o.id);
   const alert = alertPersonali(db, config, o.id);
   const letti = db.alertLetti;
   return (
@@ -100,6 +105,18 @@ function PannelloOperatore({ o, onChiudi }: { o: Operatore; onChiudi: () => void
               </a>
             ))}
             {!alert.length && <p className="small muted">Nessun alert.</p>}
+          </div>
+        </section>
+        <section className="sez">
+          <h4 className="sez__t"><FileClock size={14} /> Operazioni programmate ({operazioni.length})</h4>
+          <div className="col">
+            {operazioni.map((p) => (
+              <a key={p.id} className="mini-row" href={href(`/operazioni?id=${p.id}`)}>
+                <span className="grow"><b>{NOMI_OPERAZIONE[p.tipo]}</b><span className="small muted"> · {nomeCompleto(p.defunto)}</span></span>
+                <span className="badge badge--sm badge--blu">{data(p.dataOra?.slice(0, 10))} · {p.dataOra?.slice(11, 16)}</span>
+              </a>
+            ))}
+            {!operazioni.length && <p className="small muted">Nessuna operazione programmata.</p>}
           </div>
         </section>
         <section className="sez">
@@ -181,6 +198,67 @@ function Operatori() {
       {scelto && <PannelloOperatore o={scelto} onChiudi={() => setAperto(null)} />}
       {modale && <ModaleOperatore o={modale.o} onChiudi={() => setModale(null)} />}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Agenzie funebri
+// ---------------------------------------------------------------------------
+
+function ModaleAgenzia({ a, onChiudi }: { a?: AgenziaFunebre; onChiudi: () => void }) {
+  const [b, setB] = useState<AgenziaFunebre>(() => a ?? { id: `ag-${Date.now().toString(36)}`, nome: '', partitaIva: '', telefono: '', email: '', attiva: true });
+  const set = (p: Partial<AgenziaFunebre>) => setB((x) => ({ ...x, ...p }));
+  const salva = () => {
+    if (!b.nome.trim()) return toast('Inserisci il nome', 'errore');
+    salvaAgenzia({ ...b, nome: b.nome.trim() });
+    toast('Agenzia salvata');
+    onChiudi();
+  };
+  return (
+    <Modal titolo={a ? `Modifica ${a.nome}` : 'Nuova agenzia'} onClose={onChiudi}
+      footer={<><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--primary" onClick={salva}>Salva</button></>}>
+      <div className="grid-form">
+        <Field label="Nome" className="span-2"><input className="input" value={b.nome} onChange={(e) => set({ nome: e.target.value })} autoFocus /></Field>
+        <Field label="Partita IVA"><input className="input mono" value={b.partitaIva} onChange={(e) => set({ partitaIva: e.target.value })} /></Field>
+        <Field label="Attiva" hint={b.attiva ? undefined : 'Non si può più scegliere nelle pratiche nuove.'}><Switch on={b.attiva} onChange={(v) => set({ attiva: v })} label="Agenzia attiva" /></Field>
+        <Field label="Telefono"><input className="input" value={b.telefono} onChange={(e) => set({ telefono: e.target.value })} /></Field>
+        <Field label="Email"><input className="input" type="email" value={b.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+      </div>
+    </Modal>
+  );
+}
+
+function Agenzie() {
+  const agenzie = useStore((s) => s.db.agenzie);
+  const pratiche = useStore((s) => s.db.pratiche);
+  const [modale, setModale] = useState<{ a?: AgenziaFunebre } | null>(null);
+  return (
+    <section className="card">
+      <div className="card__head">
+        <h3>Agenzie funebri</h3>
+        <button className="btn btn--sm btn--primary" onClick={() => setModale({})}><Plus size={14} />Nuova agenzia</button>
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Nome</th><th>Partita IVA</th><th>Telefono</th><th>Email</th><th className="num">Pratiche</th><th>Stato</th><th /></tr></thead>
+          <tbody>
+            {agenzie.map((a) => (
+              <tr key={a.id}>
+                <td><b>{a.nome}</b></td>
+                <td className="mono small">{a.partitaIva}</td>
+                <td className="nowrap">{a.telefono}</td>
+                <td className="small">{a.email}</td>
+                <td className="num">{pratiche.filter((p) => p.agenziaId === a.id).length}</td>
+                <td>{a.attiva ? <span className="badge badge--verde badge--sm">Attiva</span> : <span className="badge badge--sm">Non attiva</span>}</td>
+                <td><button className="btn btn--xs" onClick={() => setModale({ a })}><Pencil size={12} />Modifica</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!agenzie.length && <div className="empty"><h3>Nessuna agenzia funebre</h3></div>}
+      </div>
+      {modale && <ModaleAgenzia a={modale.a} onChiudi={() => setModale(null)} />}
+    </section>
   );
 }
 

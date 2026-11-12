@@ -462,6 +462,7 @@ OPERATORI = [
     dict(id="op-4", nome="Elena Distefano", ruolo="Operatore", telefono="+39 333 000 1104", email="e.distefano@esempio.it", colore="#8E5BB5", attivo=True),
 ]
 NOME_OP = {o["id"]: o["nome"] for o in OPERATORI}
+OP_IDS = [o["id"] for o in OPERATORI]
 
 schede = []
 strutture = []
@@ -911,6 +912,166 @@ for s in schede:
         s["campi"].pop(chiave, None)
 
 # ---------------------------------------------------------------------------
+# Operazioni cimiteriali: agenzie funebri e pratiche
+# ---------------------------------------------------------------------------
+agenzie = [dict(id=f"ag-{i + 1}", nome=n, partitaIva=f"0{rng.randint(1000000000, 1999999999) % 10000000000:010d}", telefono=f"0932 {rng.randint(100000, 999999)}",
+                email=f"info@{n.lower().replace(' ', '').replace('.', '').replace(chr(39), '')[:18]}.esempio.it", attiva=i != 9)
+           for i, n in enumerate(["Onoranze Funebri Iblea", "Agenzia Funebre San Giorgio", "Onoranze Funebri Cascone", "La Pace Servizi Funebri", "Agenzia Funebre Occhipinti",
+                                  "Onoranze Funebri Ragusane", "Servizi Funebri Il Giglio", "Agenzia Funebre Distefano", "Onoranze Funebri Santa Lucia", "Agenzia Funebre L'Angelo"])]
+AG_ATTIVE = [a["id"] for a in agenzie if a["attiva"]]
+pratiche = []
+defunti_altrove = []
+pr_seq = {}
+TARIFFE_OP = {"inumazione": 180.0, "tumulazione": 220.0, "esumazione": 260.0, "estumulazione": 310.0, "traslazione": 240.0}
+ORE = [(8, 30), (9, 30), (10, 30), (11, 30), (15, 0), (16, 0)]
+MOTIVI_ANN_PR = ["Richiesta ritirata dalla famiglia", "Pratica doppia", "Dati del defunto sbagliati"]
+
+
+def numero_pratica(anno):
+    pr_seq[anno] = pr_seq.get(anno, 0) + 1
+    return f"PR-{anno}/{pr_seq[anno]:04d}"
+
+
+def richiedente_di(defunto):
+    sesso = rng.choice("MF")
+    nome = rng.choice(NOMI_M if sesso == "M" else NOMI_F)
+    cognome = defunto["cognome"] if rng.random() < 0.8 else rng.choice(COGNOMI)
+    return dict(nome=f"{nome} {cognome}", codiceFiscale=codice_fiscale(nome, cognome, sesso), telefono=f"+39 3{rng.randint(20, 99)} {rng.randint(100, 999)} {rng.randint(1000, 9999)}",
+                legameDefunto=rng.choice(LEGAMI))
+
+
+def nuova_pratica(tipo, scheda, defunto, aperta, stato, d_ufficio=False, giorno=None, ora=None, **extra):
+    """giorno/ora: quando è programmata o è stata eseguita."""
+    pr = dict(id=f"pr-{len(pratiche) + 1:04d}", numero=numero_pratica(aperta.year), cimiteroId="ragusa-centro", tipo=tipo, oggetto=extra.pop("oggetto", "salma"),
+              dUfficio=d_ufficio, defunto=dict(defunto), schedaId=scheda["id"], stato=stato, apertaIl=aperta.isoformat(), apertaDa="ufficio")
+    if not d_ufficio:
+        pr["richiedente"] = richiedente_di(defunto)
+        pr["tariffa"] = TARIFFE_OP[tipo]
+        if tipo in ("inumazione", "tumulazione") and rng.random() < 0.85:
+            pr["agenziaId"] = rng.choice(AG_ATTIVE)
+    if stato in ("programmata", "eseguita"):
+        h, m = ora or rng.choice(ORE)
+        pr["dataOra"] = f"{giorno.isoformat()}T{h:02d}:{m:02d}"
+        pr["operatoriIds"] = rng.sample(OP_IDS, rng.choice([1, 2, 2]))
+    if stato == "eseguita":
+        pr["eseguitaIl"] = giorno.isoformat()
+    if not d_ufficio:
+        pagata = stato == "eseguita" or (stato == "programmata" and rng.random() < 0.7)
+        pr["pagamento"] = dict(pagata=pagata)
+        if pagata:
+            dp = min(OGGI, aperta + dt.timedelta(days=rng.randint(0, 3)))
+            pr["pagamento"].update(data=dp.isoformat(), numero=f"RIC-{dp.year}-{rng.randint(10000, 99999)}")
+    if stato == "annullata":
+        pr["annullataIl"] = min(OGGI, aperta + dt.timedelta(days=rng.randint(1, 6))).isoformat()
+        pr["motivoAnnullamento"] = rng.choice(MOTIVI_ANN_PR)
+    pr.update(extra)
+    pratiche.append(pr)
+    return pr
+
+
+def giorno_lavorativo(d):
+    while d.weekday() == 6:
+        d += dt.timedelta(days=1)
+    return d
+
+
+# 1) un anno di registro: sepolture eseguite dei defunti morti negli ultimi 12 mesi
+recenti_def = []
+for s in schede:
+    if s["tipologia"] not in ("fossa", "loculo", "tomba_famiglia", "nicchia_cineraria"):
+        continue
+    for d in s["defunti"]:
+        if d.get("dataMorte") and d["dataMorte"] >= (OGGI - dt.timedelta(days=365)).isoformat():
+            recenti_def.append((s, d))
+for s, d in recenti_def:
+    morte = dt.date.fromisoformat(d["dataMorte"])
+    giorno = giorno_lavorativo(morte + dt.timedelta(days=rng.randint(1, 3)))
+    if giorno >= OGGI:
+        continue
+    cenere = s["tipologia"] == "nicchia_cineraria"
+    nuova_pratica("inumazione" if s["tipologia"] == "fossa" else "tumulazione", s, d, morte + dt.timedelta(days=1), "eseguita", giorno=giorno, oggetto="ceneri" if cenere else "salma")
+
+# 2) esumazioni ed estumulazioni eseguite: il defunto non è più nella postazione
+fosse_libere = [s for s in schede if s["tipologia"] == "fossa" and s["stato"] == "libero" and not s["defunti"]]
+cellette_occ = [s for s in schede if s["tipologia"] == "celletta_ossario" and s["defunti"]]
+for i, s in enumerate(rng.sample(fosse_libere, 10)):
+    giorno = giorno_lavorativo(OGGI - dt.timedelta(days=rng.randint(20, 330)))
+    if i < 4:
+        # i resti sono andati in una celletta ossario: il defunto si trova lì
+        cel = cellette_occ[i]
+        d = cel["defunti"][0]
+        nuova_pratica("esumazione", s, d, giorno - dt.timedelta(days=rng.randint(10, 40)), "eseguita", d_ufficio=rng.random() < 0.5, giorno=giorno, oggetto="resti",
+                      esitoResti=dict(destinazione="altra_postazione", schedaId=cel["id"]))
+    else:
+        d = persona(None, (2008, 2014))
+        dest = rng.choice(["ossario_comune", "ossario_comune", "cinerario_comune", "fuori_comune"])
+        pr = nuova_pratica("esumazione", s, d, giorno - dt.timedelta(days=rng.randint(10, 40)), "eseguita", d_ufficio=dest != "fuori_comune" and rng.random() < 0.7, giorno=giorno,
+                           oggetto="resti", esitoResti=dict(destinazione=dest))
+        defunti_altrove.append(dict(defunto=d, daSchedaId=s["id"], destinazione=dest, praticaId=pr["id"], data=giorno.isoformat()))
+loculi_liberi = [s for s in schede if s["tipologia"] == "loculo" and s["stato"] == "libero" and not s["defunti"]]
+for s in rng.sample(loculi_liberi, 5):
+    giorno = giorno_lavorativo(OGGI - dt.timedelta(days=rng.randint(15, 300)))
+    d = persona(None, (1962, 1985))
+    dest = rng.choice(["ossario_comune", "fuori_comune"])
+    pr = nuova_pratica("estumulazione", s, d, giorno - dt.timedelta(days=rng.randint(10, 40)), "eseguita", straordinaria=dest == "fuori_comune", giorno=giorno, oggetto="resti",
+                       esitoResti=dict(destinazione=dest))
+    defunti_altrove.append(dict(defunto=d, daSchedaId=s["id"], destinazione=dest, praticaId=pr["id"], data=giorno.isoformat()))
+
+# 3) l'agenda: da lunedì di questa settimana per due settimane, funerali e operazioni programmate
+lunedi = OGGI - dt.timedelta(days=OGGI.weekday())
+liberi_agenda = rng.sample(loculi_liberi, 14) + rng.sample(fosse_libere, 10)
+rng.shuffle(liberi_agenda)
+fine_turno = [s for s in schede if s["tipologia"] == "fossa" and s["defunti"] and s["defunti"][0].get("dataMorte") and s["defunti"][0]["dataMorte"] < (OGGI - dt.timedelta(days=3660)).isoformat()]
+tombe_fam = [s for s in schede if s["tipologia"] == "tomba_famiglia" and not s.get("strutturaId") and s["defunti"]]
+k = 0
+for g in range(13):
+    giorno = lunedi + dt.timedelta(days=g)
+    if giorno.weekday() == 6:
+        continue
+    passato = giorno < OGGI
+    ore = rng.sample(ORE, rng.choice([2, 3, 3, 4]))
+    for ora in sorted(ore):
+        scelta = rng.random()
+        stato = "eseguita" if passato else "programmata"
+        if scelta < 0.62 and k < len(liberi_agenda):
+            s = liberi_agenda[k]
+            k += 1
+            d = persona(None, (2026, 2026))
+            d["dataMorte"] = (giorno - dt.timedelta(days=rng.randint(1, 3))).isoformat()
+            nasc = dt.date.fromisoformat(d["dataMorte"]) - dt.timedelta(days=rng.randint(60, 95) * 365)
+            d["dataNascita"] = nasc.isoformat()
+            tipo = "inumazione" if s["tipologia"] == "fossa" else "tumulazione"
+            nuova_pratica(tipo, s, d, giorno - dt.timedelta(days=rng.randint(1, 2)), stato, giorno=giorno, ora=ora)
+            if passato:  # eseguita: il defunto è nella postazione
+                s["defunti"].append(d)
+                s["stato"] = "occupato"
+        elif scelta < 0.82 and fine_turno:
+            s = fine_turno.pop()
+            nuova_pratica("esumazione", s, s["defunti"][0], giorno - dt.timedelta(days=rng.randint(15, 40)), "programmata" if not passato else "eseguita",
+                          d_ufficio=True, giorno=giorno, ora=ora, oggetto="resti", **(dict(esitoResti=dict(destinazione="ossario_comune")) if passato else {}))
+            if passato:
+                defunti_altrove.append(dict(defunto=s["defunti"][0], daSchedaId=s["id"], destinazione="ossario_comune", praticaId=pratiche[-1]["id"], data=giorno.isoformat()))
+                s["defunti"] = []
+                s["stato"] = "libero"
+        elif not passato and tombe_fam:
+            arrivo = tombe_fam.pop()
+            partenza = rng.choice([x for x in schede if x["tipologia"] == "loculo" and x["defunti"] and x["stato"] == "occupato"])
+            nuova_pratica("traslazione", partenza, partenza["defunti"][0], giorno - dt.timedelta(days=rng.randint(5, 20)), "programmata", giorno=giorno, ora=ora,
+                          schedaArrivoId=arrivo["id"], oggetto="resti")
+
+# 4) pratiche aperte (senza data) e annullate
+for s in rng.sample([x for x in loculi_liberi if not x["defunti"]], 5):
+    d = persona(None, (2026, 2026))
+    d["dataMorte"] = (OGGI - dt.timedelta(days=rng.randint(0, 2))).isoformat()
+    nuova_pratica("tumulazione", s, d, OGGI - dt.timedelta(days=rng.randint(0, 1)), "aperta")
+for s in rng.sample([x for x in schede if x["tipologia"] == "loculo" and x["defunti"] and x["stato"] == "occupato"], 3):
+    nuova_pratica("estumulazione", s, s["defunti"][0], OGGI - dt.timedelta(days=rng.randint(2, 12)), "aperta", straordinaria=True, oggetto="resti")
+for s in rng.sample([x for x in schede if x["tipologia"] in ("loculo", "fossa") and x["defunti"]], 4):
+    nuova_pratica(rng.choice(["estumulazione", "traslazione", "esumazione"]) if s["tipologia"] == "loculo" else "esumazione", s, s["defunti"][0],
+                  OGGI - dt.timedelta(days=rng.randint(20, 200)), "annullata", oggetto="resti")
+pratiche.sort(key=lambda x: x["apertaIl"])
+
+# ---------------------------------------------------------------------------
 # Manutenzioni e verifiche
 # ---------------------------------------------------------------------------
 CAT_PER = {
@@ -964,7 +1125,6 @@ def nuova_manutenzione(s, stato, data_segn):
     return mm
 
 
-OP_IDS = [o["id"] for o in OPERATORI]
 for s in schede:
     if s["stato"] == "da_manutenzionare":
         st = scegli({"aperta": 48, "programmata": 52})
@@ -1021,7 +1181,7 @@ def data_it(iso):
     return f"{iso[8:10]}/{iso[5:7]}/{iso[0:4]}"
 for oid in OP_IDS:
     for k, mm in enumerate([x for x in manutenzioni if x["stato"] == "programmata" and oid in x["operatoriIds"]][:3]):
-        nuovo_alert(oid, "Manutenzione assegnata a te", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']}, il {data_it(mm['dataProgrammata'])}", f"/manutenzioni?id={mm['id']}", giorni_fa=k + 1)
+        nuovo_alert(oid, "Manutenzione assegnata a te", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']}", f"/manutenzioni?id={mm['id']}", giorni_fa=k + 1)
 for dest in OP_IDS + ["ufficio"]:
     for k, mm in enumerate([x for x in manutenzioni if x["stato"] == "risolta" and x["segnalataDa"] == dest][-2:]):
         nuovo_alert(dest, "Manutenzione risolta", f"{CAT_LABEL[mm['categoria']]} · {mm['schedaId']}", f"/manutenzioni?id={mm['id']}", giorni_fa=k + 2)
@@ -1058,7 +1218,7 @@ aree_out = [dict(id=f"a-{i + 1}", cimiteroId="ragusa-centro", nome=a["nome"], ti
 dataset = dict(
     versione=1, generatoIl=OGGI.isoformat(), avviso="Dati dimostrativi: nominativi, date e stati sono inventati.",
     cimiteri=cimiteri, quadranti=quadranti, viali=viali, aree=aree_out, strutture=strutture, operatori=OPERATORI,
-    schede=schede, concessioni=concessioni, utenze=utenze, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
+    schede=schede, concessioni=concessioni, utenze=utenze, pratiche=pratiche, agenzie=agenzie, defuntiAltrove=defunti_altrove, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
 )
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -1073,6 +1233,7 @@ print("defunti:", sum(len(s["defunti"]) for s in schede))
 print("concessioni:", len(concessioni), dict(Counter(c["stato"] for c in concessioni)), "| per tipo:", dict(Counter(c["tipo"] for c in concessioni)))
 print("concessioni in scadenza 6 mesi:", sum(1 for c in concessioni if c["stato"] != "chiusa" and OGGI.isoformat() <= c["scadenza"] <= (OGGI + dt.timedelta(days=183)).isoformat()))
 print("concessioni scadute:", sum(1 for c in concessioni if c["stato"] != "chiusa" and c["scadenza"] < OGGI.isoformat()))
+print("pratiche:", len(pratiche), dict(Counter(x["stato"] for x in pratiche)), dict(Counter(x["tipo"] for x in pratiche)), "| altrove:", len(defunti_altrove))
 print("utenze votive:", len(utenze), dict(Counter(u["stato"] for u in utenze)), "| lampade da controllare:", sum(1 for s in schede if s.get("lampadaAccesa")))
 print("manutenzioni:", dict(Counter(mm["stato"] for mm in manutenzioni)), "| verifiche:", dict(Counter(v["stato"] for v in verifiche)))
 print("ultima scheda:", schede[-1]["id"], schede[-1]["rilevatoIl"])

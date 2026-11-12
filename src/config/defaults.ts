@@ -99,6 +99,9 @@ export const REGOLE_DEFAULT: RegoleComune = {
   },
   // come a Ragusa: 24 € l'anno per punto luce, 15 € di allaccio
   illuminazione: { canonePuntoLuce: 24, allaccio: 15 },
+  campoComune: { turnoAnni: 10 },
+  // importi inventati: quelli di Ragusa non sono pubblicati
+  operazioni: { tariffe: { inumazione: 180, tumulazione: 220, esumazione: 260, estumulazione: 310, traslazione: 240 } },
 };
 
 export const FILTRI_VUOTI: Filtri = {

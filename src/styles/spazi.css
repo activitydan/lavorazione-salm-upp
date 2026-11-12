@@ -165,3 +165,19 @@
 .soggetto { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; }
 .modal--xl .griglia--2 { align-items: start; }
 .input.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Operazioni cimiteriali: agenda ---------- */
+.agenda { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.agenda--settimana { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.agenda--giorno { grid-template-columns: minmax(0, 1fr); }
+.agenda__giorno { border-right: 1px solid var(--border); min-height: 360px; display: flex; flex-direction: column; min-width: 0; }
+.agenda__giorno:last-child { border-right: none; }
+.agenda__giorno.is-oggi { background: var(--blu-50); }
+.agenda__testa { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; border: none; border-bottom: 1px solid var(--border); background: transparent; text-align: left; color: var(--text); }
+.agenda__testa b { font-size: 16px; }
+.agenda__voci { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.agenda--giorno .agenda__voci { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.agenda__voce { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border: 1px solid var(--border); border-left: 4px solid var(--blu); border-radius: 8px; background: #fff; text-align: left; color: var(--text); min-width: 0; }
+.agenda__voce:hover { box-shadow: var(--shadow-1); }
+.ricerca__altrove { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-top: 1px solid var(--border); }
+@media (max-width: 1100px) { .agenda--settimana { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
