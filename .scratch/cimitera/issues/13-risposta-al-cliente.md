@@ -2,6 +2,7 @@
 
 Type: grilling
 Status: open
+Assignee: Dan
 Blocked by: 05, 07, 08, 09, 10, 11
 
 ## Question
