@@ -47,7 +47,6 @@ Un piano approvato da Dan per la versione CimiTera della demo, diviso in fasi da
 ## Not yet specified
 
 - Collegamenti con i sistemi esterni previsti (ANPR, protocollo, contabilità): se serve mostrarli. Il menu non ha una voce apposta, quindi starebbero in Amministrazione o nelle Impostazioni; si vede nel ticket [Semplificazione di Impostazioni e Amministrazione](issues/18-semplificazione-impostazioni.md).
-- Divisione finale in fasi e contenuto di ogni fase: quando i modelli sono decisi. Va collocato anche il lavoro senza rete sul campo (app installabile, Planimetria automatica, "Da inviare", interruttore "Simula senza rete"), dal ticket [Uso senza rete sul campo](issues/14-uso-senza-rete.md).
 
 ## Out of scope
 
