@@ -684,6 +684,130 @@ for s in rng.sample(con_conc, max(0, 46 - len(in_scadenza))):
     c["rinnovi"] = max(0, (nuova.year - inizio.year) // c["durataAnni"] - 1)
 
 # ---------------------------------------------------------------------------
+# Concessioni: contratti a sé, collegati a una o più schede
+# ---------------------------------------------------------------------------
+VIE = ["Via Roma", "Corso Italia", "Via Archimede", "Via Mariannina Coffa", "Viale Tenente Lena", "Via Giambattista Odierna",
+       "Corso Vittorio Veneto", "Via Sant'Anna", "Via Ecce Homo", "Via Dante Alighieri", "Viale dei Platani", "Via Ettore Fieramosca",
+       "Via Natalelli", "Via Risorgimento", "Via Carducci", "Via Ercolano", "Via G. Di Vittorio", "Via Archimede"]
+ENTI = ["Confraternita del SS. Sacramento", "Parrocchia San Giovanni Battista", "Società Operaia di Mutuo Soccorso", "Arciconfraternita di Santa Maria delle Scale"]
+PARENTELE = ["coniuge", "figlio", "figlia", "fratello", "sorella", "nipote", "genero", "nuora"]
+DURATA_TIPO = {"tomba_famiglia": 99, "loculo": 60, "celletta_ossario": 30, "nicchia_cineraria": 30}
+NOME_TIPO = {"tomba_famiglia": "tomba di famiglia", "loculo": "loculo", "celletta_ossario": "celletta ossario", "nicchia_cineraria": "nicchia cineraria"}
+MESI_CF = "ABCDEHLMPRST"
+
+
+def consonanti(t, n=3):
+    t = "".join(ch for ch in t.upper() if ch.isalpha())
+    c = [ch for ch in t if ch not in "AEIOU"] + [ch for ch in t if ch in "AEIOU"]
+    return ("".join(c) + "XXX")[:n]
+
+
+def codice_fiscale(nome, cognome, sesso):
+    """Codice fiscale finto ma con la forma giusta (H163 = Ragusa)."""
+    anno = rng.randint(1935, 1990)
+    giorno = rng.randint(1, 28) + (40 if sesso == "F" else 0)
+    return f"{consonanti(cognome)}{consonanti(nome)}{anno % 100:02d}{rng.choice(MESI_CF)}{giorno:02d}H163{rng.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
+
+
+def indirizzo():
+    return f"{rng.choice(VIE)} {rng.randint(1, 180)}, 97100 Ragusa"
+
+
+def persona_concessionario(cognome, nome=None):
+    sesso = rng.choice("MF")
+    nome = nome or rng.choice(NOMI_M if sesso == "M" else NOMI_F)
+    c = dict(tipo="persona", nome=nome, cognome=cognome, codiceFiscale=codice_fiscale(nome, cognome, sesso), indirizzo=indirizzo(),
+             telefono=f"+39 3{rng.randint(20, 99)} {rng.randint(100, 999)} {rng.randint(1000, 9999)}")
+    if rng.random() < 0.6:
+        c["email"] = f"{nome.split()[0].lower()}.{cognome.lower().replace(' ', '')}@esempio.it"
+    return c
+
+
+def anni_dopo(d, anni):
+    try:
+        return d.replace(year=d.year + anni)
+    except ValueError:
+        return d.replace(year=d.year + anni, day=28)
+
+
+concessioni = []
+per_scheda = {}
+for s in schede:
+    v = s.get("concessione")
+    if not v:
+        continue
+    tipo = s["tipologia"]
+    if tipo not in DURATA_TIPO:
+        continue
+    durata = DURATA_TIPO[tipo]
+    scadenza = dt.date.fromisoformat(v["dataScadenza"])
+    rinnovi = min(3, v["rinnovi"])
+    decorrenza = anni_dopo(scadenza, -(durata + 10 * rinnovi))
+    while decorrenza.year < 1900 and rinnovi > 0:
+        rinnovi -= 1
+        decorrenza = anni_dopo(scadenza, -(durata + 10 * rinnovi))
+    if decorrenza.year < 1900:
+        decorrenza = dt.date(1900 + rng.randint(1, 20), scadenza.month, min(scadenza.day, 28))
+        scadenza = anni_dopo(decorrenza, durata)
+    ids = [s["id"]]
+    if s.get("strutturaId"):
+        loculi = [x for x in schede if x.get("posizione", {}).get("strutturaId") == s["strutturaId"]]
+        ids += [x["id"] for x in loculi]
+        posti = len(loculi)
+    elif tipo == "tomba_famiglia":
+        posti = max(2, len(s["defunti"]) + rng.randint(0, 3))
+    else:
+        posti = max(1, len(s["defunti"]))
+    # concessionari: una persona, più persone (uno è il rappresentante) oppure un ente
+    nome_v = v["intestatario"]
+    cognome = nome_v.replace("Eredi ", "").split(" ", 1)[-1] if not nome_v.startswith("Eredi ") else nome_v[6:]
+    r = rng.random()
+    if nome_v.startswith("Eredi "):
+        concessionari = [persona_concessionario(cognome) for _ in range(rng.randint(2, 3))]
+    elif r < 0.03:
+        ente = rng.choice(ENTI)
+        concessionari = [dict(tipo="ente", denominazione=ente, codiceFiscale=f"9{rng.randint(1000000000, 9999999999) % 10000000000:010d}", indirizzo=indirizzo(),
+                              legaleRappresentante=f"{rng.choice(NOMI_M)} {rng.choice(COGNOMI)}", telefono=f"0932 {rng.randint(100000, 999999)}")]
+    elif r < 0.15:
+        concessionari = [persona_concessionario(cognome, nome_v.split(" ")[0]), persona_concessionario(cognome)]
+    else:
+        concessionari = [persona_concessionario(cognome, nome_v.split(" ")[0])]
+    if len(concessionari) > 1:
+        concessionari[0]["rappresentante"] = True
+    stipula = decorrenza - dt.timedelta(days=rng.randint(0, 20))
+    numero = numero_concessione(decorrenza.year)
+    storico = [dict(data=stipula.isoformat(), azione="Nuova concessione", atto=f"Contratto rep. {rng.randint(100, 9999)}", operatore="Ufficio Cimiteri")]
+    for i in range(rinnovi):
+        d = anni_dopo(decorrenza, durata + 10 * i)
+        storico.append(dict(data=d.isoformat(), azione="Rinnovo di 10 anni", atto=f"Determina n. {rng.randint(100, 999)}/{d.year}", operatore="Ufficio Cimiteri"))
+    c = dict(id=f"conc-{len(concessioni) + 1:05d}", numero=numero, cimiteroId="ragusa-centro", dataStipula=stipula.isoformat(),
+             provvedimento=f"Determina n. {rng.randint(100, 999)}/{stipula.year}", tipo=tipo, schedeIds=ids, postiTotali=posti,
+             concessionari=concessionari, decorrenza=decorrenza.isoformat(), durataAnni=durata, rinnovi=rinnovi,
+             regola=f"Regolamento comunale: {NOME_TIPO[tipo]} {durata} anni, rinnovo 10", scadenza=scadenza.isoformat(), stato="attiva", storico=storico)
+    if tipo == "tomba_famiglia":
+        c["aventiDiritto"] = [dict(nome=f"{rng.choice(NOMI_M + NOMI_F)} {cognome if rng.random() < 0.7 else rng.choice(COGNOMI)}", parentela=rng.choice(PARENTELE)) for _ in range(rng.randint(2, 5))]
+    concessioni.append(c)
+    for i in ids:
+        per_scheda[i] = c
+
+# qualche contratto in decadenza e qualche contratto chiuso (anche con la postazione ancora occupata)
+attive_vecchie = [c for c in concessioni if c["decorrenza"] < "2005-01-01" and c["tipo"] != "tomba_famiglia" and c["scadenza"] > (OGGI + dt.timedelta(days=400)).isoformat()]
+scelte = rng.sample(attive_vecchie, 14)
+for c in scelte[:5]:
+    c["stato"] = "in_decadenza"
+    d = OGGI - dt.timedelta(days=rng.randint(15, 80))
+    c["storico"].append(dict(data=d.isoformat(), azione="Avvio della decadenza", atto=f"Diffida prot. {rng.randint(1000, 9999)}/{d.year}", operatore="Ufficio Cimiteri"))
+for c, motivo in zip(scelte[5:], ["rinunciata"] * 4 + ["decaduta"] * 3 + ["estinta"] * 2):
+    c["stato"] = "chiusa"
+    c["motivoChiusura"] = motivo
+    d = OGGI - dt.timedelta(days=rng.randint(30, 400))
+    c["chiusaIl"] = d.isoformat()
+    azione = {"rinunciata": "Rinuncia", "decaduta": "Decadenza", "estinta": "Estinzione"}[motivo]
+    c["storico"].append(dict(data=d.isoformat(), azione=azione, atto=f"Determina n. {rng.randint(100, 999)}/{d.year}", operatore="Ufficio Cimiteri"))
+for s in schede:
+    s.pop("concessione", None)
+
+# ---------------------------------------------------------------------------
 # Manutenzioni e verifiche
 # ---------------------------------------------------------------------------
 CAT_PER = {
@@ -831,7 +955,7 @@ aree_out = [dict(id=f"a-{i + 1}", cimiteroId="ragusa-centro", nome=a["nome"], ti
 dataset = dict(
     versione=1, generatoIl=OGGI.isoformat(), avviso="Dati dimostrativi: nominativi, date e stati sono inventati.",
     cimiteri=cimiteri, quadranti=quadranti, viali=viali, aree=aree_out, strutture=strutture, operatori=OPERATORI,
-    schede=schede, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
+    schede=schede, concessioni=concessioni, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
 )
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -843,8 +967,9 @@ print("tipologie:", dict(Counter(s["tipologia"] for s in schede)))
 print("stati:", dict(Counter(s["stato"] for s in schede)))
 print("per quadrante (censite/stimate):", {q["codice"]: (sum(1 for s in schede if s["quadranteId"] == q["id"]), q["stimaManufatti"]) for q in quadranti})
 print("defunti:", sum(len(s["defunti"]) for s in schede))
-print("concessioni in scadenza 6 mesi:", sum(1 for s in schede if s.get("concessione") and OGGI <= dt.date.fromisoformat(s["concessione"]["dataScadenza"]) <= OGGI + dt.timedelta(days=183)))
-print("concessioni scadute:", sum(1 for s in schede if s.get("concessione") and dt.date.fromisoformat(s["concessione"]["dataScadenza"]) < OGGI))
+print("concessioni:", len(concessioni), dict(Counter(c["stato"] for c in concessioni)), "| per tipo:", dict(Counter(c["tipo"] for c in concessioni)))
+print("concessioni in scadenza 6 mesi:", sum(1 for c in concessioni if c["stato"] != "chiusa" and OGGI.isoformat() <= c["scadenza"] <= (OGGI + dt.timedelta(days=183)).isoformat()))
+print("concessioni scadute:", sum(1 for c in concessioni if c["stato"] != "chiusa" and c["scadenza"] < OGGI.isoformat()))
 print("lampade votive:", sum(1 for s in schede if s["campi"].get("lampada_votiva")))
 print("manutenzioni:", dict(Counter(mm["stato"] for mm in manutenzioni)), "| verifiche:", dict(Counter(v["stato"] for v in verifiche)))
 print("ultima scheda:", schede[-1]["id"], schede[-1]["rilevatoIl"])

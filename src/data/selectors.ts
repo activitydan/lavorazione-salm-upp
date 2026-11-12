@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { PRIORITA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
-import { aggiungiGiorni, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
+import { aggiungiGiorni, aggiungiMesi, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
+import { concessioneDi, nomiConcessionari } from './concessioni';
 import { loculiPerStruttura, useStore } from './store';
 import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
 
@@ -138,12 +139,34 @@ export function campiPer(config: ConfigScheda, tipologia?: string, filtro?: (c: 
 
 export type StatoConcessione = { stato: 'valida' | 'in_scadenza' | 'scaduta'; giorni: number };
 
-export function statoConcessione(s: Scheda, oggi = oggiISO(), sogliaGiorni = 183): StatoConcessione | null {
-  const c = s.concessione;
+/** Il contratto in corso della scheda, nella forma breve che serve a elenchi, filtri, Excel e PDF. */
+export interface ConcessioneVista {
+  id: string;
+  numero: string;
+  /** il rappresentante, o l'unico concessionario */
+  concessionario: string;
+  decorrenza: string;
+  scadenza: string;
+  durataAnni: number;
+  rinnovi: number;
+  inDecadenza: boolean;
+}
+
+export function concessioneScheda(s: Scheda): ConcessioneVista | null {
+  const c = concessioneDi(s.id);
   if (!c) return null;
-  const giorni = giorniTra(oggi, c.dataScadenza);
+  return {
+    id: c.id, numero: c.numero, concessionario: nomiConcessionari(c), decorrenza: c.decorrenza, scadenza: c.scadenza,
+    durataAnni: c.durataAnni, rinnovi: c.rinnovi, inDecadenza: c.stato === 'in_decadenza',
+  };
+}
+
+export function statoConcessione(s: Scheda, oggi = oggiISO()): StatoConcessione | null {
+  const c = concessioneDi(s.id);
+  if (!c) return null;
+  const giorni = giorniTra(oggi, c.scadenza);
   if (giorni < 0) return { stato: 'scaduta', giorni };
-  if (giorni <= sogliaGiorni) return { stato: 'in_scadenza', giorni };
+  if (c.scadenza <= aggiungiMesi(oggi, useStore.getState().db.regole.concessioni.sogliaInScadenzaMesi)) return { stato: 'in_scadenza', giorni };
   return { stato: 'valida', giorni };
 }
 
@@ -152,7 +175,7 @@ export function statoConcessione(s: Scheda, oggi = oggiISO(), sogliaGiorni = 183
 // ---------------------------------------------------------------------------
 
 function testoScheda(s: Scheda): string {
-  const parti = [s.id, s.nomeManufatto ?? '', s.concessione?.intestatario ?? '', String(s.campi.codice_utenza ?? '')];
+  const parti = [s.id, s.nomeManufatto ?? '', concessioneScheda(s)?.concessionario ?? '', String(s.campi.codice_utenza ?? '')];
   for (const d of s.defunti) parti.push(`${d.nome} ${d.cognome}`, `${d.cognome} ${d.nome}`);
   return normalizza(parti.join(' | '));
 }
@@ -220,7 +243,7 @@ export function filtraSchede(schede: Scheda[], f: Filtri, config: ConfigScheda, 
     }
     if (f.concessione !== 'tutte') {
       const sc = statoConcessione(s, oggi);
-      if (f.concessione === 'senza' && s.concessione) return false;
+      if (f.concessione === 'senza' && sc) return false;
       if (f.concessione === 'in_scadenza' && sc?.stato !== 'in_scadenza') return false;
       if (f.concessione === 'scadute' && sc?.stato !== 'scaduta') return false;
     }

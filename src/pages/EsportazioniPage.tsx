@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CalendarClock, Filter, Lightbulb } from 'lucide-react';
 import { registraEsportazione, useStore } from '../data/store';
-import { contaFiltriAttivi, statoConcessione, useCimitero, useSchedeCimitero, useSchedeFiltrate } from '../data/selectors';
+import { concessioneScheda, contaFiltriAttivi, statoConcessione, useCimitero, useSchedeCimitero, useSchedeFiltrate } from '../data/selectors';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
 import { numero, oggiISO } from '../lib/format';
 import { href } from '../router';
@@ -57,7 +57,8 @@ export function EsportazioniPage() {
         <ExportCard icona={<CalendarClock size={22} />} colore="#8E5BB5" titolo="Scadenze concessioni" testo="Concessioni scadute o in scadenza nei prossimi 6 mesi, ordinate per data."
           bottone="Scarica Excel" disabilitato={!!lavoro}
           onClick={() => {
-            const l = filtrate.filter((s) => { const c = statoConcessione(s); return c && c.stato !== 'valida'; });
+            const viste = new Set<string>();
+            const l = filtrate.filter((s) => { const c = statoConcessione(s); const v = concessioneScheda(s); if (!c || !v || c.stato === 'valida' || viste.has(v.id)) return false; viste.add(v.id); return true; });
             esegui('Excel scadenze', l.length, () => scaricaExcel(`${base}_scadenze_${oggi}`, [{ nome: 'Scadenze', righe: righeScadenze(l, ctx) }]));
           }} />
 

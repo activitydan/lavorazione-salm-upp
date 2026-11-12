@@ -152,7 +152,7 @@ export function RilievoPage() {
       const defunti = b.stato === 'libero' ? [] : b.defunti.filter((d) => d.cognome.trim() || d.nome.trim());
       const s = creaScheda({
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
-        defunti, concessione: null, campi: { ...b.campi },
+        defunti, campi: { ...b.campi },
         rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
       });
       if (b.daFoto && defunti.length) aggiornaScheda(s.id, {}, 'Anagrafica letta dalla foto della lapide e controllata');

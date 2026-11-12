@@ -89,13 +89,81 @@ export interface Defunto {
   dataMorte?: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Concessioni
+// ---------------------------------------------------------------------------
+
+/** Le postazioni che si danno in concessione; la fossa in campo comune ha il turno. */
+export type TipoConcessione = 'loculo' | 'tomba_famiglia' | 'celletta_ossario' | 'nicchia_cineraria';
+
+/** Una persona o un ente: il tipo va indicato sempre. L'indirizzo serve alle lettere inviate tramite DAT. */
+export interface Soggetto {
+  tipo: 'persona' | 'ente';
+  nome?: string;
+  cognome?: string;
+  denominazione?: string;
+  legaleRappresentante?: string;
+  /** codice fiscale, oppure partita IVA per un ente */
+  codiceFiscale: string;
+  indirizzo: string;
+  telefono?: string;
+  email?: string;
+}
+
+export interface Concessionario extends Soggetto {
+  /** quando i concessionari sono più di uno: chi tratta con il Comune */
+  rappresentante?: boolean;
+}
+
+export interface AventeDiritto {
+  nome: string;
+  parentela: string;
+}
+
+export type MotivoChiusura = 'scaduta' | 'decaduta' | 'revocata' | 'rinunciata' | 'estinta';
+
+export interface EventoConcessione {
+  data: string;
+  azione: string;
+  atto?: string;
+  operatore: string;
+}
+
+/** Il contratto con cui il Comune assegna per un tempo determinato una o più postazioni. */
 export interface Concessione {
+  id: string;
   numero: string;
-  intestatario: string;
-  dataInizio: string;
-  dataScadenza: string;
+  cimiteroId: string;
+  dataStipula: string;
+  provvedimento?: string;
+  tipo: TipoConcessione;
+  /** una tomba di famiglia copre tutti i suoi posti con un solo contratto */
+  schedeIds: string[];
+  postiTotali: number;
+  concessionari: Concessionario[];
+  /** solo per le tombe di famiglia */
+  aventiDiritto?: AventeDiritto[];
+  decorrenza: string;
   durataAnni: number;
   rinnovi: number;
+  /** la regola con cui è nato il contratto: cambiare le durate non tocca i contratti esistenti */
+  regola: string;
+  scadenza: string;
+  /** "in scadenza" e "scaduta" non si salvano: si calcolano dalla data */
+  stato: 'attiva' | 'in_decadenza' | 'chiusa';
+  motivoChiusura?: MotivoChiusura;
+  chiusaIl?: string;
+  storico: EventoConcessione[];
+}
+
+/** Regole del Comune (Amministrazione): valgono per i nuovi contratti e addebiti. */
+export interface RegoleComune {
+  concessioni: {
+    durate: Record<TipoConcessione, number>;
+    durataRinnovo: number;
+    sogliaInScadenzaMesi: number;
+    tariffe: Record<TipoConcessione, { nuova: number; rinnovo: number }>;
+  };
 }
 
 export interface PosizioneLoculo {
@@ -123,7 +191,6 @@ export interface Scheda {
   viale: string;
   quadranteId?: string | null;
   defunti: Defunto[];
-  concessione?: Concessione | null;
   campi: Record<string, ValoreCampo>;
   rilevatoDa: string;
   rilevatoIl: string;
@@ -217,6 +284,8 @@ export interface Database {
   strutture: Struttura[];
   operatori: Operatore[];
   schede: Scheda[];
+  concessioni: Concessione[];
+  regole: RegoleComune;
   manutenzioni: Manutenzione[];
   verifiche: Verifica[];
   alert: AlertPersonale[];

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Plus, Save, ScanText, Trash2, X } from 'lucide-react';
 import { aggiornaScheda, aggiungiFoto, toast, useStore } from '../../data/store';
 import { campiPer } from '../../data/selectors';
-import type { Concessione, Defunto, Scheda } from '../../data/types';
+import type { Defunto, Scheda } from '../../data/types';
 import { decedutoDa, oggiISO } from '../../lib/format';
 import { chiave } from '../../lib/lapide';
 import { riduciFoto } from '../../lib/photo';
 import { LetturaLapide, type EsitoLettura } from '../rilievo/LetturaLapide';
-import { Field, Switch } from '../ui';
+import { Field } from '../ui';
 import { InputCampo } from './Campi';
 import { ScegliFoto } from './Media';
 
@@ -44,11 +44,6 @@ export function EditorDefunti({ defunti, onChange }: { defunti: Defunto[]; onCha
   );
 }
 
-function scadenzaDa(inizio: string, anni: number) {
-  const [y, m, d] = inizio.split('-').map(Number);
-  return `${y + anni}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-
 export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void }) {
   const config = useStore((st) => st.config);
   const viali = useStore((st) => st.db.viali).filter((v) => v.cimiteroId === s.cimiteroId);
@@ -83,12 +78,6 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
     toast('Dati della lapide inseriti: controllali e salva la scheda');
   };
 
-  const setConc = (patch: Partial<Concessione>) => {
-    const c = { ...(b.concessione ?? { numero: '', intestatario: '', dataInizio: oggiISO(), dataScadenza: scadenzaDa(oggiISO(), 30), durataAnni: 30, rinnovi: 0 }), ...patch };
-    if (patch.dataInizio || patch.durataAnni) c.dataScadenza = scadenzaDa(c.dataInizio, c.durataAnni);
-    set({ concessione: c });
-  };
-
   const salva = () => {
     const mancanti = campi.filter((c) => c.obbligatorio && (b.campi[c.id] === undefined || b.campi[c.id] === null || b.campi[c.id] === ''));
     if (mancanti.length) {
@@ -101,7 +90,6 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
     if (JSON.stringify(b.defunti) !== JSON.stringify(s.defunti)) cambiati.push(daFoto ? 'defunti (letti dalla foto della lapide)' : 'defunti');
     if (b.fotoId !== s.fotoId) cambiati.push('foto');
     if (b.viale !== s.viale || b.quadranteId !== s.quadranteId) cambiati.push('ubicazione');
-    if (JSON.stringify(b.concessione) !== JSON.stringify(s.concessione)) cambiati.push('concessione');
     for (const c of config.campi) if (JSON.stringify(b.campi[c.id]) !== JSON.stringify(s.campi[c.id])) cambiati.push(c.label.toLowerCase());
     if ((b.note ?? '') !== (s.note ?? '')) cambiati.push('note');
     aggiornaScheda(s.id, b, cambiati.length ? `Modificati: ${cambiati.join(', ')}` : 'Scheda salvata');
@@ -185,29 +173,6 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
             </>
           )}
         </div>
-      </section>
-
-      <section className="sez">
-        <h4 className="sez__t">
-          Concessione
-          <Switch on={!!b.concessione} onChange={(v) => (v ? setConc({}) : set({ concessione: null }))} small label="Concessione presente" />
-        </h4>
-        {b.concessione && (
-          <div className="grid-form">
-            <Field label="Numero"><input className="input" value={b.concessione.numero} onChange={(e) => setConc({ numero: e.target.value })} /></Field>
-            <Field label="Intestatario"><input className="input" value={b.concessione.intestatario} onChange={(e) => setConc({ intestatario: e.target.value })} /></Field>
-            <Field label="Data inizio"><input className="input" type="date" value={b.concessione.dataInizio} onChange={(e) => setConc({ dataInizio: e.target.value })} /></Field>
-            <Field label="Durata (anni)">
-              <select className="select" value={b.concessione.durataAnni} onChange={(e) => setConc({ durataAnni: Number(e.target.value) })}>
-                {[10, 20, 30, 40, 50, 99].map((n) => <option key={n} value={n}>{n} anni</option>)}
-              </select>
-            </Field>
-            <Field label="Scadenza" hint="Calcolata da inizio e durata, modificabile">
-              <input className="input" type="date" value={b.concessione.dataScadenza} onChange={(e) => set({ concessione: { ...b.concessione!, dataScadenza: e.target.value } })} />
-            </Field>
-            <Field label="Rinnovi"><input className="input" type="number" min={0} value={b.concessione.rinnovi} onChange={(e) => setConc({ rinnovi: Number(e.target.value) })} /></Field>
-          </div>
-        )}
       </section>
 
       {config.sezioni.map((sez) => {

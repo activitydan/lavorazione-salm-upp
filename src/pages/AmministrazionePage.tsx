@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Bell, ClipboardCheck, FileClock, Pencil, Plus, Users, Wrench, X } from 'lucide-react';
+import { Bell, ClipboardCheck, FileClock, Pencil, Plus, Scale, Users, Wrench, X } from 'lucide-react';
+import { RegoleDelComune } from '../components/RegoleComune';
 import { Avatar, Field, Modal, Seg, Switch, Tabs } from '../components/ui';
 import { salvaOperatore, toast, useStore } from '../data/store';
 import { alertPersonali, labelLista } from '../data/selectors';
@@ -7,7 +8,7 @@ import type { Operatore } from '../data/types';
 import { data, dataOra } from '../lib/format';
 import { href, setQuery, useRotta } from '../router';
 
-type Tab = 'operatori' | 'registro';
+type Tab = 'operatori' | 'regole' | 'registro';
 const COLORI = ['#2F6FB3', '#8E5BB5', '#1E8C8C', '#C0487A', '#5E9A3A', '#E07B22', '#4F5FB8', '#B8860B', '#D9473F', '#0A2F55'];
 
 /** Amministrazione: le persone e le regole del Comune. Solo per l'Amministratore, solo sul computer. */
@@ -25,9 +26,11 @@ export function AmministrazionePage() {
       </div>
       <Tabs value={tab} onChange={(t) => setQuery('tab', t === 'operatori' ? null : t)} tabs={[
         { id: 'operatori', label: 'Operatori', icon: <Users size={16} />, count: operatori.filter((o) => o.attivo).length },
+        { id: 'regole', label: 'Regole del Comune', icon: <Scale size={16} /> },
         { id: 'registro', label: 'Registro modifiche', icon: <FileClock size={16} />, count: registro.length },
       ]} />
       {tab === 'operatori' && <Operatori />}
+      {tab === 'regole' && <RegoleDelComune />}
       {tab === 'registro' && <Registro />}
     </div>
   );

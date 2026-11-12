@@ -20,7 +20,7 @@ const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ defaul
 const CittadinoPage = lazy(() => import('./pages/CittadinoPage').then((m) => ({ default: m.CittadinoPage })));
 const CensimentoPage = lazy(() => import('./pages/CensimentoPage').then((m) => ({ default: m.CensimentoPage })));
 const RilievoPage = lazy(() => import('./pages/RilievoPage').then((m) => ({ default: m.RilievoPage })));
-const AnagrafePage = lazy(() => import('./pages/AnagrafePage').then((m) => ({ default: m.AnagrafePage })));
+const ConcessioniPage = lazy(() => import('./pages/ConcessioniPage').then((m) => ({ default: m.ConcessioniPage })));
 const ManutenzioniPage = lazy(() => import('./pages/ManutenzioniPage').then((m) => ({ default: m.ManutenzioniPage })));
 const ReportPage = lazy(() => import('./pages/ReportPage').then((m) => ({ default: m.ReportPage })));
 const EsportazioniPage = lazy(() => import('./pages/EsportazioniPage').then((m) => ({ default: m.EsportazioniPage })));
@@ -62,8 +62,8 @@ function Pagina() {
       return <CensimentoPage />;
     case 'rilievo':
       return <RilievoPage />;
-    case 'anagrafe':
-      return <AnagrafePage />;
+    case 'concessioni':
+      return <ConcessioniPage />;
     case 'manutenzioni':
       return <ManutenzioniPage />;
     case 'report':

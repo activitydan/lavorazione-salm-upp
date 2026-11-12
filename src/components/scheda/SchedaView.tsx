@@ -5,12 +5,13 @@ import {
   aggiornaCampo, aggiornaScheda, apriParete, apriModale, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
 } from '../../data/store';
 import {
-  campiPer, descrizioneScheda, labelLista, occupazioneStruttura, prioritaDef, statoConcessione, statoDef, valoreLeggibile,
+  campiPer, concessioneScheda, descrizioneScheda, labelLista, occupazioneStruttura, prioritaDef, statoConcessione, statoDef, valoreLeggibile,
 } from '../../data/selectors';
 import type { Scheda } from '../../data/types';
 import { anniVita, data, dataBreve, dataOra, decedutoDa, eta, nomeCompleto } from '../../lib/format';
 import { formatCoord, googleMapsIndicazioni } from '../../lib/geo';
 import { pdfScheda } from '../../lib/pdf';
+import { useTelefono } from '../../lib/schermo';
 import { href, useRotta, vai } from '../../router';
 import { DaInviare } from '../StrisciaRete';
 import { Dot, Progress, Switch, TipologiaBadge } from '../ui';
@@ -32,6 +33,8 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
   const manutenzioni = db.manutenzioni.filter((m) => m.schedaId === s.id).sort((a, b) => b.segnalataIl.localeCompare(a.segnalataIl));
   const verifiche = db.verifiche.filter((v) => v.schedaId === s.id);
   const conc = statoConcessione(s);
+  const concVista = concessioneScheda(s);
+  const telefono = useTelefono();
   const flag = campiPer(config, s.tipologia, (c) => c.tipo === 'flag');
 
   if (modifica) return <SchedaForm s={s} onChiudi={() => setModifica(false)} />;
@@ -147,24 +150,24 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
         </dl>
       </section>
 
-      {s.concessione && (
+      {conc && concVista && (
         <section className="sez">
           <h4 className="sez__t">
             Concessione
-            {conc?.stato === 'scaduta' && <span className="badge badge--rosso badge--sm">Scaduta da {Math.abs(conc.giorni)} giorni</span>}
-            {conc?.stato === 'in_scadenza' && <span className="badge badge--arancio badge--sm">Scade tra {conc.giorni} giorni</span>}
-            {conc?.stato === 'valida' && <span className="badge badge--verde badge--sm">Valida</span>}
+            {concVista.inDecadenza && <span className="badge badge--rosso badge--sm">In decadenza</span>}
+            {!concVista.inDecadenza && conc.stato === 'scaduta' && <span className="badge badge--rosso badge--sm">Scaduta da {Math.abs(conc.giorni)} giorni</span>}
+            {!concVista.inDecadenza && conc.stato === 'in_scadenza' && <span className="badge badge--arancio badge--sm">Scade tra {conc.giorni} giorni</span>}
+            {!concVista.inDecadenza && conc.stato === 'valida' && <span className="badge badge--verde badge--sm">Attiva</span>}
           </h4>
           <dl className="kv">
             <dt>Numero</dt>
-            <dd>{s.concessione.numero}</dd>
+            <dd>{concVista.numero}</dd>
             <dt>Concessionario</dt>
-            <dd>{s.concessione.intestatario}</dd>
-            <dt>Periodo</dt>
-            <dd>{data(s.concessione.dataInizio)} → {data(s.concessione.dataScadenza)}</dd>
-            <dt>Durata</dt>
-            <dd>{s.concessione.durataAnni} anni{s.concessione.rinnovi ? ` · ${s.concessione.rinnovi} rinnovi` : ''}</dd>
+            <dd>{concVista.concessionario}</dd>
+            <dt>Scadenza</dt>
+            <dd>{data(concVista.scadenza)}</dd>
           </dl>
+          {!telefono && <a className="btn btn--xs mt-8" href={href(`/concessioni?id=${concVista.id}`)}>Apri in Concessioni</a>}
         </section>
       )}
 

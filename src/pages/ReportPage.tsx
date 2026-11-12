@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { CalendarClock, Euro, FileSpreadsheet, Lightbulb, Map as MapIcon } from 'lucide-react';
 import { Barre, Ciambella, Dot, Progress, Tabs } from '../components/ui';
 import { registraEsportazione, resetFiltri, seleziona, useStore } from '../data/store';
-import { conta, descrizioneScheda, statoConcessione, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
+import { concessioneScheda, conta, descrizioneScheda, statoConcessione, useSchedeCimitero, valoreLeggibile } from '../data/selectors';
 import type { Scheda } from '../data/types';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
 import { aggiungiMesi, data, euro, numero, oggiISO, percentuale } from '../lib/format';
@@ -59,18 +59,29 @@ function Scadenze() {
   const rotta = useRotta();
   const periodo = rotta.query.get('periodo') ?? '6';
   const oggi = oggiISO();
-  const con = useMemo(() => schede.filter((s) => s.concessione), [schede]);
+  const concessioni = useStore((st) => st.db.concessioni);
+  // una riga per contratto: la prima scheda di ogni concessione in corso
+  const con = useMemo(() => {
+    const viste = new Set<string>();
+    return schede.filter((s) => {
+      const c = concessioneScheda(s);
+      if (!c || viste.has(c.id)) return false;
+      viste.add(c.id);
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schede, concessioni]);
   const lista = useMemo(() => {
     if (periodo === 'scadute') return con.filter((s) => statoConcessione(s)?.stato === 'scaduta');
     const fino = aggiungiMesi(oggi, Number(periodo));
-    return con.filter((s) => s.concessione!.dataScadenza >= oggi && s.concessione!.dataScadenza <= fino);
-  }, [con, periodo, oggi]).sort((a, b) => a.concessione!.dataScadenza.localeCompare(b.concessione!.dataScadenza));
+    return con.filter((s) => concessioneScheda(s)!.scadenza >= oggi && concessioneScheda(s)!.scadenza <= fino);
+  }, [con, periodo, oggi]).sort((a, b) => concessioneScheda(a)!.scadenza.localeCompare(concessioneScheda(b)!.scadenza));
   const mesi = useMemo(() => Array.from({ length: 12 }, (_, i) => {
     const d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() + i);
     const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    return { label: d.toLocaleDateString('it-IT', { month: 'short' }), valore: con.filter((s) => s.concessione!.dataScadenza.startsWith(k)).length, titolo: d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) };
+    return { label: d.toLocaleDateString('it-IT', { month: 'short' }), valore: con.filter((s) => concessioneScheda(s)!.scadenza.startsWith(k)).length, titolo: d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) };
   }), [con]);
   const scadute = con.filter((s) => statoConcessione(s)?.stato === 'scaduta').length;
   const pag = config.campi.find((c) => c.id === 'stato_pagamenti');
@@ -101,9 +112,9 @@ function Scadenze() {
           </div>
         </div>
         <TabellaSchede lista={lista} colonne={[
-          { label: 'N. concessione', v: (s) => s.concessione!.numero },
-          { label: 'Intestatario', v: (s) => s.concessione!.intestatario },
-          { label: 'Scadenza', v: (s) => data(s.concessione!.dataScadenza) },
+          { label: 'N. concessione', v: (s) => concessioneScheda(s)!.numero },
+          { label: 'Concessionario', v: (s) => concessioneScheda(s)!.concessionario },
+          { label: 'Scadenza', v: (s) => data(concessioneScheda(s)!.scadenza) },
           { label: 'Giorni', num: true, v: (s) => { const g = statoConcessione(s)!.giorni; return <b style={{ color: g < 0 ? '#D9473F' : g < 31 ? '#E07B22' : undefined }}>{g}</b>; } },
           { label: pag?.label ?? 'Pagamenti', v: (s) => (pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '') },
         ]} />
@@ -191,7 +202,7 @@ function Pagamenti() {
       <section className="card">
         <div className="card__head"><h3>Posizioni da sollecitare o verificare</h3><span className="badge">{problemi.length}</span></div>
         <TabellaSchede lista={problemi} colonne={[
-          { label: 'Intestatario', v: (s) => s.concessione?.intestatario ?? String(s.campi.intestatario_utenza ?? '') },
+          { label: 'Intestatario', v: (s) => concessioneScheda(s)?.concessionario ?? String(s.campi.intestatario_utenza ?? '') },
           { label: pag.label, v: (s) => valoreLeggibile(pag, s.campi.stato_pagamenti) },
         ]} />
       </section>

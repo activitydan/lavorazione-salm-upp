@@ -1,4 +1,4 @@
-import type { ConfigScheda, Filtri, Struttura, TipologiaDef } from '../data/types';
+import type { ConfigScheda, Filtri, RegoleComune, Struttura, TipologiaDef } from '../data/types';
 
 // Configurazione iniziale della scheda. Campi ed elenchi si modificano da Impostazioni;
 // stati e tipologie sono fissi: le tipologie sono i cinque tipi di postazione del glossario.
@@ -87,6 +87,21 @@ export const NOMI_STRUTTURA: Record<Struttura['tipo'], string> = {
 /** Tipo di postazione dei posti a parete di ogni struttura. */
 export const POSTO_IN_STRUTTURA: Record<Struttura['tipo'], string> = {
   colombaio: 'loculo', cappella: 'loculo', ossario: 'celletta_ossario', cinerario: 'nicchia_cineraria',
+};
+
+/** Regole del Comune di partenza. Durate prese da Ragusa, solo come esempio; le tariffe sono inventate. */
+export const REGOLE_DEFAULT: RegoleComune = {
+  concessioni: {
+    durate: { tomba_famiglia: 99, loculo: 60, celletta_ossario: 30, nicchia_cineraria: 30 },
+    durataRinnovo: 10,
+    sogliaInScadenzaMesi: 6,
+    tariffe: {
+      tomba_famiglia: { nuova: 4800, rinnovo: 900 },
+      loculo: { nuova: 1650, rinnovo: 420 },
+      celletta_ossario: { nuova: 380, rinnovo: 120 },
+      nicchia_cineraria: { nuova: 420, rinnovo: 130 },
+    },
+  },
 };
 
 export const FILTRI_VUOTI: Filtri = {

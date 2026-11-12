@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { campiPer, conta, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
+import { campiPer, concessioneScheda, conta, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
 import type { CampoDef, ConfigScheda, Database, Manutenzione, Scheda } from '../data/types';
 import { anniTra, cognomeNome, data, oggiISO } from './format';
 
@@ -49,9 +49,9 @@ export function colonneDisponibili(config: ConfigScheda): ColonnaExport[] {
     { id: 'posto', label: 'Posto', valore: (s) => (s.posizione ? `Fila ${s.posizione.fila} · Col. ${s.posizione.colonna}` : s.numeroPosto ?? '') },
     { id: 'lat', label: 'Latitudine', valore: (s) => s.lat },
     { id: 'lng', label: 'Longitudine', valore: (s) => s.lng },
-    { id: 'conc_numero', label: 'N. concessione', valore: (s) => s.concessione?.numero ?? '' },
-    { id: 'conc_intestatario', label: 'Concessionario', valore: (s) => s.concessione?.intestatario ?? '' },
-    { id: 'conc_scadenza', label: 'Scadenza concessione', valore: (s) => data(s.concessione?.dataScadenza) },
+    { id: 'conc_numero', label: 'N. concessione', valore: (s) => concessioneScheda(s)?.numero ?? '' },
+    { id: 'conc_intestatario', label: 'Concessionario', valore: (s) => concessioneScheda(s)?.concessionario ?? '' },
+    { id: 'conc_scadenza', label: 'Scadenza concessione', valore: (s) => data(concessioneScheda(s)?.scadenza) },
     { id: 'conc_stato', label: 'Stato concessione', valore: (s) => statoConcessione(s)?.stato.replace('_', ' ') ?? '' },
     { id: 'rilevato', label: 'Rilevata il', valore: (s) => data(s.rilevatoIl) },
     { id: 'rilevatore', label: 'Rilevata da', valore: (s, { db }) => db.operatori.find((o) => o.id === s.rilevatoDa)?.nome ?? s.rilevatoDa },
@@ -83,7 +83,7 @@ export function righeLampadeVotive(schede: Scheda[], ctx: { config: ConfigScheda
     .sort((a, b) => String(a.campi.codice_utenza ?? '').localeCompare(String(b.campi.codice_utenza ?? '')))
     .map((s) => ({
       'Codice utenza': String(s.campi.codice_utenza ?? ''),
-      Intestatario: String(s.campi.intestatario_utenza ?? s.concessione?.intestatario ?? ''),
+      Intestatario: String(s.campi.intestatario_utenza ?? concessioneScheda(s)?.concessionario ?? ''),
       'ID scheda': s.id,
       'Defunto / postazione': descrizioneScheda(s),
       Ubicazione: `${s.viale}${s.posizione ? ` · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : ''}`,
@@ -123,22 +123,20 @@ export function fogliTotali(schede: Scheda[], ctx: { config: ConfigScheda; db: D
 export function righeScadenze(schede: Scheda[], ctx: { config: ConfigScheda; db: Database }): Riga[] {
   const pag = ctx.config.campi.find((c) => c.id === 'stato_pagamenti');
   return schede
-    .filter((s) => s.concessione)
-    .sort((a, b) => a.concessione!.dataScadenza.localeCompare(b.concessione!.dataScadenza))
-    .map((s) => {
-      const sc = statoConcessione(s);
-      return {
-        'ID scheda': s.id,
-        'N. concessione': s.concessione!.numero,
-        Intestatario: s.concessione!.intestatario,
-        'Defunto / postazione': descrizioneScheda(s),
-        Viale: s.viale,
-        Scadenza: data(s.concessione!.dataScadenza),
-        'Giorni alla scadenza': sc?.giorni ?? null,
-        Durata: `${s.concessione!.durataAnni} anni`,
-        'Stato pagamenti': pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '',
-      };
-    });
+    .map((s) => ({ s, c: concessioneScheda(s) }))
+    .filter((x) => x.c)
+    .sort((a, b) => a.c!.scadenza.localeCompare(b.c!.scadenza))
+    .map(({ s, c }) => ({
+      'ID scheda': s.id,
+      'N. concessione': c!.numero,
+      Concessionario: c!.concessionario,
+      'Defunto / postazione': descrizioneScheda(s),
+      Viale: s.viale,
+      Scadenza: data(c!.scadenza),
+      'Giorni alla scadenza': statoConcessione(s)?.giorni ?? null,
+      Durata: `${c!.durataAnni} anni`,
+      'Stato pagamenti': pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '',
+    }));
 }
 
 export function righeManutenzioni(lista: Manutenzione[], db: Database, config: ConfigScheda): Riga[] {

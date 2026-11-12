@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { campiPer, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
+import { campiPer, concessioneScheda, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
 import type { ConfigScheda, Database, Scheda } from '../data/types';
 import { markDataUrl } from './brand';
 import { data, decedutoDa, eta, nomeCompleto, oggiISO, dataOra } from './format';
@@ -202,15 +202,15 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
   if (s.posizione && str) voci.push(['Posizione', `${str.facce[s.posizione.faccia]?.nome ?? ''} · fila ${s.posizione.fila} · colonna ${s.posizione.colonna}`]);
   pag.coppie(voci);
 
-  if (s.concessione) {
-    const c = s.concessione;
+  const c = concessioneScheda(s);
+  if (c) {
     const sc = statoConcessione(s);
     pag.titolo('Concessione');
     pag.coppie([
       ['Numero', c.numero],
-      ['Concessionario', c.intestatario],
-      ['Inizio', data(c.dataInizio)],
-      ['Scadenza', `${data(c.dataScadenza)}${sc?.stato === 'scaduta' ? ' (SCADUTA)' : sc?.stato === 'in_scadenza' ? ` (tra ${sc.giorni} giorni)` : ''}`],
+      ['Concessionario', c.concessionario],
+      ['Decorrenza', data(c.decorrenza)],
+      ['Scadenza', `${data(c.scadenza)}${sc?.stato === 'scaduta' ? ' (SCADUTA)' : sc?.stato === 'in_scadenza' ? ` (tra ${sc.giorni} giorni)` : ''}`],
       ['Durata', `${c.durataAnni} anni`],
       ['Rinnovi', String(c.rinnovi)],
     ]);

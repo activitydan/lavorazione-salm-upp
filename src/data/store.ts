@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CONFIG_DEFAULT, FILTRI_VUOTI, POSTO_IN_STRUTTURA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
+import { CONFIG_DEFAULT, FILTRI_VUOTI, POSTO_IN_STRUTTURA, REGOLE_DEFAULT, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
 import { adessoISO, aggiungiGiorni, data, giorniTra, oggiISO, slug } from '../lib/format';
 import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
@@ -51,10 +51,10 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 5;
+export const VERSIONE_DATI = 6;
 
 const DB_VUOTO: Database = {
-  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [],
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], regole: REGOLE_DEFAULT,
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
@@ -94,6 +94,9 @@ export const useStore = create<Stato>(() => ({
 
 const S = () => useStore.getState();
 const setS = useStore.setState;
+
+/** Per i moduli dei modelli (concessioni, utenze, pratiche...): leggono e cambiano i dati senza passare da qui. */
+export const leggiStato = S;
 
 // ---------------------------------------------------------------------------
 // Avvio e persistenza
@@ -342,6 +345,7 @@ export function schedaPerId(id: string): Scheda | undefined {
 function setDb(fn: (db: Database) => Partial<Database>) {
   setS((s) => ({ db: { ...s.db, ...fn(s.db) } }));
 }
+export const aggiornaDb = setDb;
 
 function evento(azione: string) {
   return { data: adessoISO(), utente: utenteCorrente(), azione };
@@ -602,7 +606,7 @@ export function creaStruttura(dati: {
   const ora = adessoISO();
   const contenitore: Scheda = {
     id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: tipoLabel, stato: 'libero', lat: dati.lat, lng: dati.lng,
-    viale: dati.viale, quadranteId: dati.quadranteId, defunti: [], concessione: null,
+    viale: dati.viale, quadranteId: dati.quadranteId, defunti: [],
     campi: {},
     rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora, nomeManufatto: dati.nome, strutturaId: sid,
     storico: [evento(`Struttura creata con ${dati.facce.reduce((t, f) => t + f.righe * f.colonne, 0)} posti`)],
@@ -614,7 +618,7 @@ export function creaStruttura(dati: {
         idx++;
         loculi.push({
           id: nuovoId(), cimiteroId: dati.cimiteroId, tipologia: POSTO_IN_STRUTTURA[dati.tipo], stato: 'libero', lat: dati.lat, lng: dati.lng,
-          viale: dati.viale, quadranteId: dati.quadranteId, defunti: [], concessione: null,
+          viale: dati.viale, quadranteId: dati.quadranteId, defunti: [],
           campi: { lampada_votiva: false },
           rilevatoDa: 'ufficio', rilevatoIl: ora, aggiornatoIl: ora,
           posizione: { strutturaId: sid, faccia: fi, fila, colonna: col }, storico: [evento('Posto generato con la struttura')],
