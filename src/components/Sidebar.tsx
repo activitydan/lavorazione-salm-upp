@@ -105,7 +105,8 @@ export function Sidebar() {
   const voci = (telefono ? VOCI_TELEFONO : VOCI_COMPUTER).filter((v) => !v.ruoli || v.ruoli.includes(utente.ruolo));
   const attivo = (v: VoceMenu) => {
     const p = v.path.split('?')[0];
-    return p === '/' ? rotta.path === '/' : rotta.path.startsWith(p);
+    // la Mappa si apre dalla Dashboard: mentre si è lì resta accesa la voce Dashboard
+    return p === '/' ? rotta.path === '/' || (!telefono && rotta.path === '/mappa') : rotta.path.startsWith(p);
   };
   let gruppo: string | undefined;
 

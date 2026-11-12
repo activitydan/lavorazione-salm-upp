@@ -142,3 +142,6 @@
 .ricerca__card-list { display: flex; flex-direction: column; }
 .ricerca__card { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); background: transparent; text-align: left; color: var(--text); width: 100%; }
 .ricerca__card .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* ---------- scheda: flag "Visibile al pubblico" ---------- */
+.flag-pubblico { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; }

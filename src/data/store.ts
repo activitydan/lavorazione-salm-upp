@@ -28,8 +28,7 @@ interface UiState {
 export type Modale =
   | { tipo: 'manutenzione'; schedaId?: string }
   | { tipo: 'verifica'; schedaId?: string }
-  | { tipo: 'gps'; schedaId: string }
-  | { tipo: 'qr'; schedaId: string };
+  | { tipo: 'gps'; schedaId: string };
 
 interface Stato {
   pronto: boolean;

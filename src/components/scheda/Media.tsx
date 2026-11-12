@@ -1,21 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { aggiornaScheda, aggiungiFoto, toast, useStore } from '../../data/store';
 import type { Scheda } from '../../data/types';
 import { comprimiFoto, fotoUrl } from '../../lib/photo';
-import { qrDataUrl, urlScheda } from '../../lib/qr';
-
-export function QrImmagine({ id, size = 140, pubblica = true }: { id: string; size?: number; pubblica?: boolean }) {
-  const [src, setSrc] = useState<string>('');
-  useEffect(() => {
-    let vivo = true;
-    qrDataUrl(urlScheda(id, pubblica), Math.max(240, size * 2)).then((u) => vivo && setSrc(u));
-    return () => {
-      vivo = false;
-    };
-  }, [id, size, pubblica]);
-  return src ? <img src={src} width={size} height={size} alt={`QR code della scheda ${id}`} style={{ imageRendering: 'pixelated' }} /> : <div style={{ width: size, height: size }} className="skeleton" />;
-}
 
 /** Input file che apre la fotocamera posteriore sul telefono. */
 export function ScegliFoto({ onFoto, children, className, lato }: { onFoto: (dataUrl: string) => void; children: React.ReactNode; className?: string; lato?: number }) {
@@ -51,7 +38,7 @@ export function FotoScheda({ s, modificabile = true }: { s: Scheda; modificabile
   const vera = !!(s.fotoId && foto[s.fotoId]);
   return (
     <div className="foto">
-      <img src={fotoUrl(s, foto)} alt={`Foto del manufatto ${s.id}`} />
+      <img src={fotoUrl(s, foto)} alt={`Foto della postazione ${s.id}`} />
       {modificabile && (
         <div className="foto__azione">
           <ScegliFoto

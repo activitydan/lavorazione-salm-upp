@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, CheckCircle2, Grid3x3, MapPin, Pl
 import { LocationPicker } from '../components/map/LocationPicker';
 import { LetturaLapide, type EsitoLettura } from '../components/rilievo/LetturaLapide';
 import { InputCampo } from '../components/scheda/Campi';
-import { QrImmagine, ScegliFoto } from '../components/scheda/Media';
+import { ScegliFoto } from '../components/scheda/Media';
 import { EditorDefunti } from '../components/scheda/SchedaForm';
 import { Dot, Field, Icona, Switch } from '../components/ui';
 import {
@@ -160,7 +160,6 @@ export function RilievoPage() {
           <CheckCircle2 size={44} color="#3F9A3C" />
           <h1>Scheda salvata</h1>
           <div className="qr-big">
-            <QrImmagine id={salvata.id} size={170} />
             <div className="qr-big__id">{salvata.id}</div>
             <div className="muted">{descrizioneScheda(salvata)} · {salvata.viale}</div>
           </div>
@@ -234,7 +233,7 @@ export function RilievoPage() {
         {passo === 1 && (
           <div className="col gap-16">
             <h2>Posizione GPS</h2>
-            <p className="muted small">Il punto parte dal GPS del telefono (o dall'ultimo rilievo). Se serve, sposta la mappa finché il segnaposto non è sul manufatto, come nelle app di consegna.</p>
+            <p className="muted small">Il punto parte dal GPS del telefono (o dall'ultimo rilievo). Se serve, sposta la mappa finché il segnaposto non è sulla postazione, come nelle app di consegna.</p>
             <LocationPicker cimitero={cim} valore={b.pos} onChange={(p) => set({ pos: p })} altezza={380} />
             <div className="row row--wrap gap-8 small">
               <span className="badge badge--blu">Viale più vicino: {vialeAuto || '—'}</span>
@@ -242,7 +241,7 @@ export function RilievoPage() {
             </div>
             <label className="row small" style={{ cursor: 'pointer' }}>
               <Switch small on={inStruttura} onChange={setInStruttura} />
-              Il manufatto è un loculo dentro un colombaio o una cappella già censiti
+              La postazione è un loculo dentro un colombaio o una cappella già censiti
             </label>
             {inStruttura && (
               <div className="callout">
@@ -288,7 +287,7 @@ export function RilievoPage() {
                 </button>
               ))}
             </div>
-            <Field label="Stato del manufatto">
+            <Field label="Stato della postazione">
               <div className="stati-picker">
                 {config.stati.filter((s) => !s.archiviato).map((s) => (
                   <button key={s.id} className={`stato-opt ${b.stato === s.id ? 'is-on' : ''}`} onClick={() => set({ stato: s.id })}><Dot colore={s.colore} />{s.label}</button>
@@ -400,10 +399,6 @@ export function RilievoPage() {
                 <dt>Flag</dt><dd>{campiApp.filter((c) => c.tipo === 'flag' && b.campi[c.id] === true).map((c) => c.label).join(', ') || '—'}</dd>
                 {b.note && <><dt>Note</dt><dd style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{b.note}</dd></>}
               </dl>
-            </div>
-            <div className="riepilogo__qr">
-              <QrImmagine id={id} size={150} />
-              <span className="small muted">QR associato all'ID</span>
             </div>
           </div>
         )}

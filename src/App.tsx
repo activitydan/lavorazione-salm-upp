@@ -16,7 +16,6 @@ import { MappaPage } from './pages/MappaPage';
 
 const RicercaPage = lazy(() => import('./pages/RicercaPage').then((m) => ({ default: m.RicercaPage })));
 const SchedaPage = lazy(() => import('./pages/SchedaPage').then((m) => ({ default: m.SchedaPage })));
-const QrPubblica = lazy(() => import('./pages/QrPubblica').then((m) => ({ default: m.QrPubblica })));
 const CittadinoPage = lazy(() => import('./pages/CittadinoPage').then((m) => ({ default: m.CittadinoPage })));
 const CensimentoPage = lazy(() => import('./pages/CensimentoPage').then((m) => ({ default: m.CensimentoPage })));
 const RilievoPage = lazy(() => import('./pages/RilievoPage').then((m) => ({ default: m.RilievoPage })));
@@ -104,30 +103,21 @@ export function App() {
   }, [r.path]);
 
   // sul telefono la pagina iniziale è la Mappa: la Dashboard ha le statistiche, che restano sul computer
-  const interno = !!sessione && sessione.ruolo !== 'cittadino';
   useEffect(() => {
-    if (interno && telefono && r.path === '/') vai('/mappa');
-  }, [interno, telefono, r.path]);
+    if (sessione && telefono && r.path === '/') vai('/mappa');
+  }, [sessione, telefono, r.path]);
 
   if (!pronto || errore) return <Caricamento errore={errore} />;
 
-  // vista pubblica del QR: niente menu, pensata per il telefono del visitatore
-  if (r.parti[0] === 'qr')
-    return (
-      <Suspense fallback={<Caricamento />}>
-        <QrPubblica id={r.parti[1] ?? ''} />
-      </Suspense>
-    );
-
-  if (!sessione) return <EntraCome />;
-
-  // il Cittadino ha una sola pagina pubblica, senza menu
-  if (sessione.ruolo === 'cittadino')
+  // pagina pubblica del Cittadino: ha un suo indirizzo, senza menu e senza ingresso
+  if (r.parti[0] === 'cittadino')
     return (
       <Suspense fallback={<Caricamento />}>
         <CittadinoPage />
       </Suspense>
     );
+
+  if (!sessione) return <EntraCome />;
 
   const piena = r.parti[0] === 'mappa';
   return (

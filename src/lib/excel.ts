@@ -36,7 +36,7 @@ export function colonneDisponibili(config: ConfigScheda): ColonnaExport[] {
     { id: 'id', label: 'ID', valore: (s) => s.id },
     { id: 'tipologia', label: 'Tipologia', valore: (s, { config }) => tipologiaDef(config, s.tipologia).label },
     { id: 'stato', label: 'Stato', valore: (s, { config }) => statoDef(config, s.stato).label },
-    { id: 'descrizione', label: 'Manufatto / defunto', valore: (s) => descrizioneScheda(s) },
+    { id: 'descrizione', label: 'Postazione / defunto', valore: (s) => descrizioneScheda(s) },
     { id: 'cognome', label: 'Cognome', valore: (s) => s.defunti[0]?.cognome ?? '' },
     { id: 'nome', label: 'Nome', valore: (s) => s.defunti[0]?.nome ?? '' },
     { id: 'nascita', label: 'Data di nascita', valore: (s) => data(s.defunti[0]?.dataNascita) },
@@ -50,7 +50,7 @@ export function colonneDisponibili(config: ConfigScheda): ColonnaExport[] {
     { id: 'lat', label: 'Latitudine', valore: (s) => s.lat },
     { id: 'lng', label: 'Longitudine', valore: (s) => s.lng },
     { id: 'conc_numero', label: 'N. concessione', valore: (s) => s.concessione?.numero ?? '' },
-    { id: 'conc_intestatario', label: 'Intestatario concessione', valore: (s) => s.concessione?.intestatario ?? '' },
+    { id: 'conc_intestatario', label: 'Concessionario', valore: (s) => s.concessione?.intestatario ?? '' },
     { id: 'conc_scadenza', label: 'Scadenza concessione', valore: (s) => data(s.concessione?.dataScadenza) },
     { id: 'conc_stato', label: 'Stato concessione', valore: (s) => statoConcessione(s)?.stato.replace('_', ' ') ?? '' },
     { id: 'rilevato', label: 'Rilevata il', valore: (s) => data(s.rilevatoIl) },
@@ -85,13 +85,13 @@ export function righeLampadeVotive(schede: Scheda[], ctx: { config: ConfigScheda
       'Codice utenza': String(s.campi.codice_utenza ?? ''),
       Intestatario: String(s.campi.intestatario_utenza ?? s.concessione?.intestatario ?? ''),
       'ID scheda': s.id,
-      'Defunto / manufatto': descrizioneScheda(s),
+      'Defunto / postazione': descrizioneScheda(s),
       Ubicazione: `${s.viale}${s.posizione ? ` · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : ''}`,
       'Canone €/anno': typeof s.campi.canone_lampada === 'number' ? s.campi.canone_lampada : 24,
       'Stato pagamenti': pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : String(s.campi.stato_pagamenti ?? ''),
     }));
   const totale = righe.reduce((t, r) => t + Number(r['Canone €/anno'] ?? 0), 0);
-  righe.push({ 'Codice utenza': 'TOTALE', Intestatario: `${righe.length} utenze`, 'ID scheda': '', 'Defunto / manufatto': '', Ubicazione: '', 'Canone €/anno': totale, 'Stato pagamenti': '' });
+  righe.push({ 'Codice utenza': 'TOTALE', Intestatario: `${righe.length} utenze`, 'ID scheda': '', 'Defunto / postazione': '', Ubicazione: '', 'Canone €/anno': totale, 'Stato pagamenti': '' });
   return righe;
 }
 
@@ -131,7 +131,7 @@ export function righeScadenze(schede: Scheda[], ctx: { config: ConfigScheda; db:
         'ID scheda': s.id,
         'N. concessione': s.concessione!.numero,
         Intestatario: s.concessione!.intestatario,
-        'Defunto / manufatto': descrizioneScheda(s),
+        'Defunto / postazione': descrizioneScheda(s),
         Viale: s.viale,
         Scadenza: data(s.concessione!.dataScadenza),
         'Giorni alla scadenza': sc?.giorni ?? null,

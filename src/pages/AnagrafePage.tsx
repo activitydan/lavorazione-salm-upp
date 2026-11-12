@@ -47,13 +47,13 @@ function Concessionari({ schede }: { schede: Scheda[] }) {
       <div className="card__head">
         <div className="input-icon" style={{ flex: '1 1 260px', maxWidth: 380 }}>
           <Search size={16} />
-          <input className="input" placeholder="Cerca intestatario" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input" placeholder="Cerca concessionario" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <span className="small muted">{numero(gruppi.length)} intestatari · {numero(gruppi.reduce((t2, g) => t2 + g.morosi, 0))} posizioni morose</span>
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Intestatario</th><th className="num">Concessioni</th><th>Prossima scadenza</th><th className="num">Lampade votive</th><th>{pag?.label ?? 'Pagamenti'}</th><th /></tr></thead>
+          <thead><tr><th>Concessionario</th><th className="num">Concessioni</th><th>Prossima scadenza</th><th className="num">Lampade votive</th><th>{pag?.label ?? 'Pagamenti'}</th><th /></tr></thead>
           <tbody>
             {lista.map((g) => (
               <tr key={g.nome}>

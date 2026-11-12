@@ -134,6 +134,8 @@ export interface Scheda {
   posizione?: PosizioneLoculo; // valorizzato sui loculi dentro una struttura
   fotoId?: string;
   storico?: EventoStorico[];
+  /** spento su richiesta della famiglia: il Cittadino non trova i defunti di questa scheda (assente = visibile) */
+  visibilePubblico?: boolean;
 }
 
 export type Priorita = 'bassa' | 'media' | 'alta' | 'urgente';
@@ -311,7 +313,8 @@ export type StileMappa = 'satellite' | 'planimetria';
 // Ruoli e ingresso (demo: senza password)
 // ---------------------------------------------------------------------------
 
-export type Ruolo = 'cittadino' | 'operatore' | 'amministratore';
+/** Il Cittadino non entra: ha la sua pagina pubblica (#/cittadino). */
+export type Ruolo = 'operatore' | 'amministratore';
 
 /** Chi è entrato: l'Operatore sceglie il proprio nome, l'Amministratore entra come "Ufficio Cimiteri". */
 export interface Sessione {

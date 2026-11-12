@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, MapPin, Navigation, Search } from 'lucide-react';
 import { FIRMA, Logo } from '../components/Logo';
 import { CemeteryMap } from '../components/map/CemeteryMap';
-import { esci, useStore } from '../data/store';
+import { useStore } from '../data/store';
 import type { Defunto, Scheda } from '../data/types';
 import { data, decedutoDa, nomeCompleto, normalizza } from '../lib/format';
 import { googleMapsIndicazioni } from '../lib/geo';
 import { fotoUrl } from '../lib/photo';
+import { href } from '../router';
 
 interface Trovato {
   scheda: Scheda;
@@ -29,7 +30,7 @@ export function CittadinoPage() {
     if (parole.join('').length < 3) return null;
     const out: Trovato[] = [];
     for (const s of db.schede) {
-      if (s.campi.visibile_al_pubblico === false) continue;
+      if (s.visibilePubblico === false) continue;
       s.defunti.forEach((d, i) => {
         const nome = normalizza(nomeCompleto(d));
         if (parole.every((p) => nome.includes(p))) out.push({ scheda: s, defunto: d, chiave: `${s.id}-${i}` });
@@ -115,7 +116,7 @@ export function CittadinoPage() {
 
       <footer className="pub__foot">
         <span>{FIRMA}</span>
-        <button className="btn btn--ghost btn--xs" onClick={esci}>Cambia ruolo</button>
+        <a className="small muted" href={href('/')}>Area riservata</a>
       </footer>
     </div>
   );

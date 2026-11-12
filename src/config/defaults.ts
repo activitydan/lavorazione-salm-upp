@@ -22,7 +22,7 @@ export const CONFIG_DEFAULT: ConfigScheda = {
   sezioni: [
     { id: 'flag', label: 'Flag e informazioni aggiuntive' },
     { id: 'fatturazione', label: 'Fatturazione e pagamenti' },
-    { id: 'manufatto', label: 'Manufatto' },
+    { id: 'manufatto', label: 'Lapide' },
   ],
   campi: [
     { id: 'lampada_votiva', label: 'Lampada votiva', tipo: 'flag', sezione: 'flag', icona: 'lampada', inFiltri: true, inTabella: true, inExport: true, inPopup: true, inApp: true },

@@ -418,7 +418,7 @@ function Stati() {
   const config = useStore((s) => s.config);
   return (
     <section className="card card--pad">
-      <h3>Stati del manufatto</h3>
+      <h3>Stati della postazione</h3>
       <p className="small muted mb-16">Colore del pin sulla mappa e della legenda. Il numero indica quante schede hanno quello stato.</p>
       <EditorLista
         voci={config.stati.map((s) => ({ id: s.id, label: s.label, colore: s.colore, descrizione: s.descrizione, archiviato: s.archiviato }))}

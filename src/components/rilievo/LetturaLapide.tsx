@@ -376,7 +376,7 @@ export function LetturaLapide({
                       · {descrizioneScheda(scheda)}, {scheda.viale}
                     </span>
                   ))}
-                  <span className="small">Se è lo stesso manufatto, aggiorna quella scheda invece di crearne una nuova.</span>
+                  <span className="small">Se è la stessa postazione, aggiorna quella scheda invece di crearne una nuova.</span>
                 </div>
               </div>
             )}

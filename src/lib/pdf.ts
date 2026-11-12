@@ -4,7 +4,6 @@ import type { ConfigScheda, Database, Scheda } from '../data/types';
 import { markDataUrl } from './brand';
 import { data, decedutoDa, eta, nomeCompleto, oggiISO, dataOra } from './format';
 import { fotoUrl, rasterizza } from './photo';
-import { qrDataUrl, urlScheda } from './qr';
 
 export interface ContestoPdf {
   config: ConfigScheda;
@@ -112,7 +111,7 @@ class Impaginatore {
 async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
   const { config, db } = ctx;
   const cim = db.cimiteri.find((c) => c.id === s.cimiteroId);
-  const [foto, qr, lg] = await Promise.all([rasterizza(fotoUrl(s, ctx.foto), 800, 600), qrDataUrl(urlScheda(s.id), 360), logo()]);
+  const [foto, lg] = await Promise.all([rasterizza(fotoUrl(s, ctx.foto), 800, 600), logo()]);
 
   const intestazione = () => {
     doc.setFillColor(...NAVY);
@@ -137,27 +136,27 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(200, 214, 230);
-    doc.text(`Scheda manufatto · ${cim?.nome ?? ''}`, 196, 19.5, { align: 'right' });
+    doc.text(`Scheda della postazione · ${cim?.nome ?? ''}`, 196, 19.5, { align: 'right' });
   };
   intestazione();
 
-  // foto e QR
+  // foto e codice
   doc.addImage(foto, 'JPEG', 14, 34, 112, 84);
   doc.setDrawColor(220, 226, 234);
   doc.rect(14, 34, 112, 84);
   doc.setFillColor(243, 245, 248);
   doc.roundedRect(134, 34, 62, 84, 3, 3, 'F');
-  doc.addImage(qr, 'PNG', 141, 39, 48, 48);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(...NAVY);
-  doc.text('Scansiona per aprire', 165, 94, { align: 'center' });
-  doc.text('la scheda online', 165, 98.5, { align: 'center' });
+  doc.text('Codice della scheda', 165, 66, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text(s.id, 165, 74, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...GRIGIO);
-  doc.text(s.id, 165, 105, { align: 'center' });
-  doc.text(`${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}`, 165, 110, { align: 'center' });
+  doc.text('Coordinate GPS', 165, 84, { align: 'center' });
+  doc.text(`${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}`, 165, 89, { align: 'center' });
 
   // titolo e chip
   doc.setFont('helvetica', 'bold');
@@ -209,7 +208,7 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
     pag.titolo('Concessione');
     pag.coppie([
       ['Numero', c.numero],
-      ['Intestatario', c.intestatario],
+      ['Concessionario', c.intestatario],
       ['Inizio', data(c.dataInizio)],
       ['Scadenza', `${data(c.dataScadenza)}${sc?.stato === 'scaduta' ? ' (SCADUTA)' : sc?.stato === 'in_scadenza' ? ` (tra ${sc.giorni} giorni)` : ''}`],
       ['Durata', `${c.durataAnni} anni`],
@@ -266,38 +265,4 @@ export async function pdfSchede(lista: Scheda[], ctx: ContestoPdf, avanzamento?:
   }
   piedi(doc);
   doc.save(nomeFile);
-}
-
-/** Foglio A4 di etichette 3 x 8 con QR, ID, nominativo e viale: da stampare su carta adesiva. */
-export async function pdfEtichetteQr(lista: Scheda[], avanzamento?: (n: number) => void) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const colonne = 3;
-  const righe = 8;
-  const w = 70;
-  const h = 37.1;
-  for (let i = 0; i < lista.length; i++) {
-    const k = i % (colonne * righe);
-    if (i > 0 && k === 0) doc.addPage();
-    const x = (k % colonne) * w;
-    const y = Math.floor(k / colonne) * h;
-    const s = lista[i];
-    const qr = await qrDataUrl(urlScheda(s.id), 240);
-    doc.setDrawColor(230, 233, 238);
-    doc.rect(x + 1.5, y + 1.5, w - 3, h - 3);
-    doc.addImage(qr, 'PNG', x + 4, y + 4.5, 28, 28);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...NAVY);
-    doc.text(s.id, x + 35, y + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...TESTO);
-    doc.text(doc.splitTextToSize(descrizioneScheda(s), 32).slice(0, 2), x + 35, y + 15.5);
-    doc.setTextColor(...GRIGIO);
-    doc.setFontSize(6.8);
-    doc.text(doc.splitTextToSize(s.viale, 32).slice(0, 1), x + 35, y + 25);
-    doc.text('CimiTera', x + 35, y + 30.5);
-    avanzamento?.(i + 1);
-  }
-  doc.save(`CimiTera_etichette_QR_${oggiISO()}.pdf`);
 }

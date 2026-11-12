@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 // Router minimo basato sull'hash: funziona su qualsiasi hosting statico
-// e permette ai QR di puntare direttamente a una scheda (#/qr/CIM-RAG-000123).
+// e dà un indirizzo a ogni pagina, compresa quella pubblica del Cittadino (#/cittadino).
 
 export interface Rotta {
   path: string;

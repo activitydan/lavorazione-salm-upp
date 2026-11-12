@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import {
-  ClipboardCheck, Crosshair, FileText, Grid3x3, History, MapPinned, Navigation, Pencil, QrCode, Wrench,
-} from 'lucide-react';
+import { ClipboardCheck, Crosshair, FileText, Grid3x3, History, MapPinned, Navigation, Pencil, Wrench } from 'lucide-react';
 import { STATI_MANUTENZIONE } from '../../config/defaults';
 import {
   aggiornaCampo, aggiornaScheda, apriParete, apriModale, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
@@ -13,15 +11,16 @@ import type { Scheda } from '../../data/types';
 import { anniVita, data, dataBreve, dataOra, decedutoDa, eta, nomeCompleto } from '../../lib/format';
 import { formatCoord, googleMapsIndicazioni } from '../../lib/geo';
 import { pdfScheda } from '../../lib/pdf';
-import { href, vai } from '../../router';
-import { Dot, Progress, TipologiaBadge } from '../ui';
+import { href, useRotta, vai } from '../../router';
+import { Dot, Progress, Switch, TipologiaBadge } from '../ui';
 import { InputCampo, ValoreOpzione } from './Campi';
-import { FotoScheda, QrImmagine } from './Media';
+import { FotoScheda } from './Media';
 import { SchedaForm } from './SchedaForm';
 
 export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
   const [modifica, setModifica] = useState(false);
   const [pdf, setPdf] = useState(false);
+  const sullaMappa = useRotta().path === '/mappa';
   const config = useStore((st) => st.config);
   const db = useStore((st) => st.db);
   const foto = useStore((st) => st.foto);
@@ -59,7 +58,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
       </div>
 
       <div className="field">
-        <label>Stato del manufatto</label>
+        <label>Stato della postazione</label>
         <div className="stati-picker">
           {config.stati.filter((x) => !x.archiviato || x.id === s.stato).map((st) => (
             <button
@@ -75,26 +74,28 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
         </div>
       </div>
 
-      {flag.length > 0 && (
-        <div className="field">
-          <label>Flag</label>
-          <div className="row row--wrap gap-4">
-            {flag.map((c) => (
-              <InputCampo key={c.id} campo={c} valore={s.campi[c.id]} compatto onChange={(v) => aggiornaCampo(s.id, c.id, v, c.label)} />
-            ))}
-          </div>
+      <div className="field">
+        <label>Flag</label>
+        <div className="row row--wrap gap-4">
+          {flag.map((c) => (
+            <InputCampo key={c.id} campo={c} valore={s.campi[c.id]} compatto onChange={(v) => aggiornaCampo(s.id, c.id, v, c.label)} />
+          ))}
+          <label className="flag-pubblico" title="Se è spento, il Cittadino non trova i defunti di questa scheda">
+            <Switch small on={s.visibilePubblico !== false} label="Visibile al pubblico"
+              onChange={(v) => aggiornaScheda(s.id, { visibilePubblico: v }, `Visibile al pubblico: ${v ? 'sì' : 'no'}`)} />
+            Visibile al pubblico
+          </label>
         </div>
-      )}
+      </div>
 
       <div className="azioni-grid">
         <button className="azione" onClick={() => setModifica(true)}><Pencil size={17} />Modifica</button>
         <button className="azione" onClick={() => apriModale({ tipo: 'gps', schedaId: s.id })}><Crosshair size={17} />Modifica GPS</button>
-        <button className="azione" onClick={() => apriModale({ tipo: 'qr', schedaId: s.id })}><QrCode size={17} />QR Code</button>
         <button className="azione" onClick={scaricaPdf} disabled={pdf}>{pdf ? <span className="spinner" /> : <FileText size={17} />}Scheda PDF</button>
         <button className="azione" onClick={() => apriModale({ tipo: 'manutenzione', schedaId: s.id })}><Wrench size={17} />Segnala</button>
         <button className="azione" onClick={() => apriModale({ tipo: 'verifica', schedaId: s.id })}><ClipboardCheck size={17} />Verifica</button>
         <a className="azione" href={googleMapsIndicazioni(s.lat, s.lng)} target="_blank" rel="noreferrer"><Navigation size={17} />Indicazioni</a>
-        <button className="azione" onClick={() => { vai('/mappa'); seleziona(s.id, { vola: true }); }}><MapPinned size={17} />Sulla mappa</button>
+        {!sullaMappa && <button className="azione" onClick={() => { vai('/mappa'); seleziona(s.id, { vola: true }); }}><MapPinned size={17} />Sulla mappa</button>}
       </div>
     </>
   );
@@ -156,35 +157,13 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
           <dl className="kv">
             <dt>Numero</dt>
             <dd>{s.concessione.numero}</dd>
-            <dt>Intestatario</dt>
+            <dt>Concessionario</dt>
             <dd>{s.concessione.intestatario}</dd>
             <dt>Periodo</dt>
             <dd>{data(s.concessione.dataInizio)} → {data(s.concessione.dataScadenza)}</dd>
             <dt>Durata</dt>
             <dd>{s.concessione.durataAnni} anni{s.concessione.rinnovi ? ` · ${s.concessione.rinnovi} rinnovi` : ''}</dd>
           </dl>
-        </section>
-      )}
-
-      {config.sezioni.filter((z) => z.id !== 'flag').map((sez) => {
-        const campi = campiPer(config, s.tipologia, (c) => c.sezione === sez.id);
-        if (!campi.length) return null;
-        return (
-          <section className="sez" key={sez.id}>
-            <h4 className="sez__t">{sez.label}</h4>
-            <dl className="kv">
-              {campi.map((c) => (
-                <FragmentKV key={c.id} k={c.label} v={c.tipo === 'select' ? <ValoreOpzione campo={c} valore={s.campi[c.id]} /> : valoreLeggibile(c, s.campi[c.id])} />
-              ))}
-            </dl>
-          </section>
-        );
-      })}
-
-      {s.note && (
-        <section className="sez">
-          <h4 className="sez__t">Note</h4>
-          <p>{s.note}</p>
         </section>
       )}
 
@@ -220,6 +199,28 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
         </section>
       )}
 
+      {config.sezioni.filter((z) => z.id !== 'flag').map((sez) => {
+        const campi = campiPer(config, s.tipologia, (c) => c.sezione === sez.id);
+        if (!campi.length) return null;
+        return (
+          <section className="sez" key={sez.id}>
+            <h4 className="sez__t">{sez.label}</h4>
+            <dl className="kv">
+              {campi.map((c) => (
+                <FragmentKV key={c.id} k={c.label} v={c.tipo === 'select' ? <ValoreOpzione campo={c} valore={s.campi[c.id]} /> : valoreLeggibile(c, s.campi[c.id])} />
+              ))}
+            </dl>
+          </section>
+        );
+      })}
+
+      {s.note && (
+        <section className="sez">
+          <h4 className="sez__t">Note</h4>
+          <p>{s.note}</p>
+        </section>
+      )}
+
       <section className="sez">
         <h4 className="sez__t"><History size={14} /> Storico</h4>
         <ol className="timeline">
@@ -243,13 +244,6 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
       <div className="scheda-estesa">
         <div className="scheda-estesa__side">
           {colonnaSinistra}
-          <div className="card card--pad qr-box">
-            <QrImmagine id={s.id} size={132} />
-            <div>
-              <b>QR della scheda</b>
-              <p className="small muted">Da applicare sul manufatto: riporta a questa scheda.</p>
-            </div>
-          </div>
         </div>
         <div className="scheda-estesa__main">{colonnaDestra}</div>
       </div>

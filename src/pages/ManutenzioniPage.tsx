@@ -257,7 +257,7 @@ function ModaleRisolvi({ m, onChiudi }: { m: Manutenzione; onChiudi: () => void 
   const [foto, setFoto] = useState<string | null>(null);
   const [note, setNote] = useState('');
   return (
-    <Modal titolo={`Risolvi ${m.id}`} sottotitolo="Per chiudere la manutenzione allega la foto aggiornata del manufatto." onClose={onChiudi}
+    <Modal titolo={`Risolvi ${m.id}`} sottotitolo="Per chiudere la manutenzione allega la foto aggiornata della postazione." onClose={onChiudi}
       footer={<><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--success" disabled={!foto} onClick={() => { risolviManutenzione(m.id, aggiungiFoto(foto!), note || 'Intervento completato'); toast('Manutenzione risolta, foto aggiornata nella scheda'); onChiudi(); }}><CheckCircle2 size={16} />Segna come risolta</button></>}>
       <div className="col gap-16">
         {foto ? (

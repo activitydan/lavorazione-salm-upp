@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { CalendarClock, Filter, Lightbulb, QrCode } from 'lucide-react';
+import { CalendarClock, Filter, Lightbulb } from 'lucide-react';
 import { registraEsportazione, useStore } from '../data/store';
 import { contaFiltriAttivi, statoConcessione, useCimitero, useSchedeCimitero, useSchedeFiltrate } from '../data/selectors';
 import { righeLampadeVotive, righeScadenze, scaricaExcel } from '../lib/excel';
 import { numero, oggiISO } from '../lib/format';
-import { pdfEtichetteQr } from '../lib/pdf';
 import { href } from '../router';
 
 export function EsportazioniPage() {
@@ -62,9 +61,6 @@ export function EsportazioniPage() {
             esegui('Excel scadenze', l.length, () => scaricaExcel(`${base}_scadenze_${oggi}`, [{ nome: 'Scadenze', righe: righeScadenze(l, ctx) }]));
           }} />
 
-        <ExportCard icona={<QrCode size={22} />} colore="#0A2F55" titolo="Etichette QR" testo="Foglio A4 da 24 etichette (3 × 8) con QR, ID, nominativo e viale, per la carta adesiva."
-          bottone={`Genera etichette (${numero(filtrate.length)})`} disabilitato={!!lavoro || !filtrate.length}
-          onClick={() => esegui('Etichette QR', filtrate.length, () => pdfEtichetteQr(filtrate))} />
       </div>
     </div>
   );

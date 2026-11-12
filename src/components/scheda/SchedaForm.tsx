@@ -130,7 +130,7 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
             </select>
           </Field>
           {(b.nomeManufatto !== undefined || b.strutturaId) && (
-            <Field label="Nome del manufatto" className="span-2">
+            <Field label="Nome della postazione" className="span-2">
               <input className="input" value={b.nomeManufatto ?? ''} onChange={(e) => set({ nomeManufatto: e.target.value })} />
             </Field>
           )}

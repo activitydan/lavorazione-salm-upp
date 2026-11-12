@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type L from 'leaflet';
-import { ExternalLink, Grid3x3, List, Maximize2, PanelLeftOpen, SlidersHorizontal, X } from 'lucide-react';
+import { List, Navigation, PanelLeftOpen, SlidersHorizontal, X } from 'lucide-react';
 import { CemeteryMap, MapAnchor, ZoomControls } from '../components/map/CemeteryMap';
 import { FilterPanel } from '../components/FilterPanel';
 import { Dot, Seg, Switch } from '../components/ui';
-import { apriParete, indiceSchede, seleziona, setFiltri, setUi, useStore } from '../data/store';
+import { indiceSchede, seleziona, setFiltri, setUi, useStore } from '../data/store';
 import {
   campiPer, conta, contaFiltriAttivi, descrizioneScheda, occupazioneStruttura, statoDef, tipologiaDef, useCimitero, useDatiCimitero,
   useSchedeCimitero, useSchedeFiltrate,
@@ -13,7 +13,7 @@ import type { Scheda } from '../data/types';
 import { anniFa, data, numero } from '../lib/format';
 import { googleMapsIndicazioni } from '../lib/geo';
 import { fotoUrl } from '../lib/photo';
-import { href, vai } from '../router';
+import { vai } from '../router';
 
 export function useConteggiStrutture(filtrate: Scheda[], attivi: boolean) {
   return useMemo(() => {
@@ -60,12 +60,7 @@ export function MapCard({ s, onChiudi }: { s: Scheda; onChiudi: () => void }) {
       )}
       <div className="map-card__actions">
         <button className="btn btn--primary btn--sm grow" onClick={() => setUi({ pannello: true })}>Apri scheda</button>
-        {struttura ? (
-          <button className="btn btn--sm" onClick={() => apriParete(struttura.id)} title="Griglia a parete"><Grid3x3 size={14} />Parete</button>
-        ) : (
-          <a className="btn btn--sm btn--icon" href={googleMapsIndicazioni(s.lat, s.lng)} target="_blank" rel="noreferrer" title="Indicazioni con Google Maps"><ExternalLink size={14} /></a>
-        )}
-        <a className="btn btn--sm btn--icon" href={href(`/scheda/${s.id}`)} title="Visualizzazione estesa"><Maximize2 size={14} /></a>
+        <a className="btn btn--sm" href={googleMapsIndicazioni(s.lat, s.lng)} target="_blank" rel="noreferrer"><Navigation size={14} />Indicazioni</a>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export function EntraCome() {
           <>
             <h1 className="entra__titolo">Entra come</h1>
             <div className="entra__lista">
-              <button className="entra__voce" onClick={() => { entra({ ruolo: 'cittadino' }); vai('/cittadino'); }}>
+              <button className="entra__voce" onClick={() => vai('/cittadino')}>
                 <span className="entra__ico" style={{ background: '#EEF6E8', color: '#4A822B' }}><Search size={20} /></span>
                 <span className="grow">
                   <b>Cittadino</b>

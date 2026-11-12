@@ -38,7 +38,7 @@ function TabellaSchede({ lista, colonne }: { lista: Scheda[]; colonne: { label: 
   return (
     <div className="table-wrap" style={{ maxHeight: 560 }}>
       <table className="table">
-        <thead><tr><th>ID</th><th>Defunto / manufatto</th>{colonne.map((c) => <th key={c.label} className={c.num ? 'num' : ''}>{c.label}</th>)}</tr></thead>
+        <thead><tr><th>ID</th><th>Defunto / postazione</th>{colonne.map((c) => <th key={c.label} className={c.num ? 'num' : ''}>{c.label}</th>)}</tr></thead>
         <tbody>
           {lista.map((s) => (
             <tr key={s.id} className="clickable" onClick={() => seleziona(s.id)}>
@@ -215,7 +215,7 @@ function Statistiche() {
     <div className="report-grid">
       <div className="report-2col">
         <section className="card card--pad">
-          <h3>Stato dei manufatti</h3>
+          <h3>Stato delle postazioni</h3>
           <div className="row gap-16 mt-16 row--wrap">
             <Ciambella size={170} spessore={22} dati={config.stati.map((s) => ({ id: s.id, label: s.label, valore: perStato[s.id] ?? 0, colore: s.colore }))}
               centro={<div className="display" style={{ fontSize: 24, fontWeight: 800 }}>{numero(schede.length)}</div>} sotto={<div className="tiny muted">schede</div>} />

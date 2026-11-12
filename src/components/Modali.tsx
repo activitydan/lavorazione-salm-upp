@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Camera, ClipboardCheck, Copy, Crosshair, Download, ExternalLink, Maximize2, Printer, Wrench, X } from 'lucide-react';
+import { Camera, ClipboardCheck, Crosshair, Maximize2, Wrench, X } from 'lucide-react';
 import { PRIORITA } from '../config/defaults';
 import {
   aggiornaScheda, aggiungiFoto, apriModale, creaManutenzione, creaVerifica, firmaCorrente, indiceSchede, seleziona, toast, useStore,
@@ -8,11 +8,9 @@ import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { LatLng, Priorita, Scheda } from '../data/types';
 import { aggiungiGiorni, normalizza, oggiISO } from '../lib/format';
 import { distanzaM, quadranteDi, vialePiuVicino } from '../lib/geo';
-import { pdfEtichetteQr } from '../lib/pdf';
-import { qrDataUrl, urlScheda } from '../lib/qr';
 import { href, vai } from '../router';
 import { LocationPicker } from './map/LocationPicker';
-import { QrImmagine, ScegliFoto } from './scheda/Media';
+import { ScegliFoto } from './scheda/Media';
 import { SchedaView } from './scheda/SchedaView';
 import { Field, Modal, StatoBadge } from './ui';
 
@@ -26,7 +24,7 @@ export function PannelloScheda() {
   return (
     <aside className="drawer" aria-label={`Scheda ${s.id}`}>
       <div className="drawer__head">
-        <div className="small muted upper">Scheda {s.tipologia === 'loculo' ? 'loculo' : 'manufatto'}</div>
+        <div className="small muted upper">Scheda</div>
         <div className="row gap-4">
           <a className="btn btn--sm" href={href(`/scheda/${s.id}`)} title="Visualizzazione estesa"><Maximize2 size={14} />Vista estesa</a>
           <button className="btn btn--ghost btn--icon btn--sm" onClick={() => seleziona(null)} aria-label="Chiudi"><X size={18} /></button>
@@ -152,7 +150,6 @@ function ModaleVerifica({ schedaId }: { schedaId?: string }) {
   return (
     <Modal
       titolo="Assegna una verifica"
-      sottotitolo="Un operatore torna sul manufatto per controllare i dati della scheda."
       icona={<span className="list-item__icon" style={{ background: '#fdf6dc', color: '#8a6a00' }}><ClipboardCheck size={18} /></span>}
       onClose={chiudi}
       footer={<><button className="btn" onClick={chiudi}>Annulla</button><button className="btn btn--primary" onClick={invia}>Assegna</button></>}
@@ -202,7 +199,6 @@ function ModaleGps({ schedaId }: { schedaId: string }) {
   return (
     <Modal
       titolo={`Modifica GPS · ${s.id}`}
-      sottotitolo="Sposta la mappa finché il segnaposto non è esattamente sul manufatto."
       icona={<span className="list-item__icon" style={{ background: '#EAF2F9', color: '#1B5A8F' }}><Crosshair size={18} /></span>}
       onClose={chiudi}
       size="lg"
@@ -221,38 +217,6 @@ function ModaleGps({ schedaId }: { schedaId: string }) {
   );
 }
 
-function ModaleQr({ schedaId }: { schedaId: string }) {
-  const schede = useStore((s) => s.db.schede);
-  const s = indiceSchede(schede).get(schedaId)!;
-  const chiudi = () => apriModale(null);
-  const url = urlScheda(s.id);
-  const scarica = async () => {
-    const u = await qrDataUrl(url, 1024);
-    const a = document.createElement('a');
-    a.href = u;
-    a.download = `QR_${s.id}.png`;
-    a.click();
-  };
-  return (
-    <Modal titolo="QR Code della scheda" sottotitolo="Il codice è legato all'ID: chi lo inquadra apre la scheda del manufatto." onClose={chiudi}
-      footer={
-        <>
-          <button className="btn" onClick={() => { navigator.clipboard?.writeText(url); toast('Link copiato'); }}><Copy size={15} />Copia link</button>
-          <button className="btn" onClick={scarica}><Download size={15} />PNG</button>
-          <button className="btn btn--primary" onClick={() => pdfEtichetteQr([s])}><Printer size={15} />Etichetta PDF</button>
-        </>
-      }
-    >
-      <div className="qr-big">
-        <QrImmagine id={s.id} size={220} />
-        <div className="qr-big__id">{s.id}</div>
-        <div className="muted">{descrizioneScheda(s)} · {s.viale}</div>
-        <a className="small" href={href(`/qr/${s.id}`)} onClick={chiudi}><ExternalLink size={12} /> Apri la vista pubblica</a>
-      </div>
-    </Modal>
-  );
-}
-
 export function Modali() {
   const m = useStore((s) => s.ui.modale);
   if (!m) return null;
@@ -263,8 +227,6 @@ export function Modali() {
       return <ModaleVerifica schedaId={m.schedaId} />;
     case 'gps':
       return <ModaleGps schedaId={m.schedaId} />;
-    case 'qr':
-      return <ModaleQr schedaId={m.schedaId} />;
   }
 }
 
