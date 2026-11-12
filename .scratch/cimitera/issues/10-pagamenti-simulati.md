@@ -1,7 +1,7 @@
 # Pagamenti simulati
 
 Type: grilling
-Status: open
+Status: resolved
 Assignee: Dan
 Blocked by: 03, 07, 08
 
@@ -58,3 +58,27 @@ Dal ticket [Avvisi di scadenza inviati da DAT](11-avvisi-di-scadenza.md): il nom
 18. **Debiti che restano.** Proposta: dopo una voltura o un subentro gli avvisi già emessi restano intestati a chi li aveva; il nuovo abbonato o concessionario parte senza debiti. Dopo la cessazione per morosità, la decadenza o l'ultima diffida di una pratica, gli avvisi non pagati restano nell'elenco dei morosi senza altri passi.
 19. **Esporta.** Proposta: "Avvisi di pagamento" e "Morosi" hanno lo stesso pulsante Esporta di Ricerca (Excel o PDF, sulle righe selezionate o su tutte). L'Excel di Illuminazione votiva tiene il suo foglio dei morosi, solo per le utenze votive.
 20. **Dati finti.** Proposta: avvisi di pagamento per tutti e tre i motivi e in tutti gli stati, compresi alcuni annullati con il motivo; i canoni del 2026 già emessi e quasi tutti pagati; morosi a ogni passo della scala (sollecitati, diffidati, utenze sospese, una cessata per morosità, una concessione in decadenza per un rinnovo non pagato, una pratica diffidata). Il tempo non si simula: la scala si vede intera grazie ai dati finti.
+
+**Risposte di Dan**: sì a tutte, dalla 15 alla 20.
+
+## Answer
+
+Risolto il 2026-11-12.
+
+- **Nomi**: **avviso di pagamento** è il documento pagoPA; la lettera che DAT manda per una scadenza è la **lettera di scadenza** (deciso nel ticket [Avvisi di scadenza inviati da DAT](11-avvisi-di-scadenza.md)). "Avviso" da solo non si usa. Nel glossario anche **Tariffa**, **Moroso**, **Sollecito** e **Diffida**.
+- **Cosa si paga**: per la concessione, una tariffa alla nuova concessione e una al rinnovo, per tipo, pagate una volta sola (niente canone annuo della concessione). Per l'illuminazione votiva, l'allaccio con i dodicesimi del canone fino al 31 dicembre, poi il canone annuo per punto luce. Per la pratica su richiesta, la tariffa del suo tipo di operazione; le pratiche d'ufficio non pagano. Tutti gli importi stanno in Amministrazione, inventati nella demo.
+- **Avviso di pagamento**: uno per motivo (una concessione, un'utenza per un anno, una pratica), anche con più voci dello stesso motivo (allaccio + dodicesimi). Niente avvisi che raccolgono più motivi, niente rate. È intestato al rappresentante della concessione (o all'unico concessionario), all'abbonato (all'indirizzo per la bolletta se c'è) o al richiedente.
+- **Come nasce**: lo crea CimiTera da solo con l'azione: nuova concessione, rinnovo, nuovo allaccio, nuova pratica su richiesta, "Emetti i canoni dell'anno" (che salta le utenze sospese). Nessun blocco: l'azione vale subito. Scadenza 30 giorni dopo l'emissione, con i giorni in Amministrazione.
+- **Stati**: da pagare, scaduto (calcolato dalla data, si può ancora pagare), pagato (data e numero della ricevuta), annullato (con il motivo). Se la pratica viene annullata, il suo avviso non pagato si annulla da solo. L'attestazione di pagamento della pratica è lo stato del suo avviso. Un avviso pagato resta pagato: i rimborsi sono fuori dalla demo.
+- **Simulazione**: pulsante "Simula pagamento" sull'avviso (pagato, con data e numero di ricevuta finti); PDF sul modello A4 ufficiale con la scritta "FAC-SIMILE" e codici finti; riga fissa "pagoPA simulato: nessun pagamento reale" in "Scadenze e pagamenti". Si paga solo con pagoPA: niente pagamenti registrati a mano.
+- **Moroso**: chi ha almeno un avviso di pagamento scaduto. Il campo "Stato pagamenti" della scheda sparisce, con tutta la sezione "Fatturazione e pagamenti".
+- **Scala della morosità**: si va avanti a mano, con il pulsante del prossimo passo che compare quando il termine è passato (30 giorni, in Amministrazione). Utenza votiva: sollecito → diffida → sospensione per morosità → dopo un anno di sospensione, cessazione per morosità. Concessione: sollecito → avvio della decadenza (che ha la sua diffida). Pratica: sollecito → diffida, poi basta: la riscossione coattiva è fuori dalla demo.
+- **Riaccensione**: l'utenza sospesa torna attiva da sola quando tutti i suoi avvisi scaduti sono pagati, senza nuovo allaccio.
+- **Cosa passa da DAT**: gli avvisi di pagamento dei canoni dell'anno, i solleciti e le diffide, con lotti, canali ed esiti del ticket "Avvisi di scadenza inviati da DAT". Gli altri avvisi di pagamento si stampano e si consegnano allo sportello.
+- **Dove si vede**: in "Scadenze e pagamenti" la linguetta "Avvisi di pagamento" (in cima emesso, incassato e scaduto dell'anno scelto, senza grafici; filtri per stato e motivo) e la linguetta "Morosi" (una riga per avviso scaduto: intestatario, motivo, importo, giorni di ritardo, ultimo passo fatto, pulsante del prossimo passo). Tutte e due hanno l'Esporta di Ricerca. Concessione, utenza votiva e pratica mostrano i loro avvisi con stato, PDF e "Simula pagamento". L'etichetta "Moroso" compare su concessionario e abbonato e nei riassunti Concessione e Illuminazione votiva della scheda (anche sul telefono, in sola lettura). Avvisi e pagamenti solo dal computer; il Cittadino non vede niente. Nessun alert in campanella per i pagamenti.
+- **Chi**: Operatore e Amministratore fanno tutto sugli avvisi (simulare il pagamento, annullare, il prossimo passo, "Emetti i canoni dell'anno"); solo l'Amministratore cambia importi e giorni in Amministrazione.
+- **Storico**: ogni avviso emesso, pagato o annullato e ogni passo della scala (sollecito, diffida, sospensione, riaccensione, cessazione, avvio della decadenza) scrivono una riga nello storico della concessione, dell'utenza o della pratica, con data e operatore.
+- **Debiti che restano**: dopo una voltura o un subentro gli avvisi già emessi restano a chi li aveva. Dopo la cessazione per morosità, la decadenza o l'ultima diffida di una pratica, gli avvisi non pagati restano tra i morosi senza altri passi.
+- **Excel**: l'Excel di Illuminazione votiva tiene il suo foglio dei morosi, solo per le utenze votive.
+- **Dati finti**: avvisi per tutti e tre i motivi e in tutti gli stati, compresi alcuni annullati; canoni del 2026 già emessi e quasi tutti pagati; morosi a ogni passo della scala (sollecitati, diffidati, utenze sospese, una cessata per morosità, una concessione in decadenza per un rinnovo non pagato, una pratica diffidata). Il tempo non si simula.
+- **Fuori dalla demo**: collegamento vero con pagoPA, rate, rimborsi, riscossione coattiva, canone annuo delle sepolture private di Ragusa (art. 50, regole non trovate).

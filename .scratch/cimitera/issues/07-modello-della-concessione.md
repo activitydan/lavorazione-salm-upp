@@ -56,3 +56,7 @@ Dal ticket [Modello di pratiche e operazioni](09-modello-pratiche-e-operazioni.m
 ### Aggiornamento del 2026-11-12 (utenza votiva)
 
 Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): quando una concessione si chiude, CimiTera chiude da sola le utenze votive delle sue schede, con motivo "fine della concessione".
+
+### Aggiornamento del 2026-11-12 (pagamenti)
+
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): la concessione non ha un canone annuo. Si paga una **tariffa** alla nuova concessione e una al rinnovo, per tipo, in Amministrazione; l'avviso di pagamento nasce da solo con l'azione, intestato al rappresentante o all'unico concessionario, e l'azione vale subito. Se l'avviso resta scaduto: sollecito, poi avvio della decadenza. Il concessionario moroso ha l'etichetta "Moroso". Dopo un subentro gli avvisi già emessi restano a chi li aveva.

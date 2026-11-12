@@ -65,3 +65,7 @@ Risolto il 2026-11-12.
 ### Aggiornamento del 2026-11-12
 
 Dal ticket [Semplificazione di Manutenzioni](17-semplificazione-manutenzioni.md): gli stati della manutenzione diventano aperta, programmata, risolta, annullata. Nel riquadro Manutenzione della Dashboard "pianificate" diventa "programmate" e "in corso" sparisce; lo stesso vale per gli stati nella sezione "Manutenzioni e verifiche" della scheda.
+
+### Aggiornamento del 2026-11-12 (pagamenti)
+
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): i riassunti Concessione e Illuminazione votiva della scheda mostrano l'etichetta "Moroso" quando il concessionario o l'abbonato ha un avviso di pagamento scaduto, anche sul telefono, in sola lettura. Nessun pagamento si gestisce dalla scheda.

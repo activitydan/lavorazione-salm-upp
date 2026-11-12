@@ -95,3 +95,7 @@ Risolto il 2026-11-12.
 ### Aggiornamento del 2026-11-12 (utenza votiva)
 
 Dal ticket [Modello dell'utenza votiva](08-modello-utenza-votiva.md): quando una pratica eseguita toglie il defunto dalla postazione, CimiTera chiude da sola la sua utenza votiva (motivo "defunto spostato"). Nella traslazione la pratica chiede se spostare l'utenza sulla nuova postazione o chiuderla. Amministrazione riceve anche il canone votivo per punto luce e il contributo di allaccio.
+
+### Aggiornamento del 2026-11-12 (pagamenti)
+
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): la pratica su richiesta crea da sola un avviso di pagamento con la tariffa del suo tipo, intestato al richiedente. L'attestazione di pagamento della pratica è lo stato del suo avviso (pagato con data e numero della ricevuta). Se la pratica viene annullata, l'avviso non pagato si annulla da solo; un avviso pagato resta pagato (niente rimborsi). Se l'avviso resta scaduto: sollecito, poi diffida, poi basta.

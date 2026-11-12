@@ -54,3 +54,7 @@ Risolto il 2026-11-12.
 - **Gestione**: solo gestione diretta del Comune, come a Ragusa, senza gestore esterno. Il Cittadino non segnala guasti.
 - **Dati finti**: un'utenza per ogni scheda che oggi ha il flag "Lampada votiva", con qualche voltura, qualche utenza sospesa per morosità, qualche disdetta e qualche cessata a fine concessione.
 - **Aperto altrove**: nel Nuovo rilievo il flag non si può più spuntare; cosa fare quando sul campo c'è una lampada ma nessuna utenza è una domanda del ticket "Semplificazione di Censimento e Nuovo rilievo".
+
+### Aggiornamento del 2026-11-12 (pagamenti)
+
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): allaccio con dodicesimi e canone dell'anno sono avvisi di pagamento intestati all'abbonato (all'indirizzo per la bolletta se c'è); quelli dei canoni dell'anno partono tramite DAT. Se un avviso resta scaduto: sollecito → diffida → sospensione per morosità → dopo un anno di sospensione, cessazione per morosità, sempre a mano con il pulsante del prossimo passo. L'utenza sospesa torna attiva da sola quando tutti i suoi avvisi scaduti sono pagati, senza nuovo allaccio. "Emetti i canoni dell'anno" salta le utenze sospese. Dopo una voltura gli avvisi già emessi restano al vecchio abbonato.

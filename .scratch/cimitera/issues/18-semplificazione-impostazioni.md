@@ -28,6 +28,8 @@ Dal ticket [Semplificazione di Dashboard, Mappa, Scheda e pagina del QR](19-semp
 
 Dal ticket [Semplificazione di Manutenzioni](17-semplificazione-manutenzioni.md): le squadre di intervento spariscono, anche dall'elenco nelle Impostazioni, perché quando si programma una manutenzione si assegnano uno o più operatori. Le categorie di manutenzione restano. Le manutenzioni assegnate a un operatore sono tra le sue cose da fare.
 
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): Amministrazione riceve anche le tariffe delle concessioni (nuova concessione e rinnovo, per tipo, importi inventati) e tre numeri di giorni: 30 per pagare un avviso di pagamento, 30 di termine dopo il sollecito e 30 dopo la diffida. Li cambia solo l'Amministratore. Il campo "Stato pagamenti" sparisce anche dai campi configurabili.
+
 ## Comments
 
 ### 2026-11-12 · primo giro di domande, in attesa delle risposte di Dan

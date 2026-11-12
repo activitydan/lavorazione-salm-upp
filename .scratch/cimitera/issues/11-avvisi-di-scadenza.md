@@ -75,3 +75,7 @@ Risolto il 2026-11-12.
 - **Chi**: Operatore e Amministratore, solo dal computer.
 - **Dati finti**: qualche lotto dei mesi passati, con esiti misti.
 - **Glossario**: corretta "Lettera di scadenza"; nuove Invio, Lotto, Esito, Notifica. "Da inviare" resta solo per il lavoro fatto senza rete.
+
+### Aggiornamento del 2026-11-12 (pagamenti)
+
+Dal ticket [Pagamenti simulati](10-pagamenti-simulati.md): tramite DAT passano gli avvisi di pagamento dei canoni dell'anno, i solleciti e le diffide; gli altri avvisi di pagamento (nuova concessione, rinnovo, allaccio, pratica) si stampano e si consegnano allo sportello.
