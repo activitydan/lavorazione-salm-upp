@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3, ClipboardCheck, ClipboardList, CloudOff, Download, FileText, LayoutDashboard, Lightbulb, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Settings, ShieldCheck, Wrench,
+  CalendarClock, ClipboardCheck, ClipboardList, CloudOff, FileText, LayoutDashboard, Lightbulb, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Settings, ShieldCheck, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { esci, setRete, setUi, useStore } from '../data/store';
@@ -33,8 +33,7 @@ export const VOCI_COMPUTER: VoceMenu[] = [
   { path: '/concessioni', label: 'Concessioni', icon: ScrollText, soloComputer: true },
   { path: '/illuminazione-votiva', label: 'Illuminazione votiva', icon: Lightbulb, soloComputer: true },
   { path: '/operazioni', label: 'Operazioni cimiteriali', icon: FileText, soloComputer: true },
-  { path: '/report', label: 'Report', icon: BarChart3, soloComputer: true },
-  { path: '/esportazioni', label: 'Esportazioni', icon: Download, soloComputer: true },
+  { path: '/scadenze', label: 'Scadenze e pagamenti', icon: CalendarClock, soloComputer: true },
   { path: '/amministrazione', label: 'Amministrazione', icon: ShieldCheck, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },
   { path: '/impostazioni', label: 'Impostazioni', icon: Settings, ruoli: ['amministratore'], gruppo: 'Configurazione', soloComputer: true },
 ];

@@ -181,3 +181,9 @@
 .agenda__voce:hover { box-shadow: var(--shadow-1); }
 .ricerca__altrove { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-top: 1px solid var(--border); }
 @media (max-width: 1100px) { .agenda--settimana { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Scadenze e pagamenti ---------- */
+.simulato { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-radius: 8px; background: #fdf1e3; color: #7a4a10; font-size: 12.5px; }
+.canale { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.canale.is-on { border-color: var(--blu); background: var(--blu-50); }
+.canale .grow { display: flex; flex-direction: column; gap: 2px; }

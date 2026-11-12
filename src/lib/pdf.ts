@@ -316,3 +316,134 @@ export async function pdfRegistro(titolo: string, righe: string[][], anno: strin
   }
   doc.save(`CimiTera_registro_operazioni_${anno}.pdf`);
 }
+
+function filigrana(doc: jsPDF, testo: string) {
+  doc.saveGraphicsState();
+  doc.setGState(doc.GState({ opacity: 0.12 }));
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(74);
+  doc.setTextColor(120, 130, 145);
+  doc.text(testo, 105, 165, { align: 'center', angle: 35 });
+  doc.restoreGraphicsState();
+}
+
+/** Lettera inviata tramite DAT (o da affiggere sulla postazione): testo fisso, filigrana "Fac-simile". */
+export async function pdfLetteraDat(d: { numero: string; dataLettera: string; comune: string; destinatario: { nome: string; indirizzo: string }; oggetto: string; paragrafi: string[] }) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  filigrana(doc, 'Fac-simile');
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, 210, 24, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(`Comune di ${d.comune}`, 20, 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Ufficio Servizi Cimiteriali', 20, 17);
+  doc.setTextColor(...TESTO);
+  doc.setFontSize(10.5);
+  doc.text([d.destinatario.nome, ...doc.splitTextToSize(d.destinatario.indirizzo, 70)], 120, 44);
+  doc.setFontSize(9);
+  doc.setTextColor(...GRIGIO);
+  doc.text(`Lettera n. ${d.numero} del ${data(d.dataLettera)}`, 20, 44);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11.5);
+  doc.setTextColor(...NAVY);
+  const oggetto = doc.splitTextToSize(`Oggetto: ${d.oggetto}`, 170);
+  doc.text(oggetto, 20, 76);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...TESTO);
+  let y = 76 + oggetto.length * 6 + 6;
+  for (const par of d.paragrafi.filter(Boolean)) {
+    const righe = doc.splitTextToSize(par, 170);
+    doc.text(righe, 20, y);
+    y += righe.length * 5.4 + 4;
+  }
+  doc.text('Distinti saluti.', 20, y + 4);
+  doc.text("L'Ufficio Servizi Cimiteriali", 130, y + 18);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...GRIGIO);
+  doc.line(20, 283, 190, 283);
+  doc.text('Una soluzione DAT | HYA Group · Fac-simile: nessuna lettera parte davvero', 20, 288);
+  doc.save(`CimiTera_lettera_${d.numero}.pdf`);
+}
+
+/** Avviso di pagamento sul modello A4 pagoPA, con la scritta "FAC-SIMILE" e codici finti. */
+export async function pdfAvvisoPagamento(a: { numero: string; causale: string; intestatario: { nome: string; codiceFiscale: string; indirizzo: string }; voci: { descrizione: string; importo: number }[]; importo: number; scadenza: string; emessoIl: string }, comune: string) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const eur = (n: number) => `${n.toFixed(2).replace('.', ',')} Euro`;
+  filigrana(doc, 'FAC-SIMILE');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...NAVY);
+  doc.text('AVVISO DI PAGAMENTO', 14, 18);
+  doc.setFontSize(10);
+  doc.text('pagoPA', 196, 18, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...TESTO);
+  doc.text(doc.splitTextToSize(a.causale, 180), 14, 27);
+  doc.setFillColor(243, 245, 248);
+  doc.rect(14, 38, 88, 34, 'F');
+  doc.rect(108, 38, 88, 34, 'F');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.text('ENTE CREDITORE', 18, 45);
+  doc.text('DESTINATARIO AVVISO', 112, 45);
+  doc.setFontSize(10.5);
+  doc.setTextColor(...TESTO);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Comune di ${comune}`, 18, 52);
+  doc.text(a.intestatario.nome, 112, 52);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Ufficio Servizi Cimiteriali', 18, 58);
+  doc.text(`Cod. fiscale ${a.intestatario.codiceFiscale}`, 112, 58);
+  doc.text(doc.splitTextToSize(a.intestatario.indirizzo, 80), 112, 63);
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.text('QUANTO E QUANDO PAGARE', 14, 84);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text(eur(a.importo), 14, 94);
+  doc.setFontSize(12);
+  doc.text(`entro il ${data(a.scadenza)}`, 196, 94, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...TESTO);
+  let y = 106;
+  for (const v of a.voci) {
+    doc.text(v.descrizione, 14, y);
+    doc.text(eur(v.importo), 196, y, { align: 'right' });
+    y += 6;
+  }
+  doc.setDrawColor(200, 208, 218);
+  doc.line(14, y + 2, 196, y + 2);
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.text('DOVE PAGARE', 14, y + 12);
+  doc.setFontSize(9.5);
+  doc.setTextColor(...TESTO);
+  doc.text(doc.splitTextToSize("Sul sito del Comune, con l'app della tua banca, in banca, in ricevitoria, dal tabaccaio, al bancomat, in ufficio postale. In questa versione dimostrativa il pagamento è simulato.", 182), 14, y + 18);
+  doc.setFillColor(243, 245, 248);
+  doc.rect(14, y + 34, 182, 30, 'F');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.text('CODICE AVVISO', 18, y + 42);
+  doc.text('CODICE FISCALE ENTE CREDITORE', 110, y + 42);
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...TESTO);
+  doc.text(a.numero.replace(/(.{4})/g, '$1 ').trim(), 18, y + 50);
+  doc.text('00000000000', 110, y + 50);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.text('Codici finti: questo avviso non si può pagare.', 18, y + 58);
+  doc.line(14, 283, 196, 283);
+  doc.setFontSize(7.5);
+  doc.text(`Emesso il ${data(a.emessoIl)} · Una soluzione DAT | HYA Group · FAC-SIMILE: pagoPA simulato, nessun pagamento reale`, 14, 288);
+  doc.save(`CimiTera_avviso_${a.numero}.pdf`);
+}

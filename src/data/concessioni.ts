@@ -2,6 +2,7 @@
 // La scadenza si calcola dalla decorrenza e dalla regola applicata, mai dalla data di morte.
 import { aggiungiMesi, data, giorniTra, oggiISO } from '../lib/format';
 import { aggiornaDb, leggiStato, registra, toast, utenteCorrente } from './store';
+import { emettiAvviso, intestatarioConcessione } from './scadenze';
 import { chiudiUtenzePerConcessione } from './utenze';
 import type { Concessionario, Concessione, MotivoChiusura, RegoleComune, Scheda, Soggetto, TipoConcessione } from './types';
 
@@ -136,14 +137,26 @@ export function nuovaConcessione(d: NuovaConcessione): Concessione {
     storico: [{ data: oggi, azione: 'Nuova concessione', atto: d.provvedimento || undefined, operatore: utenteCorrente() }],
   };
   aggiornaDb((db) => ({ concessioni: [...db.concessioni, c] }));
-  toast(`Concessione ${c.numero} registrata`);
+  // l'avviso di pagamento nasce da solo con l'azione, intestato al rappresentante o all'unico concessionario
+  emettiAvviso({
+    motivo: 'concessione', riferimentoId: c.id, cimiteroId: c.cimiteroId, causale: `Concessione ${c.numero} · nuova concessione`, intestatario: intestatarioConcessione(c),
+    voci: [{ descrizione: `Tariffa di nuova concessione · ${NOMI_TIPO_CONCESSIONE[c.tipo].toLowerCase()}`, importo: regole.tariffe[c.tipo].nuova }],
+  });
+  toast(`Concessione ${c.numero} registrata, con il suo avviso di pagamento`);
   return c;
 }
 
 export function rinnovaConcessione(id: string, atto?: string) {
-  const anni = leggiStato().db.regole.concessioni.durataRinnovo;
+  const regole = leggiStato().db.regole.concessioni;
+  const anni = regole.durataRinnovo;
   cambia(id, (c) => ({ rinnovi: c.rinnovi + 1, scadenza: anniDopo(c.scadenza, anni), stato: 'attiva' }), `Rinnovo di ${anni} anni`, atto);
-  toast(`Concessione rinnovata di ${anni} anni`);
+  const c = leggiStato().db.concessioni.find((x) => x.id === id);
+  if (c)
+    emettiAvviso({
+      motivo: 'concessione', riferimentoId: c.id, cimiteroId: c.cimiteroId, causale: `Concessione ${c.numero} · rinnovo`, intestatario: intestatarioConcessione(c),
+      voci: [{ descrizione: `Tariffa di rinnovo · ${NOMI_TIPO_CONCESSIONE[c.tipo].toLowerCase()}`, importo: regole.tariffe[c.tipo].rinnovo }],
+    });
+  toast(`Concessione rinnovata di ${anni} anni, con il suo avviso di pagamento`);
 }
 
 export function subentroConcessione(id: string, nuovi: Concessionario[], atto?: string) {

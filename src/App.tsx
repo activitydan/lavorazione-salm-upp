@@ -24,8 +24,7 @@ const IlluminazionePage = lazy(() => import('./pages/IlluminazionePage').then((m
 const OperazioniPage = lazy(() => import('./pages/OperazioniPage').then((m) => ({ default: m.OperazioniPage })));
 const ConcessioniPage = lazy(() => import('./pages/ConcessioniPage').then((m) => ({ default: m.ConcessioniPage })));
 const ManutenzioniPage = lazy(() => import('./pages/ManutenzioniPage').then((m) => ({ default: m.ManutenzioniPage })));
-const ReportPage = lazy(() => import('./pages/ReportPage').then((m) => ({ default: m.ReportPage })));
-const EsportazioniPage = lazy(() => import('./pages/EsportazioniPage').then((m) => ({ default: m.EsportazioniPage })));
+const ScadenzePage = lazy(() => import('./pages/ScadenzePage').then((m) => ({ default: m.ScadenzePage })));
 const AmministrazionePage = lazy(() => import('./pages/AmministrazionePage').then((m) => ({ default: m.AmministrazionePage })));
 const ImpostazioniPage = lazy(() => import('./pages/ImpostazioniPage').then((m) => ({ default: m.ImpostazioniPage })));
 
@@ -72,10 +71,8 @@ function Pagina() {
       return <OperazioniPage />;
     case 'manutenzioni':
       return <ManutenzioniPage />;
-    case 'report':
-      return <ReportPage />;
-    case 'esportazioni':
-      return <EsportazioniPage />;
+    case 'scadenze':
+      return <ScadenzePage />;
     case 'amministrazione':
       return <AmministrazionePage />;
     case 'impostazioni':

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Save } from 'lucide-react';
 import { NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, salvaRegoleConcessioni } from '../data/concessioni';
 import { NOMI_OPERAZIONE, TIPI_OPERAZIONE, salvaRegoleOperazioni } from '../data/pratiche';
+import { salvaRegolePagamenti } from '../data/scadenze';
 import { useStore } from '../data/store';
 import type { RegoleComune } from '../data/types';
 import { salvaRegoleIlluminazione } from '../data/utenze';
@@ -105,6 +106,21 @@ function RegoleOperazioni() {
   );
 }
 
+function RegolePagamenti() {
+  const salvate = useStore((s) => s.db.regole.pagamenti);
+  const [b, setB] = useState<RegoleComune['pagamenti']>(salvate);
+  const modificato = JSON.stringify(b) !== JSON.stringify(salvate);
+  return (
+    <RiquadroRegole titolo="Scadenze e pagamenti" modificato={modificato} onSalva={() => salvaRegolePagamenti(b)}>
+      <div className="grid-form grid-form--3">
+        <Field label="Giorni per pagare un avviso di pagamento"><CampoNumero min={1} valore={b.giorniPagamento} onChange={(n) => setB({ ...b, giorniPagamento: n })} /></Field>
+        <Field label="Giorni dopo il sollecito"><CampoNumero min={1} valore={b.giorniDopoSollecito} onChange={(n) => setB({ ...b, giorniDopoSollecito: n })} /></Field>
+        <Field label="Giorni dopo la diffida"><CampoNumero min={1} valore={b.giorniDopoDiffida} onChange={(n) => setB({ ...b, giorniDopoDiffida: n })} /></Field>
+      </div>
+    </RiquadroRegole>
+  );
+}
+
 /** Regole del Comune: un riquadro per voce del menu. Le fasi dei modelli aggiungono qui i loro riquadri. */
 export function RegoleDelComune() {
   return (
@@ -112,6 +128,7 @@ export function RegoleDelComune() {
       <RegoleConcessioni />
       <RegoleIlluminazione />
       <RegoleOperazioni />
+      <RegolePagamenti />
     </div>
   );
 }

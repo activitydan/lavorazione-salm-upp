@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { PRIORITA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
 import { aggiungiGiorni, aggiungiMesi, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
-import { concessioneDi, nomiConcessionari } from './concessioni';
+import { concessioneDi, nomiConcessionari, rappresentanteDi } from './concessioni';
 import { haLampada } from './utenze';
 import { loculiPerStruttura, useStore } from './store';
 import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
@@ -146,6 +146,7 @@ export interface ConcessioneVista {
   numero: string;
   /** il rappresentante, o l'unico concessionario */
   concessionario: string;
+  codiceFiscale: string;
   decorrenza: string;
   scadenza: string;
   durataAnni: number;
@@ -157,7 +158,7 @@ export function concessioneScheda(s: Scheda): ConcessioneVista | null {
   const c = concessioneDi(s.id);
   if (!c) return null;
   return {
-    id: c.id, numero: c.numero, concessionario: nomiConcessionari(c), decorrenza: c.decorrenza, scadenza: c.scadenza,
+    id: c.id, numero: c.numero, concessionario: nomiConcessionari(c), codiceFiscale: rappresentanteDi(c)?.codiceFiscale ?? '', decorrenza: c.decorrenza, scadenza: c.scadenza,
     durataAnni: c.durataAnni, rinnovi: c.rinnovi, inDecadenza: c.stato === 'in_decadenza',
   };
 }

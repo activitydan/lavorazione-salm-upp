@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Ban, CheckCircle2, Download, ExternalLink, History, Lightbulb, LightbulbOff, Plus, Search, UserRoundPen, Wrench, X } from 'lucide-react';
+import { Ban, CheckCircle2, Download, Euro, ExternalLink, History, Lightbulb, LightbulbOff, Plus, Search, UserRoundPen, Wrench, X } from 'lucide-react';
+import { AvvisiDi, Moroso } from '../components/Avvisi';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { SOGGETTO_VUOTO, SoggettoForm, soggettoIncompleto } from '../components/Soggetti';
 import { Field, Modal, Seg, StatoBadge, Tabs } from '../components/ui';
 import { concessioneDi, nomeSoggetto, rappresentanteDi } from '../data/concessioni';
+import { emettiCanoni, statoAvviso } from '../data/scadenze';
 import { aggiornaScheda, apriModale, indiceSchede, seleziona, toast, useStore } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { Abbonato, Scheda, StatoUtenza, UtenzaVotiva } from '../data/types';
@@ -59,6 +61,12 @@ export function IlluminazionePage() {
   );
   const sel = selId ? db.utenze.find((u) => u.id === selId) : undefined;
 
+  const canoni = () => {
+    const anno = Number(oggiISO().slice(0, 4));
+    if (!confirm(`Emettere i canoni ${anno} per tutte le utenze attive? Gli avvisi di pagamento partono tramite DAT (simulato). Le utenze sospese si saltano.`)) return;
+    const n = emettiCanoni(anno, cim.id);
+    toast(n ? `${n} ${n === 1 ? 'avviso di pagamento emesso' : 'avvisi di pagamento emessi'} per il ${anno}` : `I canoni ${anno} sono già stati emessi`, n ? 'ok' : 'info');
+  };
   const ubicazione = (s?: Scheda) => (s ? `${s.viale}${s.posizione ? ` · fila ${s.posizione.fila} col. ${s.posizione.colonna}` : ''}` : '');
   const esporta = () => {
     const righe = lista.map((u) => ({
@@ -70,6 +78,11 @@ export function IlluminazionePage() {
     scaricaExcel(`CimiTera_${cim.codice}_illuminazione_votiva_${oggiISO()}`, [{
       nome: 'Utenze votive',
       righe: [...righe, { Numero: 'TOTALE', Abbonato: `${righe.length} utenze`, 'Codice fiscale': '', 'Indirizzo per la bolletta': '', 'ID scheda': '', Defunto: '', Ubicazione: '', 'Punti luce': righe.reduce((t, r) => t + Number(r['Punti luce']), 0), 'Canone annuo €': totale, Stato: '' }],
+    }, {
+      nome: 'Morosi',
+      righe: db.avvisi.filter((a) => a.motivo === 'utenza' && a.cimiteroId === cim.id && statoAvviso(a) === 'scaduto').map((a) => ({
+        Abbonato: a.intestatario.nome, 'Codice fiscale': a.intestatario.codiceFiscale, Indirizzo: a.intestatario.indirizzo, Causale: a.causale, 'Importo €': a.importo, Scadenza: data(a.scadenza),
+      })),
     }]);
   };
 
@@ -81,6 +94,7 @@ export function IlluminazionePage() {
         </div>
         <div className="page-head__actions">
           {tab === 'utenze' && <button className="btn" disabled={!lista.length} onClick={esporta}><Download size={16} />Esporta {numero(lista.length)}</button>}
+          <button className="btn" onClick={canoni}><Euro size={16} />Emetti i canoni dell'anno</button>
           <button className="btn btn--primary" onClick={() => setNuova({})}><Plus size={16} />Nuovo allaccio</button>
         </div>
       </div>
@@ -120,7 +134,7 @@ export function IlluminazionePage() {
                     return (
                       <tr key={u.id} className={`clickable ${selId === u.id ? 'is-sel' : ''}`} onClick={() => setQuery('id', u.id)}>
                         <td className="id">{u.numero}</td>
-                        <td><b>{nomeSoggetto(u.abbonato)}</b></td>
+                        <td><b>{nomeSoggetto(u.abbonato)}</b> <Moroso codiceFiscale={u.abbonato.codiceFiscale} /></td>
                         <td>
                           <span className="id">{u.schedaId}</span> · {nomeDefuntoUtenza(u)}
                           <div className="tiny muted">{ubicazione(s)}</div>
@@ -210,12 +224,13 @@ function Dettaglio({ u, onChiudi }: { u: UtenzaVotiva; onChiudi: () => void }) {
           <section className="sez">
             <h4 className="sez__t">Abbonato</h4>
             <div className="soggetto">
-              <div className="row gap-8"><b>{nomeSoggetto(u.abbonato)}</b>{u.abbonato.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{u.abbonato.legameDefunto && <span className="badge badge--sm">{u.abbonato.legameDefunto}</span>}</div>
+              <div className="row gap-8"><b>{nomeSoggetto(u.abbonato)}</b><Moroso codiceFiscale={u.abbonato.codiceFiscale} />{u.abbonato.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{u.abbonato.legameDefunto && <span className="badge badge--sm">{u.abbonato.legameDefunto}</span>}</div>
               <div className="small muted">{u.abbonato.codiceFiscale} · {u.abbonato.indirizzo}</div>
               {u.abbonato.indirizzoBolletta && <div className="small muted">Bolletta a: {u.abbonato.indirizzoBolletta}</div>}
               <div className="small muted">{[u.abbonato.telefono, u.abbonato.email].filter(Boolean).join(' · ')}</div>
             </div>
           </section>
+          <AvvisiDi motivo="utenza" id={u.id} />
           <section className="sez">
             <h4 className="sez__t"><History size={14} /> Storico</h4>
             <ol className="timeline">

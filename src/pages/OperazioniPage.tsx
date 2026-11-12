@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Ban, BookOpenCheck, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, FileText, FolderOpen, Plus, Printer, Search, X,
 } from 'lucide-react';
+import { AvvisiDi, BadgeAvviso } from '../components/Avvisi';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { EditorDefunti } from '../components/scheda/SchedaForm';
-import { Avatar, Field, Modal, Seg, StatoBadge, Switch, Tabs } from '../components/ui';
+import { Avatar, Field, Modal, Seg, StatoBadge, Tabs } from '../components/ui';
 import { UFFICIO } from '../config/defaults';
 import {
   COLORI_OPERAZIONE, NOMI_DESTINAZIONE, NOMI_OGGETTO, NOMI_OPERAZIONE, STATI_PRATICA, TIPI_OPERAZIONE, annullaPratica, apriPratica, avvisoStagione, eseguiPratica,
-  nomeOperazione, programmaPratica, segnaPagamento, sepoltura, sovrapposizioni,
+  nomeOperazione, programmaPratica, sepoltura, sovrapposizioni,
 } from '../data/pratiche';
 import { indiceSchede, seleziona, toast, useStore } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
@@ -87,6 +88,8 @@ function Pratiche({ selId }: { selId: string | null }) {
   }, [tutte, stati, tipo, q]);
   useEffect(() => setPagina(0), [q, stati, tipo]);
   const conta = (st: string) => tutte.filter((p) => p.stato === st).length;
+  // l'attestazione di pagamento della pratica è lo stato del suo avviso
+  const avviso = useMemo(() => new Map(db.avvisi.filter((a) => a.motivo === 'pratica').map((a) => [a.riferimentoId, a])), [db.avvisi]);
   return (
     <section className="card">
       <div className="card__head" style={{ flexWrap: 'wrap' }}>
@@ -120,7 +123,7 @@ function Pratiche({ selId }: { selId: string | null }) {
                   <td><span className="id">{p.schedaId}</span><div className="tiny muted">{s?.viale}</div></td>
                   <td>{p.dUfficio ? <span className="muted">D'ufficio</span> : p.richiedente?.nome}</td>
                   <td className="nowrap">{p.dataOra ? `${dataBreve(p.dataOra.slice(0, 10))} · ${ora(p)}` : <span className="muted">da programmare</span>}</td>
-                  <td>{p.dUfficio ? <span className="muted">—</span> : p.pagamento?.pagata ? <span className="badge badge--sm badge--verde">Pagata</span> : <span className="badge badge--sm badge--giallo">Da pagare</span>}</td>
+                  <td>{p.dUfficio ? <span className="muted">—</span> : avviso.get(p.id) ? <BadgeAvviso a={avviso.get(p.id)!} /> : <span className="muted">—</span>}</td>
                   <td><BadgePratica p={p} /></td>
                 </tr>
               );
@@ -178,21 +181,13 @@ function Dettaglio({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) {
             {p.stato === 'annullata' && (<><dt>Annullata il</dt><dd>{data(p.annullataIl)} · {p.motivoAnnullamento}</dd></>)}
             {p.note && (<><dt>Note</dt><dd>{p.note}</dd></>)}
           </dl>
-          {!p.dUfficio && (
+          {!p.dUfficio && <AvvisiDi motivo="pratica" id={p.id} />}
+          {!!p.storico?.length && (
             <section className="sez">
-              <h4 className="sez__t">Attestazione di pagamento</h4>
-              <div className="row row--wrap gap-12">
-                <span>Tariffa <b>{euro(p.tariffa ?? 0)}</b></span>
-                <label className="row gap-8" style={{ cursor: 'pointer' }}>
-                  <Switch small on={!!p.pagamento?.pagata} label="Pagata"
-                    onChange={(v) => segnaPagamento(p.id, v ? { pagata: true, data: oggiISO(), numero: p.pagamento?.numero ?? '' } : { pagata: false })} />
-                  {p.pagamento?.pagata ? `Pagata il ${data(p.pagamento.data)}` : 'Non pagata'}
-                </label>
-                {p.pagamento?.pagata && (
-                  <input className="input input--sm" style={{ width: 200 }} placeholder="Numero della ricevuta" value={p.pagamento.numero ?? ''}
-                    onChange={(e) => segnaPagamento(p.id, { ...p.pagamento!, numero: e.target.value })} />
-                )}
-              </div>
+              <h4 className="sez__t">Storico</h4>
+              <ol className="timeline">
+                {[...p.storico].reverse().map((ev, i) => <li key={i}><b>{ev.azione}</b><span className="tiny muted">{data(ev.data)} · {ev.operatore}</span></li>)}
+              </ol>
             </section>
           )}
         </div>
@@ -416,6 +411,7 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
             <div className="grid-form">
               <Field label="Nome e cognome"><input className="input" value={richiedente.nome} onChange={(e) => setRichiedente({ ...richiedente, nome: e.target.value })} /></Field>
               <Field label="Codice fiscale"><input className="input mono" value={richiedente.codiceFiscale} onChange={(e) => setRichiedente({ ...richiedente, codiceFiscale: e.target.value.toUpperCase() })} /></Field>
+              <Field label="Indirizzo"><input className="input" value={richiedente.indirizzo ?? ''} onChange={(e) => setRichiedente({ ...richiedente, indirizzo: e.target.value })} placeholder="Via e numero, CAP e Comune" /></Field>
               <Field label="Telefono"><input className="input" value={richiedente.telefono ?? ''} onChange={(e) => setRichiedente({ ...richiedente, telefono: e.target.value })} /></Field>
               <Field label="Legame con il defunto"><input className="input" value={richiedente.legameDefunto ?? ''} onChange={(e) => setRichiedente({ ...richiedente, legameDefunto: e.target.value })} /></Field>
             </div>

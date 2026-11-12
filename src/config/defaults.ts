@@ -20,19 +20,9 @@ export const CONFIG_DEFAULT: ConfigScheda = {
   ],
   sezioni: [
     { id: 'flag', label: 'Flag e informazioni aggiuntive' },
-    { id: 'fatturazione', label: 'Fatturazione e pagamenti' },
     { id: 'manufatto', label: 'Postazione' },
   ],
   campi: [
-    {
-      id: 'stato_pagamenti', label: 'Stato pagamenti', tipo: 'select', sezione: 'fatturazione',
-      opzioni: [
-        { id: 'regolare', label: 'Regolare', colore: '#3F9A3C' },
-        { id: 'moroso', label: 'Moroso', colore: '#D9473F' },
-        { id: 'in_verifica', label: 'In verifica', colore: '#E9BE1F' },
-      ],
-      inFiltri: true, inTabella: true, inExport: true, inPopup: false, inApp: false,
-    },
     {
       id: 'materiale', label: 'Materiale lapide', tipo: 'select', sezione: 'manufatto',
       opzioni: [
@@ -102,6 +92,7 @@ export const REGOLE_DEFAULT: RegoleComune = {
   campoComune: { turnoAnni: 10 },
   // importi inventati: quelli di Ragusa non sono pubblicati
   operazioni: { tariffe: { inumazione: 180, tumulazione: 220, esumazione: 260, estumulazione: 310, traslazione: 240 } },
+  pagamenti: { giorniPagamento: 30, giorniDopoSollecito: 30, giorniDopoDiffida: 30 },
 };
 
 export const FILTRI_VUOTI: Filtri = {

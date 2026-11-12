@@ -13,6 +13,7 @@ import { formatCoord, googleMapsIndicazioni } from '../../lib/geo';
 import { pdfScheda } from '../../lib/pdf';
 import { useTelefono } from '../../lib/schermo';
 import { href, useRotta, vai } from '../../router';
+import { Moroso } from '../Avvisi';
 import { DaInviare } from '../StrisciaRete';
 import { Dot, Progress, Seg, Switch, TipologiaBadge } from '../ui';
 import { nomeSoggetto } from '../../data/concessioni';
@@ -170,7 +171,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
             <dt>Numero</dt>
             <dd>{concVista.numero}</dd>
             <dt>Concessionario</dt>
-            <dd>{concVista.concessionario}</dd>
+            <dd>{concVista.concessionario} <Moroso codiceFiscale={concVista.codiceFiscale} /></dd>
             <dt>Scadenza</dt>
             <dd>{data(concVista.scadenza)}</dd>
           </dl>
@@ -186,7 +187,7 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
               <dt>Utenza</dt>
               <dd>{u.numero} <span className={`badge badge--sm ${CLASSE_STATO_UTENZA[statoUtenza(u)]}`}>{NOMI_STATO_UTENZA[statoUtenza(u)]}</span></dd>
               <dt>Abbonato</dt>
-              <dd>{nomeSoggetto(u.abbonato)}</dd>
+              <dd>{nomeSoggetto(u.abbonato)} <Moroso codiceFiscale={u.abbonato.codiceFiscale} /></dd>
               <dt>Punti luce</dt>
               <dd>{u.puntiLuce}{u.defunto ? ` · per ${u.defunto.nome} ${u.defunto.cognome}` : ''}</dd>
             </dl>

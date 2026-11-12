@@ -51,10 +51,10 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 8;
+export const VERSIONE_DATI = 9;
 
 const DB_VUOTO: Database = {
-  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], pratiche: [], agenzie: [], defuntiAltrove: [], regole: REGOLE_DEFAULT,
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], pratiche: [], agenzie: [], defuntiAltrove: [], avvisi: [], lotti: [], invii: [], regole: REGOLE_DEFAULT,
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
@@ -428,9 +428,10 @@ let alertN = 0;
 export function avvisa(
   destinatari: (string | undefined | null)[],
   a: { livello?: AlertPersonale['livello']; titolo: string; messaggio: string; link?: string },
+  ancheAMe = false,
 ) {
   const io = firmaCorrente();
-  const chi = Array.from(new Set(destinatari.filter((d): d is string => !!d && d !== io)));
+  const chi = Array.from(new Set(destinatari.filter((d): d is string => !!d && (ancheAMe || d !== io))));
   if (!chi.length) return;
   const ora = adessoISO();
   const nuovi: AlertPersonale[] = chi.map((destinatario) => ({

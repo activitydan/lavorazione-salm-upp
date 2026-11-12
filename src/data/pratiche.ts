@@ -3,6 +3,7 @@
 import { adessoISO, data, nomeCompleto, oggiISO } from '../lib/format';
 import { aggiornaDb, aggiornaScheda, avvisa, firmaCorrente, leggiStato, registra, schedaPerId, toast } from './store';
 import type { AgenziaFunebre, Defunto, DestinazioneResti, Pratica, RegoleComune, Richiedente, Scheda, TipoOperazione } from './types';
+import { annullaAvvisiDellaPratica, emettiAvviso } from './scadenze';
 import { chiudiUtenzePerDefunto, spostaUtenza } from './utenze';
 
 export const NOMI_OPERAZIONE: Record<TipoOperazione, string> = {
@@ -99,15 +100,22 @@ export interface NuovaPratica {
 }
 
 /** Apre una pratica. Su richiesta ha il richiedente e la tariffa del suo tipo; d'ufficio no. */
-export function apriPratica(d: NuovaPratica): Pratica {
+export function apriPratica(d: NuovaPratica, silenzioso = false): Pratica {
   const oggi = oggiISO();
   const tariffa = d.dUfficio ? undefined : leggiStato().db.regole.operazioni.tariffe[d.tipo];
   const p: Pratica = {
     ...d, id: `pr-${Date.now().toString(36)}`, numero: prossimoNumero(Number(oggi.slice(0, 4))), stato: 'aperta', apertaIl: oggi, apertaDa: firmaCorrente(),
-    tariffa, pagamento: d.dUfficio ? undefined : { pagata: false },
+    tariffa,
   };
   aggiornaDb((db) => ({ pratiche: [...db.pratiche, p] }));
-  toast(`Pratica ${p.numero} aperta`);
+  // la pratica su richiesta crea da sola il suo avviso di pagamento, intestato al richiedente
+  if (!d.dUfficio && d.richiedente && tariffa)
+    emettiAvviso({
+      motivo: 'pratica', riferimentoId: p.id, cimiteroId: p.cimiteroId, causale: `Pratica ${p.numero} · ${NOMI_OPERAZIONE[p.tipo].toLowerCase()} · ${nomeCompleto(p.defunto)}`,
+      intestatario: { nome: d.richiedente.nome, codiceFiscale: d.richiedente.codiceFiscale, indirizzo: d.richiedente.indirizzo ?? '' },
+      voci: [{ descrizione: `Tariffa · ${NOMI_OPERAZIONE[p.tipo].toLowerCase()}`, importo: tariffa }],
+    });
+  if (!silenzioso) toast(`Pratica ${p.numero} aperta`);
   return p;
 }
 
@@ -129,12 +137,9 @@ export function annullaPratica(id: string, motivo: string) {
   const p = leggiStato().db.pratiche.find((x) => x.id === id);
   if (!p) return;
   cambia(id, { stato: 'annullata', annullataIl: oggiISO(), motivoAnnullamento: motivo });
+  annullaAvvisiDellaPratica(id);
   avvisa(p.operatoriIds ?? [], { livello: 'attenzione', titolo: 'Operazione annullata', messaggio: `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)} · ${motivo}`, link: `/operazioni?id=${id}` });
   toast('Pratica annullata');
-}
-
-export function segnaPagamento(id: string, pagamento: NonNullable<Pratica['pagamento']>) {
-  cambia(id, { pagamento });
 }
 
 const stesso = (a: Defunto, b: Defunto) => a.nome === b.nome && a.cognome === b.cognome && (a.dataMorte ?? '') === (b.dataMorte ?? '');

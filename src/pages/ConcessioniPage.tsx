@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Ban, Download, FileSignature, History, Plus, RefreshCw, ScrollText, Search, ShieldAlert, Trash2, UserRoundPlus, Users, X } from 'lucide-react';
+import { AvvisiDi, Moroso } from '../components/Avvisi';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { EditorConcessionari, SOGGETTO_VUOTO, soggettoIncompleto } from '../components/Soggetti';
 import { Field, Modal, StatoBadge, Tabs } from '../components/ui';
 import {
-  NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, anniDopo, avviaDecadenza, chiudiConcessione, etichettaStato, indiceConcessioni, nomeSoggetto,
+  NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, anniDopo, chiudiConcessione, etichettaStato, indiceConcessioni, nomeSoggetto,
   nomiConcessionari, nuovaConcessione, postiOccupati, rappresentanteDi, rinnovaConcessione, salvaAventiDiritto, statoEffettivo, subentroConcessione,
   tipoConcessioneDi,
 } from '../data/concessioni';
+import { avviaDecadenzaConDiffida } from '../data/scadenze';
 import { indiceSchede, seleziona, toast, useStore } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { AventeDiritto, Concessionario, Concessione, Scheda } from '../data/types';
@@ -115,7 +117,7 @@ export function ConcessioniPage() {
                   return (
                     <tr key={c.id} className={`clickable ${selId === c.id ? 'is-sel' : ''}`} onClick={() => setQuery('id', c.id)}>
                       <td className="id">{c.numero}</td>
-                      <td><b>{nomiConcessionari(c)}</b></td>
+                      <td><b>{nomiConcessionari(c)}</b> <Moroso codiceFiscale={rappresentanteDi(c)?.codiceFiscale} /></td>
                       <td>{NOMI_TIPO_CONCESSIONE[c.tipo]}</td>
                       <td>
                         <span className="id">{c.schedeIds[0]}</span>
@@ -242,7 +244,7 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
                 <div className="col gap-8">
                   {c.concessionari.map((x, i) => (
                     <div key={i} className="soggetto">
-                      <div className="row gap-8"><b>{nomeSoggetto(x)}</b>{x.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{x.rappresentante && <span className="badge badge--sm badge--blu">Rappresentante</span>}</div>
+                      <div className="row gap-8"><b>{nomeSoggetto(x)}</b>{x.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{x.rappresentante && <span className="badge badge--sm badge--blu">Rappresentante</span>}<Moroso codiceFiscale={x.codiceFiscale} /></div>
                       <div className="small muted">{x.codiceFiscale} · {x.indirizzo}</div>
                       <div className="small muted">{[x.telefono, x.email, x.legaleRappresentante ? `Legale rappresentante: ${x.legaleRappresentante}` : ''].filter(Boolean).join(' · ')}</div>
                     </div>
@@ -250,6 +252,7 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
                 </div>
               </section>
               {c.tipo === 'tomba_famiglia' && <AventiDiritto c={c} />}
+              <AvvisiDi motivo="concessione" id={c.id} />
             </div>
             <div className="col gap-16">
               <section className="sez">
@@ -331,7 +334,7 @@ function AventiDiritto({ c }: { c: Concessione }) {
 const TESTI: Record<Exclude<Azione, 'subentro'>, { titolo: string; testo: string; bottone: string }> = {
   rinnovo: { titolo: 'Rinnova', testo: 'La scadenza si sposta in avanti della durata del rinnovo scritta nelle Regole del Comune.', bottone: 'Rinnova' },
   rinuncia: { titolo: 'Rinuncia', testo: 'Il concessionario rinuncia: il contratto si chiude oggi.', bottone: 'Registra la rinuncia' },
-  avvia_decadenza: { titolo: 'Avvia la decadenza', testo: 'Parte la diffida al concessionario. Il contratto resta in corso finché la decadenza non è dichiarata.', bottone: 'Avvia la decadenza' },
+  avvia_decadenza: { titolo: 'Avvia la decadenza', testo: 'La diffida parte tramite DAT con Notifica Certa (simulato). Il contratto resta in corso finché la decadenza non è dichiarata.', bottone: 'Avvia la decadenza' },
   decadenza: { titolo: 'Dichiara la decadenza', testo: 'Il contratto si chiude oggi. Le postazioni ancora occupate restano da liberare.', bottone: 'Dichiara la decadenza' },
 };
 
@@ -342,7 +345,7 @@ function ModaleAtto({ c, azione, onChiudi }: { c: Concessione; azione: Exclude<A
   const esegui = () => {
     if (azione === 'rinnovo') rinnovaConcessione(c.id, atto);
     else if (azione === 'rinuncia') chiudiConcessione(c.id, 'rinunciata', atto);
-    else if (azione === 'avvia_decadenza') avviaDecadenza(c.id, atto);
+    else if (azione === 'avvia_decadenza') avviaDecadenzaConDiffida(c.id, atto);
     else chiudiConcessione(c.id, 'decaduta', atto);
     onChiudi();
   };

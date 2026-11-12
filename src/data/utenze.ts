@@ -2,6 +2,7 @@
 // con uno o più punti luce. Chi la paga è l'abbonato, che non è per forza il concessionario.
 import { oggiISO } from '../lib/format';
 import { nomeSoggetto } from './concessioni';
+import { emettiAvviso, intestatarioUtenza } from './scadenze';
 import { aggiornaDb, aggiornaScheda, leggiStato, registra, toast, utenteCorrente } from './store';
 import type { Abbonato, MotivoCessazione, RegoleComune, Scheda, StatoUtenza, UtenzaVotiva } from './types';
 
@@ -105,7 +106,13 @@ export function nuovoAllaccio(d: NuovaUtenza): UtenzaVotiva {
   aggiornaDb((db) => ({ utenze: [...db.utenze, u] }));
   // la lampada vista sul campo ora ha la sua utenza
   if (d.scheda.lampadaAccesa) aggiornaScheda(d.scheda.id, { lampadaAccesa: undefined, lampadaVistaIl: undefined });
-  toast(`Utenza ${u.numero} registrata: da allacciare`);
+  const regole = leggiStato().db.regole;
+  const imp = primoImporto(u.puntiLuce, oggi, regole);
+  emettiAvviso({
+    motivo: 'utenza', riferimentoId: u.id, cimiteroId: u.cimiteroId, causale: `Illuminazione votiva · allaccio · utenza ${u.numero}`, intestatario: intestatarioUtenza(u),
+    voci: [{ descrizione: 'Contributo di allaccio', importo: imp.allaccio }, ...(imp.mesi ? [{ descrizione: `Canone ${oggi.slice(0, 4)} · ${imp.mesi} dodicesimi`, importo: imp.dodicesimi }] : [])],
+  });
+  toast(`Utenza ${u.numero} registrata: da allacciare, con il suo avviso di pagamento`);
   return u;
 }
 

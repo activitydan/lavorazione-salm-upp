@@ -212,6 +212,8 @@ export interface Richiedente {
   codiceFiscale: string;
   telefono?: string;
   email?: string;
+  /** serve a solleciti e diffide inviati tramite DAT */
+  indirizzo?: string;
   legameDefunto?: string;
 }
 
@@ -255,9 +257,9 @@ export interface Pratica {
   esitoResti?: { destinazione: DestinazioneResti; schedaId?: string };
   annullataIl?: string;
   motivoAnnullamento?: string;
+  /** la tariffa del suo tipo; l'attestazione di pagamento è lo stato del suo avviso di pagamento */
   tariffa?: number;
-  /** l'unico documento della pratica: l'attestazione di pagamento */
-  pagamento?: { pagata: boolean; data?: string; numero?: string };
+  storico?: { data: string; azione: string; operatore: string }[];
   /** traslazione di un defunto con l'utenza votiva */
   utenzaVotiva?: 'sposta' | 'chiudi';
   note?: string;
@@ -270,6 +272,80 @@ export interface DefuntoAltrove {
   destinazione: DestinazioneResti;
   praticaId: string;
   data: string;
+}
+
+// ---------------------------------------------------------------------------
+// Scadenze e pagamenti: invii tramite DAT e avvisi di pagamento (tutto simulato)
+// ---------------------------------------------------------------------------
+
+/** I servizi di DAT, con i loro nomi. Un canale per lotto. */
+export type CanaleDat = 'posta_certa' | 'raccomandata_certa' | 'notifica_certa';
+export type EsitoInvio = 'in_lavorazione' | 'spedito' | 'consegnato' | 'notificato' | 'non_consegnato';
+export type TipoLettera = 'scadenza_concessione' | 'esumazione_dovuta' | 'avviso_pagamento' | 'sollecito' | 'diffida' | 'diffida_decadenza';
+
+export interface Destinatario {
+  nome: string;
+  indirizzo: string;
+}
+
+/** Lotto: le lettere affidate a DAT in una volta sola, con lo stesso servizio. */
+export interface LottoDat {
+  id: string;
+  numero: number;
+  data: string;
+  canale: CanaleDat;
+  operatore: string;
+  simulato: boolean;
+}
+
+/** Invio: una lettera a un destinatario, con il suo esito. */
+export interface InvioDat {
+  id: string;
+  lottoId: string;
+  tipo: TipoLettera;
+  /** la riga dello scadenzario o l'avviso di pagamento a cui si riferisce */
+  riferimento: string;
+  destinatario: Destinatario;
+  oggetto: string;
+  esito: EsitoInvio;
+  esitoIl?: string;
+  motivoNonConsegna?: string;
+  schedaId?: string;
+  concessioneId?: string;
+  avvisoId?: string;
+}
+
+export type MotivoAvviso = 'concessione' | 'utenza' | 'pratica';
+
+/** Un passo della scala della morosità su un avviso di pagamento scaduto. */
+export interface PassoMorosita {
+  tipo: 'sollecito' | 'diffida' | 'sospensione' | 'cessazione' | 'avvio_decadenza';
+  data: string;
+}
+
+/** Avviso di pagamento pagoPA: uno per motivo, anche con più voci. "Scaduto" si calcola dalla data. */
+export interface AvvisoPagamento {
+  id: string;
+  /** codice dell'avviso (finto) */
+  numero: string;
+  cimiteroId: string;
+  motivo: MotivoAvviso;
+  /** id della concessione, dell'utenza votiva o della pratica */
+  riferimentoId: string;
+  causale: string;
+  intestatario: { nome: string; codiceFiscale: string; indirizzo: string };
+  voci: { descrizione: string; importo: number }[];
+  importo: number;
+  emessoIl: string;
+  scadenza: string;
+  stato: 'da_pagare' | 'pagato' | 'annullato';
+  pagatoIl?: string;
+  ricevuta?: string;
+  annullatoIl?: string;
+  motivoAnnullamento?: string;
+  /** per i canoni dell'illuminazione votiva */
+  anno?: number;
+  passi: PassoMorosita[];
 }
 
 /** Regole del Comune (Amministrazione): valgono per i nuovi contratti e addebiti. */
@@ -292,6 +368,12 @@ export interface RegoleComune {
   };
   operazioni: {
     tariffe: Record<TipoOperazione, number>;
+  };
+  pagamenti: {
+    /** giorni per pagare un avviso di pagamento */
+    giorniPagamento: number;
+    giorniDopoSollecito: number;
+    giorniDopoDiffida: number;
   };
 }
 
@@ -421,6 +503,9 @@ export interface Database {
   pratiche: Pratica[];
   agenzie: AgenziaFunebre[];
   defuntiAltrove: DefuntoAltrove[];
+  avvisi: AvvisoPagamento[];
+  lotti: LottoDat[];
+  invii: InvioDat[];
   regole: RegoleComune;
   manutenzioni: Manutenzione[];
   verifiche: Verifica[];

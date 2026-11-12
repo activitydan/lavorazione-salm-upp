@@ -520,8 +520,6 @@ def campi_dinamici(kind, stato, defunti, conc, in_cappella=False, in_colombario=
                  "celletta_ossario": 0.22, "nicchia_cineraria": 0.3}.get(kind, 0)
     lampada = (occupato or kind == "cappella") and rng.random() < p_lampada and stato != "inaccessibile"
     c = {"lampada_votiva": lampada}
-    if conc or lampada:
-        c["stato_pagamenti"] = scegli({"regolare": 85, "moroso": 10, "in_verifica": 5})
     if lampada:
         c["canone_lampada"] = {"cappella": 48.0, "tomba_famiglia": 30.0}.get(kind, 24.0)
         while True:
@@ -660,7 +658,6 @@ for giorno, minuti, op, pos in censiti:
             stato_c = "da_manutenzionare"
         contenitore["stato"] = stato_c
         contenitore["campi"] = campi_dinamici(k, stato_c, [1] if occupati else [], conc_c)
-        contenitore["campi"].pop("stato_pagamenti", None) if k == "colombaio" else None
         if k == "colombaio":
             contenitore["campi"]["lampada_votiva"] = False
             for key in ("canone_lampada", "codice_utenza", "intestatario_utenza"):
@@ -743,6 +740,9 @@ for s in schede:
     durata = DURATA_TIPO[tipo]
     scadenza = dt.date.fromisoformat(v["dataScadenza"])
     rinnovi = min(3, v["rinnovi"])
+    # l'ultimo rinnovo cade dieci anni prima della scadenza: se è nel futuro, il contratto non è mai stato rinnovato
+    if anni_dopo(scadenza, -10) > OGGI:
+        rinnovi = 0
     decorrenza = anni_dopo(scadenza, -(durata + 10 * rinnovi))
     while decorrenza.year < 1900 and rinnovi > 0:
         rinnovi -= 1
@@ -942,6 +942,7 @@ def richiedente_di(defunto):
 
 def nuova_pratica(tipo, scheda, defunto, aperta, stato, d_ufficio=False, giorno=None, ora=None, **extra):
     """giorno/ora: quando è programmata o è stata eseguita."""
+    aperta = min(aperta, OGGI)  # una pratica non si apre nel futuro
     pr = dict(id=f"pr-{len(pratiche) + 1:04d}", numero=numero_pratica(aperta.year), cimiteroId="ragusa-centro", tipo=tipo, oggetto=extra.pop("oggetto", "salma"),
               dUfficio=d_ufficio, defunto=dict(defunto), schedaId=scheda["id"], stato=stato, apertaIl=aperta.isoformat(), apertaDa="ufficio")
     if not d_ufficio:
@@ -1070,6 +1071,192 @@ for s in rng.sample([x for x in schede if x["tipologia"] in ("loculo", "fossa") 
     nuova_pratica(rng.choice(["estumulazione", "traslazione", "esumazione"]) if s["tipologia"] == "loculo" else "esumazione", s, s["defunti"][0],
                   OGGI - dt.timedelta(days=rng.randint(20, 200)), "annullata", oggetto="resti")
 pratiche.sort(key=lambda x: x["apertaIl"])
+
+# ---------------------------------------------------------------------------
+# Scadenze e pagamenti: avvisi di pagamento (pagoPA simulato), morosi, lotti e invii tramite DAT
+# ---------------------------------------------------------------------------
+avvisi = []
+lotti = []
+invii = []
+MOTIVI_NC = ["Irreperibile", "Indirizzo errato", "Destinatario deceduto", "Rifiutato"]
+TARIFFE_CONC = {"tomba_famiglia": (4800.0, 900.0), "loculo": (1650.0, 420.0), "celletta_ossario": (380.0, 120.0), "nicchia_cineraria": (420.0, 130.0)}
+
+
+def nome_soggetto(x):
+    return x.get("denominazione") if x["tipo"] == "ente" else f"{x.get('nome', '')} {x.get('cognome', '')}".strip()
+
+
+def intest_conc(c):
+    r = next((x for x in c["concessionari"] if x.get("rappresentante")), c["concessionari"][0])
+    return dict(nome=nome_soggetto(r), codiceFiscale=r["codiceFiscale"], indirizzo=r["indirizzo"])
+
+
+def intest_ut(u):
+    a = u["abbonato"]
+    return dict(nome=nome_soggetto(a), codiceFiscale=a["codiceFiscale"], indirizzo=a.get("indirizzoBolletta") or a["indirizzo"])
+
+
+def nuovo_avviso(motivo, rif, causale, intest, voci, emesso, stato, **extra):
+    importo = round(sum(v["importo"] for v in voci), 2)
+    a = dict(id=f"av-{len(avvisi) + 1:05d}", numero=f"3{rng.randint(10 ** 16, 10 ** 17 - 1)}", cimiteroId="ragusa-centro", motivo=motivo, riferimentoId=rif, causale=causale,
+             intestatario=intest, voci=voci, importo=importo, emessoIl=emesso.isoformat(), scadenza=(emesso + dt.timedelta(days=30)).isoformat(), stato=stato, passi=[])
+    if stato == "pagato":
+        dp = min(OGGI, emesso + dt.timedelta(days=rng.randint(1, 26)))
+        a.update(pagatoIl=dp.isoformat(), ricevuta=f"RIC-{dp.year}-{rng.randint(100000, 999999)}")
+    if stato == "annullato":
+        a.update(annullatoIl=min(OGGI, emesso + dt.timedelta(days=rng.randint(1, 8))).isoformat(), motivoAnnullamento=extra.pop("motivoAnnullamento", "Emesso per errore"))
+    a.update(extra)
+    avvisi.append(a)
+    return a
+
+
+def passo(a, tipo, d):
+    a["passi"].append(dict(tipo=tipo, data=d.isoformat()))
+
+
+def nuovo_lotto(d, canale):
+    l = dict(id=f"lotto-{len(lotti) + 1:03d}", numero=len(lotti) + 1, data=d.isoformat(), canale=canale, operatore="Ufficio Cimiteri", simulato=True)
+    lotti.append(l)
+    return l
+
+
+def nuovo_invio(lotto, tipo, rif, dest, oggetto, p_nc=0.08, **extra):
+    d0 = dt.date.fromisoformat(lotto["data"])
+    nc = rng.random() < p_nc
+    esito = "non_consegnato" if nc else ("notificato" if lotto["canale"] == "notifica_certa" else "consegnato")
+    i = dict(id=f"inv-{len(invii) + 1:05d}", lottoId=lotto["id"], tipo=tipo, riferimento=rif, destinatario=dict(nome=dest["nome"], indirizzo=dest["indirizzo"]), oggetto=oggetto,
+             esito=esito, esitoIl=(d0 + dt.timedelta(days=rng.randint(3, 9))).isoformat())
+    if nc:
+        i["motivoNonConsegna"] = rng.choice(MOTIVI_NC)
+    i.update(extra)
+    invii.append(i)
+    return i
+
+
+# 1) canoni 2026 dell'illuminazione votiva: emessi a gennaio, quasi tutti pagati, spediti tramite DAT
+EMISSIONE = dt.date(OGGI.year, 1, 15)
+lotto_canoni = nuovo_lotto(EMISSIONE + dt.timedelta(days=1), "posta_certa")
+morosi_votiva = rng.sample([u for u in utenze if u["stato"] == "attiva" and u["dataContratto"] < f"{OGGI.year}-01-01" and not u.get("disdettaDal")], 9)
+for u in utenze:
+    if u["dataContratto"] >= f"{OGGI.year}-01-01":
+        continue
+    if u["stato"] == "cessata" and u.get("cessataIl", "9") < f"{OGGI.year}-01-01":
+        continue
+    canone = round(24.0 * u["puntiLuce"], 2)
+    pagato = u["stato"] != "sospesa" and u not in morosi_votiva and not (u["stato"] == "cessata" and u.get("motivoCessazione") == "morosita")
+    a = nuovo_avviso("utenza", u["id"], f"Illuminazione votiva · canone {OGGI.year} · utenza {u['numero']}", intest_ut(u),
+                     [dict(descrizione=f"Canone {OGGI.year} · {u['puntiLuce']} {'punto luce' if u['puntiLuce'] == 1 else 'punti luce'}", importo=canone)], EMISSIONE,
+                     "pagato" if pagato else "da_pagare", anno=OGGI.year)
+    nuovo_invio(lotto_canoni, "avviso_pagamento", a["id"], a["intestatario"], a["causale"], p_nc=0.03, avvisoId=a["id"])
+    if not pagato:
+        scad = dt.date.fromisoformat(a["scadenza"])
+        k = morosi_votiva.index(u) if u in morosi_votiva else 99
+        if u["stato"] == "sospesa" or u["stato"] == "cessata" or k >= 3:
+            passo(a, "sollecito", scad + dt.timedelta(days=rng.randint(10, 20)))
+        if u["stato"] == "sospesa" or u["stato"] == "cessata" or k >= 6:
+            passo(a, "diffida", scad + dt.timedelta(days=rng.randint(50, 60)))
+        if u["stato"] == "sospesa":
+            ds = scad + dt.timedelta(days=rng.randint(92, 110))
+            passo(a, "sospensione", ds)
+            u["sospesaIl"] = ds.isoformat()
+            u["storico"] = [e for e in u["storico"] if not e["azione"].startswith("Sospesa")] + [evento_ut(ds, "Sospesa per morosità")]
+        if u["stato"] == "cessata":
+            passo(a, "sospensione", scad + dt.timedelta(days=95))
+            passo(a, "cessazione", dt.date.fromisoformat(u["cessataIl"]))
+# solleciti e diffide passano da DAT
+con_sollecito = [a for a in avvisi if any(x["tipo"] == "sollecito" for x in a["passi"])]
+if con_sollecito:
+    l = nuovo_lotto(dt.date(OGGI.year, 3, 4), "posta_certa")
+    for a in con_sollecito:
+        nuovo_invio(l, "sollecito", a["id"], a["intestatario"], f"Sollecito di pagamento · {a['causale']}", avvisoId=a["id"])
+con_diffida = [a for a in avvisi if any(x["tipo"] == "diffida" for x in a["passi"])]
+if con_diffida:
+    l = nuovo_lotto(dt.date(OGGI.year, 4, 14), "raccomandata_certa")
+    for a in con_diffida:
+        nuovo_invio(l, "diffida", a["id"], a["intestatario"], f"Diffida di pagamento · {a['causale']}", avvisoId=a["id"])
+
+# 2) allacci recenti: allaccio più dodicesimi del canone
+for u in utenze:
+    if u["dataContratto"] < f"{OGGI.year}-01-01":
+        continue
+    dc = dt.date.fromisoformat(u["dataContratto"])
+    mesi = 12 - dc.month
+    voci = [dict(descrizione="Contributo di allaccio", importo=15.0)]
+    if mesi:
+        voci.append(dict(descrizione=f"Canone {dc.year} · {mesi} dodicesimi", importo=round(24.0 * u["puntiLuce"] * mesi / 12, 2)))
+    nuovo_avviso("utenza", u["id"], f"Illuminazione votiva · allaccio · utenza {u['numero']}", intest_ut(u), voci, dc, "da_pagare" if u["stato"] == "da_allacciare" else "pagato")
+
+# 3) concessioni: tariffa alla nuova concessione e al rinnovo
+for c in concessioni:
+    for ev in c["storico"]:
+        if ev["data"] < f"{OGGI.year - 2}-01-01":
+            continue
+        nuova_t, rinnovo_t = TARIFFE_CONC[c["tipo"]]
+        if ev["azione"] == "Nuova concessione":
+            nuovo_avviso("concessione", c["id"], f"Concessione {c['numero']} · nuova concessione", intest_conc(c), [dict(descrizione=f"Tariffa di nuova concessione · {NOME_TIPO[c['tipo']]}", importo=nuova_t)],
+                         dt.date.fromisoformat(ev["data"]), "pagato")
+        elif ev["azione"].startswith("Rinnovo"):
+            nuovo_avviso("concessione", c["id"], f"Concessione {c['numero']} · rinnovo", intest_conc(c), [dict(descrizione=f"Tariffa di rinnovo · {NOME_TIPO[c['tipo']]}", importo=rinnovo_t)],
+                         dt.date.fromisoformat(ev["data"]), "pagato")
+# due rinnovi appena registrati (avviso da pagare) e una concessione in decadenza per un rinnovo non pagato
+scadute_c = [c for c in concessioni if c["stato"] == "attiva" and c["scadenza"] < OGGI.isoformat()]
+for c in scadute_c[:2]:
+    d = OGGI - dt.timedelta(days=rng.randint(3, 15))
+    c["rinnovi"] += 1
+    c["scadenza"] = anni_dopo(dt.date.fromisoformat(c["scadenza"]), 10).isoformat()
+    c["storico"].append(dict(data=d.isoformat(), azione="Rinnovo di 10 anni", atto=f"Determina n. {rng.randint(100, 999)}/{d.year}", operatore="Ufficio Cimiteri"))
+    nuovo_avviso("concessione", c["id"], f"Concessione {c['numero']} · rinnovo", intest_conc(c), [dict(descrizione=f"Tariffa di rinnovo · {NOME_TIPO[c['tipo']]}", importo=TARIFFE_CONC[c["tipo"]][1])], d, "da_pagare")
+c = next(x for x in concessioni if x["stato"] == "in_decadenza")
+d = OGGI - dt.timedelta(days=200)
+a = nuovo_avviso("concessione", c["id"], f"Concessione {c['numero']} · rinnovo", intest_conc(c), [dict(descrizione=f"Tariffa di rinnovo · {NOME_TIPO[c['tipo']]}", importo=TARIFFE_CONC[c["tipo"]][1])], d, "da_pagare")
+passo(a, "sollecito", d + dt.timedelta(days=45))
+passo(a, "avvio_decadenza", d + dt.timedelta(days=85))
+
+# 4) pratiche su richiesta: la tariffa dell'operazione; l'attestazione di pagamento è lo stato dell'avviso
+da_lasciare = [pr for pr in pratiche if pr["stato"] == "eseguita" and not pr["dUfficio"] and pr["apertaIl"] < (OGGI - dt.timedelta(days=120)).isoformat()][:3]
+for pr in pratiche:
+    pag = pr.pop("pagamento", None)
+    if pr["dUfficio"]:
+        continue
+    r = pr["richiedente"]
+    r["indirizzo"] = indirizzo()
+    intest = dict(nome=r["nome"], codiceFiscale=r["codiceFiscale"], indirizzo=r["indirizzo"])
+    aperta = dt.date.fromisoformat(pr["apertaIl"])
+    causale = f"Pratica {pr['numero']} · {pr['tipo']} · {pr['defunto']['nome']} {pr['defunto']['cognome']}"
+    voci = [dict(descrizione=f"Tariffa · {pr['tipo']}", importo=pr["tariffa"])]
+    if pr["stato"] == "annullata":
+        nuovo_avviso("pratica", pr["id"], causale, intest, voci, aperta, "annullato", motivoAnnullamento="Pratica annullata")
+    elif pr in da_lasciare:
+        a = nuovo_avviso("pratica", pr["id"], causale, intest, voci, aperta, "da_pagare")
+        k = da_lasciare.index(pr)
+        scad = dt.date.fromisoformat(a["scadenza"])
+        if k >= 1:
+            passo(a, "sollecito", scad + dt.timedelta(days=12))
+        if k >= 2:
+            passo(a, "diffida", scad + dt.timedelta(days=50))
+    else:
+        nuovo_avviso("pratica", pr["id"], causale, intest, voci, aperta, "pagato" if (pag or {}).get("pagata") else "da_pagare")
+for k in range(3):  # qualche avviso annullato per errore
+    u = rng.choice(utenze)
+    nuovo_avviso("utenza", u["id"], f"Illuminazione votiva · canone {OGGI.year} · utenza {u['numero']}", intest_ut(u), [dict(descrizione=f"Canone {OGGI.year}", importo=24.0)],
+                 OGGI - dt.timedelta(days=rng.randint(40, 200)), "annullato", motivoAnnullamento="Emesso due volte")
+
+# 5) lettere di scadenza già inviate tramite DAT, con esiti misti
+in_scad = [c for c in concessioni if c["stato"] == "attiva" and OGGI.isoformat() <= c["scadenza"] <= (OGGI + dt.timedelta(days=183)).isoformat()]
+for quando, gruppo, canale in [(OGGI - dt.timedelta(days=75), [c for c in concessioni if c["stato"] == "attiva" and c["scadenza"] < OGGI.isoformat()], "raccomandata_certa"),
+                               (OGGI - dt.timedelta(days=34), in_scad[:18], "posta_certa")]:
+    if not gruppo:
+        continue
+    l = nuovo_lotto(quando, canale)
+    for c in gruppo:
+        i = nuovo_invio(l, "scadenza_concessione", c["id"], intest_conc(c), f"Scadenza della concessione {c['numero']}", p_nc=0.12, concessioneId=c["id"], schedaId=c["schedeIds"][0])
+        if i["esito"] != "non_consegnato":
+            c["storico"].append(dict(data=i["esitoIl"], azione=f"Lettera di scadenza tramite DAT – consegnato il {i['esitoIl'][8:10]}/{i['esitoIl'][5:7]}/{i['esitoIl'][0:4]}", operatore="Ufficio Cimiteri"))
+dec = [c for c in concessioni if c["stato"] == "in_decadenza"]
+if dec:
+    l = nuovo_lotto(OGGI - dt.timedelta(days=50), "notifica_certa")
+    for c in dec:
+        nuovo_invio(l, "diffida_decadenza", c["id"], intest_conc(c), f"Diffida: avvio della decadenza della concessione {c['numero']}", p_nc=0.0, concessioneId=c["id"], schedaId=c["schedeIds"][0])
 
 # ---------------------------------------------------------------------------
 # Manutenzioni e verifiche
@@ -1215,10 +1402,14 @@ for qid, nome, colore, rect in QUADRANTI:
 viali = [dict(id=f"v-{i + 1}", cimiteroId="ragusa-centro", nome=n, tracciato=[to_ll(p) for p in pts]) for i, (n, pts) in enumerate(VIALI_PX)]
 aree_out = [dict(id=f"a-{i + 1}", cimiteroId="ragusa-centro", nome=a["nome"], tipo=a["tipo"], poligono=[to_ll(p) for p in a["poly"]]) for i, a in enumerate(aree)]
 
+# i lotti si numerano in ordine di data
+for n, l in enumerate(sorted(lotti, key=lambda x: x["data"]), 1):
+    l["numero"] = n
+
 dataset = dict(
     versione=1, generatoIl=OGGI.isoformat(), avviso="Dati dimostrativi: nominativi, date e stati sono inventati.",
     cimiteri=cimiteri, quadranti=quadranti, viali=viali, aree=aree_out, strutture=strutture, operatori=OPERATORI,
-    schede=schede, concessioni=concessioni, utenze=utenze, pratiche=pratiche, agenzie=agenzie, defuntiAltrove=defunti_altrove, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
+    schede=schede, concessioni=concessioni, utenze=utenze, pratiche=pratiche, agenzie=agenzie, defuntiAltrove=defunti_altrove, avvisi=avvisi, lotti=lotti, invii=invii, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
 )
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -1233,6 +1424,8 @@ print("defunti:", sum(len(s["defunti"]) for s in schede))
 print("concessioni:", len(concessioni), dict(Counter(c["stato"] for c in concessioni)), "| per tipo:", dict(Counter(c["tipo"] for c in concessioni)))
 print("concessioni in scadenza 6 mesi:", sum(1 for c in concessioni if c["stato"] != "chiusa" and OGGI.isoformat() <= c["scadenza"] <= (OGGI + dt.timedelta(days=183)).isoformat()))
 print("concessioni scadute:", sum(1 for c in concessioni if c["stato"] != "chiusa" and c["scadenza"] < OGGI.isoformat()))
+print("avvisi di pagamento:", len(avvisi), dict(Counter(a["stato"] for a in avvisi)), dict(Counter(a["motivo"] for a in avvisi)), "| con passi:", sum(1 for a in avvisi if a["passi"]))
+print("lotti DAT:", len(lotti), "| invii:", len(invii), dict(Counter(i["esito"] for i in invii)))
 print("pratiche:", len(pratiche), dict(Counter(x["stato"] for x in pratiche)), dict(Counter(x["tipo"] for x in pratiche)), "| altrove:", len(defunti_altrove))
 print("utenze votive:", len(utenze), dict(Counter(u["stato"] for u in utenze)), "| lampade da controllare:", sum(1 for s in schede if s.get("lampadaAccesa")))
 print("manutenzioni:", dict(Counter(mm["stato"] for mm in manutenzioni)), "| verifiche:", dict(Counter(v["stato"] for v in verifiche)))

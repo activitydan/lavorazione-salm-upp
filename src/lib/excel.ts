@@ -102,25 +102,6 @@ export function fogliTotali(schede: Scheda[], ctx: { config: ConfigScheda; db: D
   ];
 }
 
-export function righeScadenze(schede: Scheda[], ctx: { config: ConfigScheda; db: Database }): Riga[] {
-  const pag = ctx.config.campi.find((c) => c.id === 'stato_pagamenti');
-  return schede
-    .map((s) => ({ s, c: concessioneScheda(s) }))
-    .filter((x) => x.c)
-    .sort((a, b) => a.c!.scadenza.localeCompare(b.c!.scadenza))
-    .map(({ s, c }) => ({
-      'ID scheda': s.id,
-      'N. concessione': c!.numero,
-      Concessionario: c!.concessionario,
-      'Defunto / postazione': descrizioneScheda(s),
-      Viale: s.viale,
-      Scadenza: data(c!.scadenza),
-      'Giorni alla scadenza': statoConcessione(s)?.giorni ?? null,
-      Durata: `${c!.durataAnni} anni`,
-      'Stato pagamenti': pag ? valoreLeggibile(pag, s.campi.stato_pagamenti) : '',
-    }));
-}
-
 export function righeManutenzioni(lista: Manutenzione[], db: Database, config: ConfigScheda): Riga[] {
   const nome = (id?: string) => (id === 'ufficio' ? 'Ufficio Cimiteri' : db.operatori.find((o) => o.id === id)?.nome ?? '');
   return lista.map((m) => ({
