@@ -11,7 +11,7 @@ import { Field } from '../ui';
 import { InputCampo } from './Campi';
 import { ScegliFoto } from './Media';
 
-export function EditorDefunti({ defunti, onChange }: { defunti: Defunto[]; onChange: (d: Defunto[]) => void }) {
+export function EditorDefunti({ defunti, onChange, conProvvisoria }: { defunti: Defunto[]; onChange: (d: Defunto[]) => void; conProvvisoria?: boolean }) {
   const set = (i: number, patch: Partial<Defunto>) => onChange(defunti.map((d, j) => (j === i ? { ...d, ...patch } : d)));
   return (
     <div className="col gap-12">
@@ -35,6 +35,22 @@ export function EditorDefunti({ defunti, onChange }: { defunti: Defunto[]; onCha
               <Trash2 size={14} /> Rimuovi
             </button>
           </div>
+          {conProvvisoria && (
+            <div className="row row--wrap gap-8 mt-8">
+              <span className="small strong">Sepoltura</span>
+              <div className="seg seg--sm seg--light">
+                <button type="button" className={!d.provvisorio ? 'is-on' : ''} onClick={() => set(i, { provvisorio: undefined })}>Definitiva</button>
+                <button type="button" className={d.provvisorio ? 'is-on' : ''} onClick={() => !d.provvisorio && set(i, { provvisorio: { dal: oggiISO() } })}>Provvisoria</button>
+              </div>
+              {d.provvisorio && (
+                <>
+                  <span className="small muted">fino al</span>
+                  <input className="input input--sm" style={{ width: 160 }} type="date" value={d.provvisorio.fino ?? ''} onChange={(e) => set(i, { provvisorio: { ...d.provvisorio!, fino: e.target.value || undefined } })} />
+                  <span className="tiny muted">Senza data: senza scadenza</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       ))}
       <button type="button" className="btn btn--sm" onClick={() => onChange([...defunti, { nome: '', cognome: defunti[0]?.cognome ?? '', dataNascita: null, dataMorte: null }])}>
@@ -72,7 +88,7 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
       else out.push(n);
     }
     const note = [b.note ?? '', ...e.note.filter((n) => !(b.note ?? '').includes(n))].filter(Boolean).join('\n');
-    set({ defunti: out, note: note || undefined, stato: out.length && b.stato === 'libero' ? 'occupato' : b.stato });
+    set({ defunti: out, note: note || undefined, epigrafe: b.epigrafe || e.epigrafe, stato: out.length && b.stato === 'libero' ? 'occupato' : b.stato });
     setDaFoto(true);
     setLettura(null);
     toast('Dati della lapide inseriti: controllali e salva la scheda');
@@ -147,7 +163,10 @@ export function SchedaForm({ s, onChiudi }: { s: Scheda; onChiudi: () => void })
               <LetturaLapide foto={lettura} cimiteroId={s.cimiteroId} schedaId={s.id} onUsa={inserisciLettura} onSalta={() => setLettura(null)} testoUsa="Inserisci nella scheda" testoSalta="Chiudi" />
             </div>
           )}
-          <EditorDefunti defunti={b.defunti} onChange={(d) => set({ defunti: d })} />
+          <EditorDefunti defunti={b.defunti} onChange={(d) => set({ defunti: d })} conProvvisoria />
+          <Field label="Scritta sulla lapide" hint="L'epigrafe, per esempio: I tuoi cari ti ricordano con affetto">
+            <input className="input" value={b.epigrafe ?? ''} onChange={(e) => set({ epigrafe: e.target.value || undefined })} />
+          </Field>
         </section>
       )}
 

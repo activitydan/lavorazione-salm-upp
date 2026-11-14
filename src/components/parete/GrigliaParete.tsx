@@ -15,6 +15,9 @@ function Griglia({ struttura, loculi, coloreDi, evidenzia, selezionata, onSel }:
   struttura: Struttura; loculi: Scheda[]; coloreDi: (s: Scheda) => string; evidenzia: Set<string> | null; selezionata: string | null; onSel: (id: string) => void;
 }) {
   const perCella = useMemo(() => new Map(loculi.map((l) => [`${l.posizione!.faccia}|${l.posizione!.fila}|${l.posizione!.colonna}`, l])), [loculi]);
+  // prenotato: in concessione ma ancora vuoto
+  const concessioni = useStore((st) => st.db.concessioni);
+  const prenotati = useMemo(() => new Set(concessioni.filter((c) => c.stato !== 'chiusa').flatMap((c) => c.schedeIds)), [concessioni]);
   return (
     <div className="griglia2d">
       {struttura.facce.map((f, fi) => (
@@ -25,34 +28,40 @@ function Griglia({ struttura, loculi, coloreDi, evidenzia, selezionata, onSel }:
               {Array.from({ length: f.righe }, (_, i) => <span key={i}>{f.righe - i}</span>)}
             </div>
             <div className="griglia2d__cells" style={{ gridTemplateColumns: `repeat(${f.colonne}, minmax(74px, 1fr))` }}>
-              {Array.from({ length: f.righe }, (_, r) => f.righe - r).flatMap((fila) =>
-                Array.from({ length: f.colonne }, (_, c) => {
-                  const l = perCella.get(`${fi}|${fila}|${c + 1}`);
+              {Array.from({ length: f.righe }, (_, r) => f.righe - r).flatMap((fila) => {
+                // i loculi doppi e tripli occupano più spazi della fila: le celle coperte non si disegnano
+                const celle: React.ReactNode[] = [];
+                for (let c = 1; c <= f.colonne; c++) {
+                  const l = perCella.get(`${fi}|${fila}|${c}`);
+                  const spazi = Math.min(l?.posizione?.spazi ?? 1, f.colonne - c + 1);
                   const col = l ? coloreDi(l) : '#D5D8DD';
                   const spento = !!(l && evidenzia && !evidenzia.has(l.id));
                   const d = l?.defunti[0];
-                  return (
+                  celle.push(
                     <button
                       key={`${fila}-${c}`}
                       data-scheda={l?.id}
-                      className={`cella2d ${l?.id === selezionata ? 'is-sel' : ''} ${spento ? 'is-off' : ''}`}
-                      style={{ ['--c' as string]: col.toUpperCase() === '#FFFFFF' ? '#cfd6de' : col }}
+                      className={`cella2d ${l?.id === selezionata ? 'is-sel' : ''} ${spento ? 'is-off' : ''} ${spazi > 1 ? 'cella2d--larga' : ''}`}
+                      style={{ ['--c' as string]: col.toUpperCase() === '#FFFFFF' ? '#cfd6de' : col, gridColumn: spazi > 1 ? `span ${spazi}` : undefined }}
                       onClick={() => l && onSel(l.id)}
-                      title={l ? `${l.id} · fila ${fila}, colonna ${c + 1}` : 'Cella senza scheda'}
+                      title={l ? `${l.id} · fila ${fila}, colonna ${c}${spazi > 1 ? ` · ${spazi} spazi` : ''}` : 'Cella senza scheda'}
                     >
                       {d ? (
                         <>
                           <b>{(d.cognome || '?').toUpperCase()}</b>
-                          <span>{d.nome}</span>
-                          <span className="tiny">{(d.dataMorte ?? '????').slice(0, 4)}</span>
+                          <span>{d.nome}{l.defunti.length > 1 ? ` +${l.defunti.length - 1}` : ''}</span>
+                          <span className="tiny">{(d.dataMorte ?? '????').slice(0, 4)}{d.provvisorio ? ' · provv.' : ''}</span>
                         </>
                       ) : (
-                        <span className="tiny muted">{l ? 'Libero' : '—'}</span>
+                        <span className="tiny muted">{l ? (prenotati.has(l.id) ? 'Prenotato' : 'Libero') : '—'}</span>
                       )}
-                    </button>
+                      {spazi > 1 && <i className="cella2d__spazi">{spazi} spazi</i>}
+                    </button>,
                   );
-                }),
-              )}
+                  c += spazi - 1;
+                }
+                return celle;
+              })}
             </div>
           </div>
           <div className="griglia2d__col tiny muted">Colonne 1 → {f.colonne}, file dal basso</div>
@@ -152,11 +161,11 @@ function Contenuto({ v }: { v: { strutturaId: string; schedaId?: string } }) {
                     </div>
                   ))
                 ) : (
-                  <p className="small muted mt-8">Posto libero, disponibile per una nuova concessione.</p>
+                  <p className="small muted mt-8">{db.concessioni.some((c) => c.stato !== 'chiusa' && c.schedeIds.includes(scelto.id)) ? 'Posto prenotato: è in concessione, ma ancora vuoto.' : 'Posto libero, disponibile per una nuova concessione.'}</p>
                 )}
                 {scelto.posizione && (
                   <p className="small mt-8">
-                    {struttura.facce[scelto.posizione.faccia]?.nome} · fila <b>{scelto.posizione.fila}</b> · colonna <b>{scelto.posizione.colonna}</b>
+                    {struttura.facce[scelto.posizione.faccia]?.nome} · fila <b>{scelto.posizione.fila}</b> · colonna <b>{scelto.posizione.colonna}</b>{(scelto.posizione.spazi ?? 1) > 1 ? <> · <b>{scelto.posizione.spazi} spazi</b></> : null}
                   </p>
                 )}
                 <div className="row gap-4 mt-12">

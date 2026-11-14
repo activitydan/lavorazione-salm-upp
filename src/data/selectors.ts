@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { PRIORITA, TIPOLOGIA_STRUTTURA, UFFICIO } from '../config/defaults';
-import { aggiungiGiorni, aggiungiMesi, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
+import { aggiungiGiorni, aggiungiMesi, data, giorniTra, normalizza, oggiISO, nomeCompleto, numero } from '../lib/format';
 import { concessioneDi, nomiConcessionari, rappresentanteDi } from './concessioni';
 import { haLampada } from './utenze';
 import { loculiPerStruttura, useStore } from './store';
-import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
+import type { CampoDef, CategoriaAlert, ConfigScheda, Database, Filtri, Manutenzione, Opzione, Scheda, ValoreCampo } from './types';
 
 // ---------------------------------------------------------------------------
 // Hook di comodo
@@ -14,20 +14,25 @@ import type { CampoDef, ConfigScheda, Database, Filtri, Manutenzione, Opzione, S
 export function useUtente() {
   const sessione = useStore((s) => s.sessione);
   const operatori = useStore((s) => s.db.operatori);
+  const agenzie = useStore((s) => s.db.agenzie);
   return useMemo(() => {
     const ruolo = sessione?.ruolo ?? 'amministratore';
     const op = sessione?.operatoreId ? operatori.find((o) => o.id === sessione.operatoreId) : undefined;
-    const nome = op?.nome ?? (ruolo === 'operatore' ? 'Operatore' : UFFICIO);
+    const ag = ruolo === 'agenzia' ? agenzie.find((a) => a.id === sessione?.agenziaId) : undefined;
+    const nome = ag?.nome ?? op?.nome ?? (ruolo === 'operatore' ? 'Operatore' : ruolo === 'agenzia' ? 'Agenzia funebre' : UFFICIO);
     return {
       ruolo,
       operatoreId: op?.id ?? null,
+      agenziaId: ag?.id ?? null,
+      /** a chi arrivano gli alert e di chi sono le cose "mie" */
+      chi: op?.id ?? (ruolo === 'agenzia' ? `agenzia:${sessione?.agenziaId ?? ''}` : 'ufficio'),
       nome,
-      etichettaRuolo: ruolo === 'amministratore' ? 'Amministratore' : 'Operatore',
-      colore: op?.colore ?? '#0A2F55',
-      sigla: nome.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase(),
+      etichettaRuolo: ruolo === 'amministratore' ? 'Amministratore' : ruolo === 'agenzia' ? 'Agenzia funebre' : 'Operatore',
+      colore: op?.colore ?? (ruolo === 'agenzia' ? '#4A822B' : '#0A2F55'),
+      sigla: nome.replace(/^Agenzia Funebre\s+/i, '').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase(),
       amministratore: ruolo === 'amministratore',
     };
-  }, [sessione, operatori]);
+  }, [sessione, operatori, agenzie]);
 }
 
 export function useCimitero() {
@@ -146,7 +151,10 @@ export interface ConcessioneVista {
   numero: string;
   /** il rappresentante, o l'unico concessionario */
   concessionario: string;
+  /** chi è il concessionario per il defunto */
+  legame?: string;
   codiceFiscale: string;
+  perpetua: boolean;
   decorrenza: string;
   scadenza: string;
   durataAnni: number;
@@ -158,8 +166,8 @@ export function concessioneScheda(s: Scheda): ConcessioneVista | null {
   const c = concessioneDi(s.id);
   if (!c) return null;
   return {
-    id: c.id, numero: c.numero, concessionario: nomiConcessionari(c), codiceFiscale: rappresentanteDi(c)?.codiceFiscale ?? '', decorrenza: c.decorrenza, scadenza: c.scadenza,
-    durataAnni: c.durataAnni, rinnovi: c.rinnovi, inDecadenza: c.stato === 'in_decadenza',
+    id: c.id, numero: c.numero, concessionario: nomiConcessionari(c), legame: rappresentanteDi(c)?.legameDefunto, codiceFiscale: rappresentanteDi(c)?.codiceFiscale ?? '', decorrenza: c.decorrenza, scadenza: c.scadenza,
+    durataAnni: c.durataAnni, perpetua: !!c.perpetua, rinnovi: c.rinnovi, inDecadenza: c.stato === 'in_decadenza',
   };
 }
 
@@ -305,44 +313,83 @@ export function occupazioneStruttura(schede: Scheda[], strutturaId: string) {
 export interface AlertItem {
   id: string;
   livello: 'urgente' | 'attenzione' | 'info';
+  categoria: CategoriaAlert;
   titolo: string;
   messaggio: string;
   data: string;
   link?: string;
 }
 
+export const NOMI_CATEGORIA_ALERT: Record<CategoriaAlert, string> = {
+  inumazione: 'Inumazioni', tumulazione: 'Tumulazioni', esumazione: 'Esumazioni', estumulazione: 'Estumulazioni', traslazione: 'Traslazioni',
+  manutenzione: 'Manutenzioni', verifica: 'Verifiche', pagamenti: 'Pagamenti e invii', agenzie: 'Agenzie funebri', altro: 'Altro',
+};
+
+/** Gli alert nati prima delle categorie: la categoria si ricava da dove portano. */
+function categoriaDaLink(db: Database, link?: string): CategoriaAlert {
+  if (!link) return 'altro';
+  if (link.startsWith('/manutenzioni')) return 'manutenzione';
+  if (link.startsWith('/censimento')) return 'verifica';
+  if (link.startsWith('/scadenze')) return 'pagamenti';
+  const m = /^\/(?:operazioni|pratiche)\?id=(.+)$/.exec(link);
+  return (m && db.pratiche.find((p) => p.id === m[1])?.tipo) || 'altro';
+}
+
 /**
- * Gli alert di una persona (id dell'operatore oppure 'ufficio'): quelli che ha ricevuto,
- * più quelli calcolati su ciò che le è assegnato. Nessuno riceve alert generali.
+ * Gli alert di una persona (id dell'operatore, 'ufficio' oppure 'agenzia:<id>'): quelli che ha ricevuto,
+ * più quelli calcolati su ciò che è in programma oggi e domani. L'ufficio vede tutte le operazioni in programma,
+ * l'operatore quelle assegnate a lui, l'agenzia le sue.
  */
 export function alertPersonali(db: Database, config: ConfigScheda, chi: string, oggi = oggiISO()): AlertItem[] {
-  const out: AlertItem[] = db.alert.filter((a) => a.destinatario === chi).map((a) => ({ id: a.id, livello: a.livello, titolo: a.titolo, messaggio: a.messaggio, data: a.data, link: a.link }));
+  const out: AlertItem[] = db.alert.filter((a) => a.destinatario === chi).map((a) => ({
+    id: a.id, livello: a.livello, categoria: a.categoria ?? categoriaDaLink(db, a.link), titolo: a.titolo, messaggio: a.messaggio, data: a.data, link: a.link,
+  }));
   const domani = aggiungiGiorni(oggi, 1);
+  const agenzia = chi.startsWith('agenzia:') ? chi.slice(8) : null;
   for (const m of db.manutenzioni) {
     if (m.stato !== 'programmata' || !m.dataProgrammata || !m.operatoriIds?.includes(chi)) continue;
     if (m.dataProgrammata !== oggi && m.dataProgrammata !== domani) continue;
     const eOggi = m.dataProgrammata === oggi;
     out.push({
-      id: `man-${m.id}-${m.dataProgrammata}-${chi}`, livello: eOggi ? 'attenzione' : 'info', titolo: `Manutenzione di ${eOggi ? 'oggi' : 'domani'}`,
-      messaggio: `${labelLista(config.categorieManutenzione, m.categoria)} · ${m.schedaId}`, data: m.dataProgrammata, link: `/manutenzioni?id=${m.id}`,
+      id: `man-${m.id}-${m.dataProgrammata}-${chi}`, livello: eOggi ? 'attenzione' : 'info', categoria: 'manutenzione', titolo: `Manutenzione programmata ${eOggi ? 'oggi' : 'domani'}`,
+      messaggio: `${labelLista(config.categorieManutenzione, m.categoria)} · ${m.schedaId || m.luogo || ''}`, data: m.dataProgrammata, link: `/manutenzioni?id=${m.id}`,
     });
   }
   for (const p of db.pratiche) {
-    if (p.stato !== 'programmata' || !p.dataOra || !p.operatoriIds?.includes(chi)) continue;
+    if (p.stato !== 'programmata' || !p.dataOra) continue;
+    if (!(agenzia ? p.agenziaId === agenzia : chi === 'ufficio' || p.operatoriIds?.includes(chi))) continue;
     const g = p.dataOra.slice(0, 10);
     if (g !== oggi && g !== domani) continue;
     out.push({
-      id: `pr-${p.id}-${p.dataOra}-${chi}`, livello: g === oggi ? 'attenzione' : 'info', titolo: `Operazione di ${g === oggi ? 'oggi' : 'domani'} alle ${p.dataOra.slice(11, 16)}`,
-      messaggio: `${p.tipo.charAt(0).toUpperCase()}${p.tipo.slice(1)} · ${nomeCompleto(p.defunto)} · ${p.schedaId}`, data: g, link: `/operazioni?id=${p.id}`,
+      id: `pr-${p.id}-${p.dataOra}-${chi}`, livello: g === oggi ? 'attenzione' : 'info', categoria: p.tipo,
+      titolo: `${p.tipo.charAt(0).toUpperCase()}${p.tipo.slice(1)} programmata ${g === oggi ? 'oggi' : 'domani'} alle ${p.dataOra.slice(11, 16)}`,
+      messaggio: `${nomeCompleto(p.defunto)} · ${p.schedaId}${p.provvisoria ? ' · sepoltura provvisoria' : ''}`, data: g, link: agenzia ? `/pratiche?id=${p.id}` : `/operazioni?id=${p.id}`,
     });
+  }
+  if (chi === 'ufficio') {
+    // sepolture provvisorie: chi va spostato nei prossimi giorni e non ha ancora una traslazione in corso
+    const limite = aggiungiGiorni(oggi, 7);
+    for (const s of db.schede)
+      for (const d of s.defunti) {
+        const fino = d.provvisorio?.fino;
+        if (!fino || fino > limite) continue;
+        if (db.pratiche.some((p) => p.tipo === 'traslazione' && p.schedaId === s.id && (p.stato === 'aperta' || p.stato === 'programmata') && p.defunto.cognome === d.cognome && p.defunto.nome === d.nome)) continue;
+        out.push({
+          id: `prov-${s.id}-${d.cognome}-${d.nome}-${fino}`, livello: fino < oggi ? 'urgente' : 'attenzione', categoria: 'traslazione',
+          titolo: fino < oggi ? 'Sepoltura provvisoria scaduta' : 'Sepoltura provvisoria in scadenza', messaggio: `${nomeCompleto(d)} · ${s.id} · da spostare entro il ${data(fino)}`, data: oggi, link: `/scheda/${s.id}`,
+        });
+      }
+    const attesa = db.richieste.filter((r) => r.stato === 'in_attesa').length;
+    if (attesa)
+      out.push({ id: `rich-${oggi}-${attesa}`, livello: 'attenzione', categoria: 'agenzie', titolo: attesa === 1 ? 'Una richiesta di un\'agenzia funebre da valutare' : `${attesa} richieste delle agenzie funebri da valutare`, messaggio: 'Aprile dalle Operazioni cimiteriali.', data: oggi, link: '/operazioni' });
   }
   const mie = db.verifiche.filter((v) => v.stato === 'aperta' && v.operatoreId === chi);
   const inRitardo = mie.filter((v) => v.scadenza < oggi).length;
   const vicine = mie.filter((v) => v.scadenza === oggi || v.scadenza === domani).length;
   if (inRitardo)
-    out.push({ id: `ver-ritardo-${chi}-${inRitardo}`, livello: 'urgente', titolo: inRitardo === 1 ? 'Una tua verifica è in ritardo' : `${inRitardo} tue verifiche sono in ritardo`, messaggio: 'Controlli assegnati a te e non ancora chiusi.', data: oggi, link: '/censimento?tab=verifiche' });
+    out.push({ id: `ver-ritardo-${chi}-${inRitardo}`, livello: 'urgente', categoria: 'verifica', titolo: inRitardo === 1 ? 'Una tua verifica è in ritardo' : `${inRitardo} tue verifiche sono in ritardo`, messaggio: 'Controlli assegnati a te e non ancora chiusi.', data: oggi, link: '/censimento?tab=verifiche' });
   if (vicine)
-    out.push({ id: `ver-vicine-${chi}-${oggi}-${vicine}`, livello: 'attenzione', titolo: vicine === 1 ? 'Una tua verifica scade oggi o domani' : `${vicine} tue verifiche scadono oggi o domani`, messaggio: 'Chiudile dalla voce Verifiche.', data: oggi, link: '/censimento?tab=verifiche' });
+    out.push({ id: `ver-vicine-${chi}-${oggi}-${vicine}`, livello: 'attenzione', categoria: 'verifica', titolo: vicine === 1 ? 'Una tua verifica scade oggi o domani' : `${vicine} tue verifiche scadono oggi o domani`, messaggio: 'Chiudile dalla voce Verifiche.', data: oggi, link: '/censimento?tab=verifiche' });
   const peso = { urgente: 0, attenzione: 1, info: 2 };
   return out.sort((a, b) => b.data.slice(0, 10).localeCompare(a.data.slice(0, 10)) || peso[a.livello] - peso[b.livello] || b.data.localeCompare(a.data));
 }
@@ -351,8 +398,7 @@ export function alertPersonali(db: Database, config: ConfigScheda, chi: string, 
 export function useAlert(): AlertItem[] {
   const db = useStore((s) => s.db);
   const config = useStore((s) => s.config);
-  const utente = useUtente();
-  const chi = utente.operatoreId ?? 'ufficio';
+  const chi = useUtente().chi;
   return useMemo(() => alertPersonali(db, config, chi), [db, config, chi]);
 }
 

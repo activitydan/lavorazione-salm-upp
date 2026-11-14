@@ -15,6 +15,8 @@ export interface EsitoLettura {
   defunti: Defunto[];
   note: string[];
   famiglia?: string;
+  /** la scritta sulla lapide che non è un nome né una data */
+  epigrafe?: string;
 }
 
 type Voce = Omit<DefuntoLetto, 'aff'> & { id: number; aff: Record<CampoLetto, Affidabilita | 'ok'> };
@@ -37,12 +39,13 @@ const vuota = (): Voce => ({
   aff: { nome: 'ok', cognome: 'ok', sesso: 'ok', dataNascita: 'ok', dataMorte: 'ok' },
 });
 
-export function esitoDa(voci: Voce[], famiglia?: string): EsitoLettura {
+export function esitoDa(voci: Voce[], famiglia?: string, epigrafe?: string): EsitoLettura {
   const utili = voci.filter((v) => v.nome.trim() || v.cognome.trim() || v.dataMorte || v.dataNascita);
   return {
     defunti: utili.map((v) => ({ nome: v.nome.trim(), cognome: v.cognome.trim(), sesso: v.sesso, dataNascita: v.dataNascita, dataMorte: v.dataMorte })),
     note: noteDaLettura(utili.map((v) => ({ ...v, aff: { nome: 'alta', cognome: 'alta', sesso: 'alta', dataNascita: 'alta', dataMorte: 'alta' } }))),
     famiglia,
+    epigrafe,
   };
 }
 
@@ -134,9 +137,10 @@ export function LetturaLapide({
   }, [foto]);
 
   const famiglia = stato.fase === 'fatto' ? stato.r.lettura.famiglia : undefined;
+  const epigrafe = stato.fase === 'fatto' ? stato.r.lettura.epigrafe.join(' ').replace(/\s+/g, ' ').trim().slice(0, 160) || undefined : undefined;
   useEffect(() => {
-    esitoRef.current?.(stato.fase === 'fatto' ? esitoDa(voci, famiglia) : null);
-  }, [voci, stato.fase, famiglia]);
+    esitoRef.current?.(stato.fase === 'fatto' ? esitoDa(voci, famiglia, epigrafe) : null);
+  }, [voci, stato.fase, famiglia, epigrafe]);
 
   const doppi = useMemo(() => (stato.fase === 'fatto' ? giaCensiti(voci, schede, cimiteroId, schedaId) : []), [voci, schede, cimiteroId, schedaId, stato.fase]);
   const daControllare = voci.reduce((t, v) => t + (Object.keys(v.aff) as CampoLetto[]).filter((k) => v.aff[k] !== 'ok' && v.aff[k] !== 'alta' && valore(v, k)).length, 0);
@@ -396,7 +400,7 @@ export function LetturaLapide({
             )}
 
             <div className="lettura__azioni">
-              <button type="button" className="btn btn--primary" disabled={!voci.length} onClick={() => onUsa(esitoDa(voci, famiglia))}>
+              <button type="button" className="btn btn--primary" disabled={!voci.length} onClick={() => onUsa(esitoDa(voci, famiglia, epigrafe))}>
                 <Check size={16} />
                 {testoUsa}
               </button>

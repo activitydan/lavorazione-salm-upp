@@ -42,6 +42,8 @@ interface Bozza {
   /** "C'è una lampada accesa?": null finché l'operatore non risponde */
   lampadaAccesa: boolean | null;
   note: string;
+  /** la scritta sulla lapide */
+  epigrafe: string;
 }
 
 export function RilievoPage() {
@@ -67,6 +69,7 @@ export function RilievoPage() {
     campi: {},
     lampadaAccesa: null,
     note: '',
+    epigrafe: '',
   });
   const [b, setB] = useState<Bozza>(iniziale);
   const [passo, setPasso] = useState(0);
@@ -99,6 +102,7 @@ export function RilievoPage() {
       daFoto: e.defunti.length > 0,
       stato: e.defunti.length && x.stato === 'libero' ? 'occupato' : x.stato,
       note: [x.note, ...e.note.filter((n) => !x.note.includes(n))].filter(Boolean).join('\n'),
+      epigrafe: x.epigrafe || e.epigrafe || '',
       nomeManufatto: x.nomeManufatto || (e.famiglia ? `Cappella Fam. ${e.famiglia}` : ''),
     }));
   };
@@ -157,7 +161,7 @@ export function RilievoPage() {
         cimiteroId: cim.id, tipologia: b.tipologia, stato: b.stato, lat: b.pos[0], lng: b.pos[1], viale, quadranteId: q?.id ?? null,
         defunti, campi: { ...b.campi },
         ...(b.lampadaAccesa !== null && defunti.length ? { lampadaAccesa: b.lampadaAccesa, lampadaVistaIl: oggiISO() } : {}),
-        rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, fotoId,
+        rilevatoDa: firmaCorrente(), area: b.area || undefined, numeroPosto: b.numeroPosto || undefined, note: b.note || undefined, epigrafe: (defunti.length && b.epigrafe.trim()) || undefined, fotoId,
       });
       if (b.daFoto && defunti.length) aggiornaScheda(s.id, {}, 'Anagrafica letta dalla foto della lapide e controllata');
       setSalvata(s);
@@ -356,6 +360,9 @@ export function RilievoPage() {
                 )}
                 <EditorDefunti defunti={b.defunti} onChange={(d) => set({ defunti: d })} />
                 {b.defunti.filter((d) => d.dataMorte).map((d, i) => <span key={i} className="badge badge--blu">{nomeCompleto(d)}: {decedutoDa(d)}</span>)}
+                <Field label="Scritta sulla lapide" hint="L'epigrafe, per esempio: I tuoi cari ti ricordano con affetto">
+                  <input className="input" value={b.epigrafe} onChange={(e) => set({ epigrafe: e.target.value })} />
+                </Field>
               </>
             )}
             <div className="grid-form">
@@ -419,6 +426,7 @@ export function RilievoPage() {
                 <dt>Quadrante</dt><dd>{q?.nome ?? '—'}</dd>
                 <dt>GPS</dt><dd className="mono">{b.pos[0].toFixed(6)}, {b.pos[1].toFixed(6)}</dd>
                 <dt>Flag</dt><dd>{campiApp.filter((c) => c.tipo === 'flag' && b.campi[c.id] === true).map((c) => c.label).join(', ') || '—'}</dd>
+                {b.epigrafe.trim() && !contenitore && <><dt>Scritta</dt><dd>{b.epigrafe}</dd></>}
                 {b.note && <><dt>Note</dt><dd style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{b.note}</dd></>}
               </dl>
             </div>

@@ -3,10 +3,10 @@ import { Ban, Download, FileSignature, History, Plus, Printer, RefreshCw, Scroll
 import { AvvisiDi, Moroso } from '../components/Avvisi';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { EditorConcessionari, SOGGETTO_VUOTO, soggettoIncompleto } from '../components/Soggetti';
-import { Field, Modal, StatoBadge, Tabs } from '../components/ui';
+import { Field, Modal, Seg, StatoBadge, Tabs } from '../components/ui';
 import {
-  NOMI_TIPO_CONCESSIONE, TIPI_CONCESSIONE, anniDopo, chiudiConcessione, etichettaStato, indiceConcessioni, nomeSoggetto,
-  nomiConcessionari, nuovaConcessione, postiOccupati, rappresentanteDi, rinnovaConcessione, salvaAventiDiritto, statoEffettivo, subentroConcessione,
+  NOMI_TIPO_CONCESSIONE, SENZA_SCADENZA, TIPI_CONCESSIONE, anniDopo, chiudiConcessione, durataLeggibile, etichettaStato, indiceConcessioni, nomeSoggetto,
+  nomiConcessionari, nuovaConcessione, postiOccupati, rappresentanteDi, rinnovaConcessione, salvaAventiDiritto, scadenzaLeggibile, statoEffettivo, subentroConcessione,
   tipoConcessioneDi,
 } from '../data/concessioni';
 import { avviaDecadenzaConDiffida } from '../data/scadenze';
@@ -68,7 +68,7 @@ export function ConcessioniPage() {
       const r = rappresentanteDi(c);
       return {
         Numero: c.numero, Concessionario: nomiConcessionari(c), 'Codice fiscale': r?.codiceFiscale ?? '', Indirizzo: r?.indirizzo ?? '', Tipo: NOMI_TIPO_CONCESSIONE[c.tipo],
-        Schede: c.schedeIds.length === 1 ? c.schedeIds[0] : `${c.schedeIds[0]} e altre ${c.schedeIds.length - 1}`, Decorrenza: data(c.decorrenza), Scadenza: data(c.scadenza),
+        Schede: c.schedeIds.length === 1 ? c.schedeIds[0] : `${c.schedeIds[0]} e altre ${c.schedeIds.length - 1}`, Decorrenza: data(c.decorrenza), Scadenza: scadenzaLeggibile(c),
         Rinnovi: c.rinnovi, Stato: etichettaStato(statoEffettivo(c, db.regole)).testo,
       };
     }),
@@ -125,7 +125,7 @@ export function ConcessioniPage() {
                         <div className="tiny muted">{s ? `${descrizioneScheda(s)} · ${s.viale}` : ''}{c.schedeIds.length > 1 ? ` · ${c.postiTotali} posti` : ''}</div>
                       </td>
                       <td className="nowrap">{data(c.decorrenza)}</td>
-                      <td className="nowrap">{data(c.scadenza)}</td>
+                      <td className="nowrap">{scadenzaLeggibile(c)}</td>
                       <td><BadgeStato c={c} /></td>
                     </tr>
                   );
@@ -189,7 +189,7 @@ function Concessionari({ concessioni, onCerca }: { concessioni: Concessione[]; o
                 <td><b>{g.nome}</b>{g.ente && <span className="badge badge--sm" style={{ marginLeft: 8 }}>Ente</span>}</td>
                 <td className="mono small">{g.cf}</td>
                 <td className="num">{g.lista.length}</td>
-                <td className="nowrap">{data(g.lista.reduce((m, c) => (c.scadenza < m ? c.scadenza : m), '9999-12-31'))}</td>
+                <td className="nowrap">{scadenzaLeggibile({ scadenza: g.lista.reduce((m, c) => (c.scadenza < m ? c.scadenza : m), SENZA_SCADENZA), perpetua: g.lista.every((c) => c.perpetua) })}</td>
               </tr>
             ))}
           </tbody>
@@ -233,8 +233,8 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
                 <dl className="kv">
                   <dt>Stipula</dt><dd>{data(c.dataStipula)}{c.provvedimento ? ` · ${c.provvedimento}` : ''}</dd>
                   <dt>Decorrenza</dt><dd>{data(c.decorrenza)}</dd>
-                  <dt>Durata</dt><dd>{c.durataAnni} anni{c.rinnovi ? ` · ${c.rinnovi} ${c.rinnovi === 1 ? 'rinnovo' : 'rinnovi'}` : ''}</dd>
-                  <dt>Scadenza</dt><dd><b>{data(c.scadenza)}</b>{!chiusa && <span className="muted"> · {e.giorni >= 0 ? `tra ${numero(e.giorni)} giorni` : `da ${numero(-e.giorni)} giorni`}</span>}</dd>
+                  <dt>Durata</dt><dd>{durataLeggibile(c)}{c.rinnovi ? ` · ${c.rinnovi} ${c.rinnovi === 1 ? 'rinnovo' : 'rinnovi'}` : ''}</dd>
+                  {c.perpetua ? (<><dt>Scadenza</dt><dd><b>Non scade</b></dd></>) : (<><dt>Scadenza</dt><dd><b>{data(c.scadenza)}</b>{!chiusa && <span className="muted"> · {e.giorni >= 0 ? `tra ${numero(e.giorni)} giorni` : `da ${numero(-e.giorni)} giorni`}</span>}</dd></>)}
                   <dt>Regola applicata</dt><dd>{c.regola}</dd>
                   <dt>Posti</dt><dd>{occupati} occupati su {c.postiTotali}</dd>
                   {chiusa && (<><dt>Chiusa il</dt><dd>{data(c.chiusaIl)}</dd></>)}
@@ -245,7 +245,7 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
                 <div className="col gap-8">
                   {c.concessionari.map((x, i) => (
                     <div key={i} className="soggetto">
-                      <div className="row gap-8"><b>{nomeSoggetto(x)}</b>{x.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{x.rappresentante && <span className="badge badge--sm badge--blu">Rappresentante</span>}<Moroso codiceFiscale={x.codiceFiscale} /></div>
+                      <div className="row gap-8"><b>{nomeSoggetto(x)}</b>{x.legameDefunto && <span className="badge badge--sm">{x.legameDefunto}</span>}{x.tipo === 'ente' && <span className="badge badge--sm">Ente</span>}{x.rappresentante && <span className="badge badge--sm badge--blu">Rappresentante</span>}<Moroso codiceFiscale={x.codiceFiscale} /></div>
                       <div className="small muted">{x.codiceFiscale} · {x.indirizzo}</div>
                       <div className="small muted">{[x.telefono, x.email, x.legaleRappresentante ? `Legale rappresentante: ${x.legaleRappresentante}` : ''].filter(Boolean).join(' · ')}</div>
                     </div>
@@ -287,7 +287,7 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
         </div>
         <div className="modal__foot">
           <button className="btn" onClick={() => void pdfContrattoConcessione(c, db)}><Printer size={15} />Stampa il contratto</button>
-          <button className="btn" onClick={() => setAzione('rinnovo')}><RefreshCw size={15} />Rinnova</button>
+          {!c.perpetua && <button className="btn" onClick={() => setAzione('rinnovo')}><RefreshCw size={15} />Rinnova</button>}
           {!chiusa && <button className="btn" onClick={() => setAzione('subentro')}><UserRoundPlus size={15} />Subentro</button>}
           {!chiusa && <button className="btn" onClick={() => setAzione('rinuncia')}><Ban size={15} />Rinuncia</button>}
           {c.stato === 'attiva' && <button className="btn" onClick={() => setAzione('avvia_decadenza')}><ShieldAlert size={15} />Avvia la decadenza</button>}
@@ -397,6 +397,8 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
   const [decorrenza, setDecorrenza] = useState(oggiISO());
   const [provvedimento, setProvvedimento] = useState('');
   const [posti, setPosti] = useState(1);
+  const [durata, setDurata] = useState<'regola' | 'altra' | 'perpetua'>('regola');
+  const [anni, setAnni] = useState(50);
   const [concessionari, setConcessionari] = useState<Concessionario[]>([{ ...SOGGETTO_VUOTO }]);
   const conConcessione = indiceConcessioni(db.concessioni);
 
@@ -423,7 +425,7 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
     if (err) return toast(err, 'errore');
     const c = nuovaConcessione({
       cimiteroId: cim.id, tipo, schedeIds: [scheda.id, ...postiStruttura.map((x) => x.id)], postiTotali: posti, concessionari,
-      decorrenza, provvedimento: provvedimento.trim(),
+      decorrenza, provvedimento: provvedimento.trim(), perpetua: durata === 'perpetua', durataAnni: durata === 'altra' ? Math.max(1, anni) : undefined,
     });
     onCreata(c.id);
   };
@@ -466,8 +468,15 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
               <Field label="Decorrenza"><input className="input" type="date" value={decorrenza} onChange={(e) => setDecorrenza(e.target.value)} /></Field>
               <Field label="Provvedimento"><input className="input" value={provvedimento} onChange={(e) => setProvvedimento(e.target.value)} placeholder="Per esempio: Determina n. 123/2026" /></Field>
             </div>
+            <div className="grid-form">
+              <Field label="Durata" className="span-2">
+                <Seg light value={durata} onChange={setDurata} options={[{ id: 'regola', label: `${regole.durate[tipo]} anni (Regole del Comune)` }, { id: 'altra', label: 'Altra durata' }, { id: 'perpetua', label: 'Perpetua' }]} />
+              </Field>
+              {durata === 'altra' && <Field label="Anni"><input className="input" type="number" min={1} max={99} value={anni} onChange={(e) => setAnni(Number(e.target.value))} /></Field>}
+            </div>
             <p className="callout">
-              Durata {regole.durate[tipo]} anni, dalle Regole del Comune: scade il <b>{data(anniDopo(decorrenza || oggiISO(), regole.durate[tipo]))}</b>.
+              {durata === 'perpetua' ? <>Concessione perpetua: <b>non scade</b> e non si rinnova.</> : <>Scade il <b>{data(anniDopo(decorrenza || oggiISO(), durata === 'altra' ? Math.max(1, anni) : regole.durate[tipo]))}</b>.</>}
+              {scheda && !scheda.defunti.length && !scheda.strutturaId ? ' La postazione è vuota: resta prenotata per il concessionario finché non serve.' : ''}
             </p>
             <div>
               <h3 className="section-title">Concessionario</h3>

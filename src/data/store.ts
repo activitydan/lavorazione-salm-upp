@@ -4,7 +4,7 @@ import { adessoISO, aggiungiGiorni, data, giorniTra, oggiISO, slug } from '../li
 import { quadranteDi, puntoNelPoligono } from '../lib/geo';
 import { CHIAVI, cancellaTutto, leggi, salvaDopo } from './persist';
 import type {
-  AlertPersonale, CampoDef, ConfigScheda, Database, Faccia, Filtri, LatLng, Manutenzione, Opzione, Operatore, Quadrante, Scheda, Sessione, StileMappa,
+  AlertPersonale, CampoDef, ConfigScheda, Database, DocumentoScheda, Faccia, Filtri, LatLng, Manutenzione, Opzione, Operatore, Quadrante, Scheda, Sessione, StileMappa,
   Struttura, Verifica, VoceDaInviare,
 } from './types';
 
@@ -51,10 +51,10 @@ interface Stato {
  * Versione della forma dei dati. Quando una fase la cambia, alla prima apertura la demo
  * ricarica da sola i dati dimostrativi (niente conversione dei dati vecchi nel browser).
  */
-export const VERSIONE_DATI = 9;
+export const VERSIONE_DATI = 10;
 
 const DB_VUOTO: Database = {
-  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], pratiche: [], agenzie: [], defuntiAltrove: [], avvisi: [], lotti: [], invii: [], regole: REGOLE_DEFAULT,
+  versione: VERSIONE_DATI, cimiteri: [], quadranti: [], viali: [], aree: [], strutture: [], operatori: [], schede: [], concessioni: [], utenze: [], pratiche: [], agenzie: [], richieste: [], defuntiAltrove: [], avvisi: [], lotti: [], invii: [], regole: REGOLE_DEFAULT,
   manutenzioni: [], verifiche: [], alert: [], alertLetti: [], daInviare: [], esportazioni: [],
 };
 
@@ -105,7 +105,7 @@ export const leggiStato = S;
 /** Sposta in avanti tutte le date dei dati dimostrativi (non nascita e morte), così "oggi" resta dentro i dati. */
 function spostaDate(v: unknown, giorni: number, chiave = ''): unknown {
   if (typeof v === 'string') {
-    if (chiave === 'dataNascita' || chiave === 'dataMorte') return v;
+    if (chiave === 'dataNascita' || chiave === 'dataMorte' || v === '9999-12-31') return v;
     const m = /^(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}(?::\d{2})?)?$/.exec(v);
     return m ? aggiungiGiorni(m[1], giorni) + (m[2] ?? '') : v;
   }
@@ -136,6 +136,8 @@ async function caricaDemo(): Promise<Database> {
     };
     for (const p of d.pratiche ?? []) if (p.stato === 'programmata' && p.dataOra) p.dataOra = avanti(p.dataOra);
     for (const m of d.manutenzioni ?? []) if (m.stato === 'programmata' && m.dataProgrammata) m.dataProgrammata = avanti(m.dataProgrammata);
+    for (const x of d.richieste ?? []) if (x.stato === 'in_attesa') x.dataOra = avanti(x.dataOra);
+    for (const x of d.schede ?? []) for (const dd of x.defunti ?? []) if (dd.provvisorio?.fino) dd.provvisorio.fino = avanti(dd.provvisorio.fino);
   }
   return { ...DB_VUOTO, ...d, versione: VERSIONE_DATI, alertLetti: [], daInviare: [], esportazioni: [] };
 }
@@ -207,6 +209,8 @@ export function importaBackup(testo: string) {
 export function entra(sessione: Sessione) {
   try { window.localStorage.setItem(CHIAVE_SESSIONE, JSON.stringify(sessione)); } catch { /* resta in memoria */ }
   setS({ sessione });
+  if (sessione.ruolo === 'agenzia' && sessione.agenziaId)
+    setDb((db) => ({ agenzie: db.agenzie.map((a) => (a.id === sessione.agenziaId ? { ...a, ultimoAccesso: adessoISO() } : a)) }));
 }
 
 export function esci() {
@@ -217,6 +221,7 @@ export function esci() {
 /** Nome di chi è entrato: firma lo storico, gli alert e il registro delle modifiche. */
 export function utenteCorrente(): string {
   const { sessione, db } = S();
+  if (sessione?.ruolo === 'agenzia') return db.agenzie.find((a) => a.id === sessione.agenziaId)?.nome ?? 'Agenzia funebre';
   const op = sessione?.operatoreId ? db.operatori.find((o) => o.id === sessione.operatoreId) : undefined;
   return op?.nome ?? (sessione?.ruolo === 'operatore' ? 'Operatore' : UFFICIO);
 }
@@ -224,6 +229,7 @@ export function utenteCorrente(): string {
 /** Valore di "rilevatoDa" e "segnalataDa": l'id dell'operatore entrato, oppure 'ufficio'. */
 export function firmaCorrente(): string {
   const { sessione } = S();
+  if (sessione?.ruolo === 'agenzia') return `agenzia:${sessione.agenziaId ?? ''}`;
   return sessione?.operatoreId ?? 'ufficio';
 }
 
@@ -415,6 +421,83 @@ export function aggiungiFoto(dataUrl: string): string {
   return id;
 }
 
+/** Carica un documento nella scheda: il file resta nel browser, come le foto. */
+export function aggiungiDocumento(schedaId: string, d: { nome: string; categoria: string; defunto?: string; dataUrl: string; mime: string; dimensione: number }) {
+  const s = schedaPerId(schedaId);
+  if (!s) return;
+  const doc: DocumentoScheda = {
+    id: `DOC-${Date.now().toString(36)}`, nome: d.nome, categoria: d.categoria, defunto: d.defunto, fileId: aggiungiFoto(d.dataUrl), mime: d.mime, dimensione: d.dimensione,
+    caricatoIl: adessoISO(), caricatoDa: utenteCorrente(),
+  };
+  aggiornaScheda(schedaId, { documenti: [...(s.documenti ?? []), doc] }, `Documento caricato: ${d.nome}`);
+  daInviare('rilievo', schedaId, `Documento ${d.nome} · ${schedaId}`);
+}
+
+export function eliminaDocumento(schedaId: string, docId: string) {
+  const s = schedaPerId(schedaId);
+  const doc = s?.documenti?.find((x) => x.id === docId);
+  if (!s || !doc) return;
+  aggiornaScheda(schedaId, { documenti: (s.documenti ?? []).filter((x) => x.id !== docId) }, `Documento tolto: ${doc.nome}`);
+  if (doc.fileId !== 'demo')
+    setS((st) => {
+      const foto = { ...st.foto };
+      delete foto[doc.fileId];
+      return { foto };
+    });
+}
+
+/**
+ * Loculi doppi e tripli: il posto si allarga sugli spazi liberi alla sua destra, che spariscono dalla griglia.
+ * Se si restringe, gli spazi lasciati tornano posti liberi.
+ */
+export function impostaSpazi(schedaId: string, spazi: number): boolean {
+  const db = S().db;
+  const s = db.schede.find((x) => x.id === schedaId);
+  const str = s?.posizione ? db.strutture.find((x) => x.id === s.posizione!.strutturaId) : undefined;
+  if (!s?.posizione || !str) return false;
+  const pos = s.posizione;
+  const ora = pos.spazi ?? 1;
+  if (spazi === ora) return true;
+  if (pos.colonna + spazi - 1 > (str.facce[pos.faccia]?.colonne ?? 0)) {
+    toast('Su questa fila non ci sono abbastanza spazi a destra', 'errore');
+    return false;
+  }
+  const stessaFila = db.schede.filter((l) => l.id !== s.id && l.posizione?.strutturaId === str.id && l.posizione.faccia === pos.faccia && l.posizione.fila === pos.fila);
+  const azione = spazi === 1 ? 'Posto tornato singolo' : `Posto allargato a ${spazi} spazi`;
+  const patch = (x: Scheda): Scheda => ({ ...x, posizione: { ...pos, spazi: spazi > 1 ? spazi : undefined }, aggiornatoIl: adessoISO(), storico: [...(x.storico ?? []), evento(azione)] });
+  if (spazi > ora) {
+    const via: string[] = [];
+    for (let c = pos.colonna + ora; c <= pos.colonna + spazi - 1; c++) {
+      const v = stessaFila.find((l) => l.posizione!.colonna <= c && c <= l.posizione!.colonna + (l.posizione!.spazi ?? 1) - 1);
+      if (!v) continue;
+      const usato = v.defunti.length > 0 || v.stato !== 'libero' || (v.posizione!.spazi ?? 1) > 1
+        || db.concessioni.some((x) => x.schedeIds.includes(v.id)) || db.utenze.some((x) => x.schedaId === v.id)
+        || db.pratiche.some((x) => x.schedaId === v.id || x.schedaArrivoId === v.id) || db.manutenzioni.some((x) => x.schedaId === v.id) || db.verifiche.some((x) => x.schedaId === v.id);
+      if (usato) {
+        toast(`Lo spazio accanto (${v.id}) non è libero`, 'errore');
+        return false;
+      }
+      via.push(v.id);
+    }
+    setDb((d) => ({ schede: d.schede.filter((x) => !via.includes(x.id)).map((x) => (x.id === s.id ? patch(x) : x)) }));
+  } else {
+    const base = prossimoId(s.cimiteroId);
+    const pref = base.slice(0, base.lastIndexOf('-') + 1);
+    let num = parseInt(base.slice(pref.length), 10);
+    const adesso = adessoISO();
+    const nuovi: Scheda[] = [];
+    for (let c = pos.colonna + spazi; c <= pos.colonna + ora - 1; c++)
+      nuovi.push({
+        id: `${pref}${String(num++).padStart(6, '0')}`, cimiteroId: s.cimiteroId, tipologia: s.tipologia, stato: 'libero', lat: s.lat, lng: s.lng, viale: s.viale, quadranteId: s.quadranteId,
+        defunti: [], campi: {}, rilevatoDa: 'ufficio', rilevatoIl: adesso, aggiornatoIl: adesso,
+        posizione: { strutturaId: str.id, faccia: pos.faccia, fila: pos.fila, colonna: c }, storico: [evento(`Posto tornato libero: ${s.id} è stato ristretto`)],
+      });
+    setDb((d) => ({ schede: [...d.schede.map((x) => (x.id === s.id ? patch(x) : x)), ...nuovi] }));
+  }
+  toast(azione);
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Alert personali (campanella)
 // ---------------------------------------------------------------------------
@@ -427,7 +510,7 @@ let alertN = 0;
  */
 export function avvisa(
   destinatari: (string | undefined | null)[],
-  a: { livello?: AlertPersonale['livello']; titolo: string; messaggio: string; link?: string },
+  a: { livello?: AlertPersonale['livello']; titolo: string; messaggio: string; link?: string; categoria?: AlertPersonale['categoria'] },
   ancheAMe = false,
 ) {
   const io = firmaCorrente();
@@ -435,7 +518,7 @@ export function avvisa(
   if (!chi.length) return;
   const ora = adessoISO();
   const nuovi: AlertPersonale[] = chi.map((destinatario) => ({
-    id: `AL-${Date.now().toString(36)}-${++alertN}`, destinatario, data: ora, livello: a.livello ?? 'info', titolo: a.titolo, messaggio: a.messaggio, link: a.link,
+    id: `AL-${Date.now().toString(36)}-${++alertN}`, destinatario, data: ora, livello: a.livello ?? 'info', titolo: a.titolo, messaggio: a.messaggio, link: a.link, categoria: a.categoria,
   }));
   setDb((db) => ({ alert: [...nuovi, ...db.alert].slice(0, 500) }));
 }
@@ -475,7 +558,7 @@ export function programmaManutenzione(id: string, dataProgrammata: string, opera
   if (!m || !operatoriIds.length) return;
   const prima = m.operatoriIds ?? [];
   const link = `/manutenzioni?id=${id}`;
-  const cosa = `${nomeCategoria(m.categoria)} · ${m.schedaId}`;
+  const cosa = `${nomeCategoria(m.categoria)} · ${m.schedaId || m.luogo || ''}`;
   aggiornaManutenzione(id, { stato: 'programmata', dataProgrammata, operatoriIds });
   avvisa(operatoriIds.filter((o) => !prima.includes(o)), { titolo: 'Manutenzione assegnata a te', messaggio: `${cosa}, il ${data(dataProgrammata)}`, link });
   avvisa(prima.filter((o) => !operatoriIds.includes(o)), { titolo: 'Assegnazione tolta', messaggio: cosa, link });
@@ -499,7 +582,7 @@ export function annullaManutenzione(id: string, motivo: string) {
   aggiornaManutenzione(id, { stato: 'annullata', annullataIl: oggiISO(), motivoAnnullamento: motivo });
   liberaScheda(m, `Manutenzione ${id} annullata: ${motivo}`);
   avvisa([...(m.operatoriIds ?? []), m.segnalataDa], {
-    livello: 'attenzione', titolo: 'Manutenzione annullata', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId} · ${motivo}`, link: `/manutenzioni?id=${id}`,
+    livello: 'attenzione', titolo: 'Manutenzione annullata', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId || m.luogo || ''} · ${motivo}`, link: `/manutenzioni?id=${id}`,
   });
 }
 
@@ -510,7 +593,7 @@ export function risolviManutenzione(id: string, fotoId: string, note: string) {
   aggiornaManutenzione(id, { stato: 'risolta', risoltaIl: oggiISO(), fotoRisoluzione: fotoId, noteRisoluzione: note });
   liberaScheda(m, `Manutenzione ${id} risolta, foto aggiornata`, fotoId);
   daInviare('manutenzione', id, `Manutenzione ${id} risolta`);
-  avvisa([m.segnalataDa], { titolo: 'Manutenzione risolta', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId}`, link: `/manutenzioni?id=${id}` });
+  avvisa([m.segnalataDa], { titolo: 'Manutenzione risolta', messaggio: `${nomeCategoria(m.categoria)} · ${m.schedaId || m.luogo || ''}`, link: `/manutenzioni?id=${id}` });
 }
 
 // ---------------------------------------------------------------------------

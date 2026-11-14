@@ -119,21 +119,31 @@ export interface NuovaConcessione {
   decorrenza: string;
   provvedimento?: string;
   aventiDiritto?: Concessione['aventiDiritto'];
+  /** durata diversa da quella delle Regole del Comune, scritta nel contratto */
+  durataAnni?: number;
+  perpetua?: boolean;
 }
 
-/** Nuova concessione: la durata viene dalle Regole del Comune e resta scritta nel contratto. */
+/** La scadenza di una concessione perpetua: una data che non arriva mai, così i calcoli restano gli stessi. */
+export const SENZA_SCADENZA = '9999-12-31';
+export const scadenzaLeggibile = (c: { perpetua?: boolean; scadenza: string }) => (c.perpetua ? 'Perpetua' : data(c.scadenza));
+export const durataLeggibile = (c: { perpetua?: boolean; durataAnni: number }) => (c.perpetua ? 'Perpetua' : `${c.durataAnni} anni`);
+
+/** Nuova concessione: la durata viene dalle Regole del Comune (o dal contratto, se è diversa o perpetua) e resta scritta nel contratto. */
 export function nuovaConcessione(d: NuovaConcessione): Concessione {
   const regole = leggiStato().db.regole.concessioni;
-  const durata = regole.durate[d.tipo];
+  const durata = d.perpetua ? 0 : d.durataAnni ?? regole.durate[d.tipo];
   const oggi = oggiISO();
   const c: Concessione = {
     id: `conc-${Date.now().toString(36)}`,
     numero: prossimoNumero(Number(d.decorrenza.slice(0, 4))),
     cimiteroId: d.cimiteroId, dataStipula: oggi, provvedimento: d.provvedimento || undefined, tipo: d.tipo, schedeIds: d.schedeIds, postiTotali: d.postiTotali,
     concessionari: d.concessionari, aventiDiritto: d.aventiDiritto?.length ? d.aventiDiritto : undefined,
-    decorrenza: d.decorrenza, durataAnni: durata, rinnovi: 0,
-    regola: `Regole del Comune al ${data(oggi)}: ${NOMI_TIPO_CONCESSIONE[d.tipo].toLowerCase()} ${durata} anni, rinnovo ${regole.durataRinnovo}`,
-    scadenza: anniDopo(d.decorrenza, durata), stato: 'attiva',
+    decorrenza: d.decorrenza, durataAnni: durata, perpetua: d.perpetua || undefined, rinnovi: 0,
+    regola: d.perpetua ? 'Concessione perpetua, scritta nel contratto' : d.durataAnni
+      ? `Durata scritta nel contratto: ${durata} anni, rinnovo ${regole.durataRinnovo}`
+      : `Regole del Comune al ${data(oggi)}: ${NOMI_TIPO_CONCESSIONE[d.tipo].toLowerCase()} ${durata} anni, rinnovo ${regole.durataRinnovo}`,
+    scadenza: d.perpetua ? SENZA_SCADENZA : anniDopo(d.decorrenza, durata), stato: 'attiva',
     storico: [{ data: oggi, azione: 'Nuova concessione', atto: d.provvedimento || undefined, operatore: utenteCorrente() }],
   };
   aggiornaDb((db) => ({ concessioni: [...db.concessioni, c] }));

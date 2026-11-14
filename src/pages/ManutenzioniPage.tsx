@@ -59,7 +59,7 @@ export function ManutenzioniPage() {
     return manutenzioni
       .filter((m) => (!stati.length || stati.includes(m.stato)) && (!cat || m.categoria === cat))
       .filter((m) => !telefono || !soloMie || m.operatoriIds?.includes(io) || m.segnalataDa === io)
-      .filter((m) => !t || normalizza(`${m.id} ${m.schedaId} ${m.descrizione} ${descrizioneScheda(indice.get(m.schedaId) ?? ({ defunti: [] } as unknown as Scheda))}`).includes(t))
+      .filter((m) => !t || normalizza(`${m.id} ${m.schedaId} ${m.luogo ?? ''} ${m.descrizione} ${descrizioneScheda(indice.get(m.schedaId) ?? ({ defunti: [] } as unknown as Scheda))}`).includes(t))
       .sort((a, b) => (chiusa(a) ? 1 : 0) - (chiusa(b) ? 1 : 0) || peso[a.priorita] - peso[b.priorita] || b.segnalataIl.localeCompare(a.segnalataIl));
   }, [manutenzioni, stati, cat, q, indice, telefono, soloMie, io]);
   useEffect(() => setPagina(0), [stati, cat, q, soloMie]);
@@ -121,7 +121,7 @@ export function ManutenzioniPage() {
                     <span className="list-item__thumb" style={{ overflow: 'hidden', display: 'block' }}><FotoManutenzione m={m} dopo={m.stato === 'risolta'} /></span>
                     <span className="grow">
                       <b className="ellipsis">{labelLista(config.categorieManutenzione, m.categoria)} <DaInviare riferimento={m.id} /></b>
-                      <span className="tiny muted">{m.schedaId}{s ? ` · ${s.viale}` : ''}</span>
+                      <span className="tiny muted">{m.schedaId || m.luogo}{s ? ` · ${s.viale}` : ''}</span>
                       <span className="tiny muted">{m.dataProgrammata && !chiusa(m) ? `Programmata ${dataBreve(m.dataProgrammata)}` : `Segnalata ${dataBreve(m.segnalataIl)}`}</span>
                     </span>
                     <span className="badge badge--sm" style={{ color: pr.colore, background: `${pr.colore}14` }}>{pr.label}</span>
@@ -147,7 +147,7 @@ export function ManutenzioniPage() {
                           <span className="badge badge--sm" style={{ background: `${st.colore}18`, color: st.colore }}>{st.label}</span>
                         </div>
                         <b className="ticket__title">{labelLista(config.categorieManutenzione, m.categoria)}</b>
-                        <span className="small muted ellipsis">{m.schedaId} · {s ? descrizioneScheda(s) : ''}</span>
+                        <span className="small muted ellipsis">{m.schedaId ? `${m.schedaId} · ${s ? descrizioneScheda(s) : ''}` : `Parte comune · ${m.luogo ?? ''}`}</span>
                         <span className="small ticket__desc">{m.descrizione}</span>
                         <div className="row row--between mt-8">
                           <span className="badge badge--sm" style={{ color: pr.colore, background: `${pr.colore}14` }}>{pr.label}</span>
@@ -234,7 +234,7 @@ function Calendario({ manutenzioni }: { manutenzioni: Manutenzione[] }) {
               <span className="dot" style={{ background: prioritaDef(m.priorita).colore }} />
               <span className="grow" style={{ minWidth: 0 }}>
                 <b className="small">{labelLista(config.categorieManutenzione, m.categoria)}</b>
-                <span className="tiny muted ellipsis" style={{ display: 'block' }}>{m.schedaId} · {m.descrizione}</span>
+                <span className="tiny muted ellipsis" style={{ display: 'block' }}>{m.schedaId || m.luogo} · {m.descrizione}</span>
               </span>
             </button>
           ))}
@@ -304,7 +304,7 @@ function ModaleRisolvi({ m, onChiudi }: { m: Manutenzione; onChiudi: () => void 
   const [foto, setFoto] = useState<string | null>(null);
   const [note, setNote] = useState('');
   return (
-    <Modal titolo={`Risolvi ${m.id}`} sottotitolo="La foto che alleghi diventa la foto della scheda." onClose={onChiudi}
+    <Modal titolo={`Risolvi ${m.id}`} sottotitolo={m.schedaId ? 'La foto che alleghi diventa la foto della scheda.' : 'Allega la foto del lavoro fatto.'} onClose={onChiudi}
       footer={<><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--success" disabled={!foto} onClick={() => { risolviManutenzione(m.id, aggiungiFoto(foto!), note || 'Intervento completato'); toast('Manutenzione risolta, foto aggiornata nella scheda'); onChiudi(); }}><CheckCircle2 size={16} />Segna come risolta</button></>}>
       <div className="col gap-16">
         {foto ? (
@@ -342,7 +342,7 @@ function DettaglioManutenzione({ m, onChiudi }: { m: Manutenzione; onChiudi: () 
               <span className="badge" style={{ color: pr.colore, background: `${pr.colore}14` }}>Priorità {pr.label.toLowerCase()}</span>
             </div>
             <h2 className="mt-8">{labelLista(config.categorieManutenzione, m.categoria)} · {m.id}</h2>
-            <p>{s ? `${s.id} · ${descrizioneScheda(s)} · ${s.viale}` : m.schedaId}</p>
+            <p>{s ? `${s.id} · ${descrizioneScheda(s)} · ${s.viale}` : m.schedaId || `Parte comune · ${m.luogo ?? ''}`}</p>
           </div>
           <button className="btn btn--ghost btn--icon btn--sm" onClick={onChiudi} aria-label="Chiudi"><X size={18} /></button>
         </div>

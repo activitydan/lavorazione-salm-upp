@@ -52,7 +52,7 @@ export function colonneDisponibili(config: ConfigScheda): ColonnaExport[] {
     { id: 'lng', label: 'Longitudine', valore: (s) => s.lng },
     { id: 'conc_numero', label: 'N. concessione', valore: (s) => concessioneScheda(s)?.numero ?? '' },
     { id: 'conc_intestatario', label: 'Concessionario', valore: (s) => concessioneScheda(s)?.concessionario ?? '' },
-    { id: 'conc_scadenza', label: 'Scadenza concessione', valore: (s) => data(concessioneScheda(s)?.scadenza) },
+    { id: 'conc_scadenza', label: 'Scadenza concessione', valore: (s) => (concessioneScheda(s)?.perpetua ? 'Perpetua' : data(concessioneScheda(s)?.scadenza)) },
     { id: 'conc_stato', label: 'Stato concessione', valore: (s) => statoConcessione(s)?.stato.replace('_', ' ') ?? '' },
     { id: 'rilevato', label: 'Rilevata il', valore: (s) => data(s.rilevatoIl) },
     { id: 'rilevatore', label: 'Rilevata da', valore: (s, { db }) => db.operatori.find((o) => o.id === s.rilevatoDa)?.nome ?? s.rilevatoDa },
@@ -105,7 +105,7 @@ export function fogliTotali(schede: Scheda[], ctx: { config: ConfigScheda; db: D
 export function righeManutenzioni(lista: Manutenzione[], db: Database, config: ConfigScheda): Riga[] {
   const nome = (id?: string) => (id === 'ufficio' ? 'Ufficio Cimiteri' : db.operatori.find((o) => o.id === id)?.nome ?? '');
   return lista.map((m) => ({
-    ID: m.id, Scheda: m.schedaId, Categoria: labelLista(config.categorieManutenzione, m.categoria), Priorità: m.priorita, Stato: m.stato,
+    ID: m.id, Scheda: m.schedaId || m.luogo || '', Categoria: labelLista(config.categorieManutenzione, m.categoria), Priorità: m.priorita, Stato: m.stato,
     Descrizione: m.descrizione, 'Segnalata da': nome(m.segnalataDa), 'Segnalata il': data(m.segnalataIl),
     'Programmata il': data(m.dataProgrammata), Operatori: (m.operatoriIds ?? []).map(nome).join(', '),
     'Risolta il': data(m.risoltaIl), 'Note risoluzione': m.noteRisoluzione ?? '', 'Annullata il': data(m.annullataIl), 'Motivo annullamento': m.motivoAnnullamento ?? '',

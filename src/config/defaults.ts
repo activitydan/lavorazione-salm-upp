@@ -51,6 +51,8 @@ export const CONFIG_DEFAULT: ConfigScheda = {
     { id: 'vegetazione', label: 'Vegetazione infestante' },
     { id: 'cedimento', label: 'Cedimento strutturale' },
     { id: 'pulizia', label: 'Pulizia straordinaria' },
+    { id: 'viali', label: 'Viali e pavimentazione' },
+    { id: 'verde', label: 'Cura del verde' },
   ],
   motiviVerifica: [
     { id: 'lapide_illeggibile', label: 'Lapide illeggibile' },

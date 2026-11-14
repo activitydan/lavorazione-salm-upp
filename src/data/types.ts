@@ -87,6 +87,8 @@ export interface Defunto {
   sesso?: 'M' | 'F';
   dataNascita?: string | null;
   dataMorte?: string | null;
+  /** sepoltura provvisoria: il defunto sta qui finché non si libera il posto definitivo ("fino" assente = senza scadenza) */
+  provvisorio?: { dal: string; fino?: string };
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +115,8 @@ export interface Soggetto {
 export interface Concessionario extends Soggetto {
   /** quando i concessionari sono più di uno: chi tratta con il Comune */
   rappresentante?: boolean;
+  /** chi è per il defunto: figlio, moglie, erede... Il concessionario non è mai il defunto */
+  legameDefunto?: string;
 }
 
 export interface AventeDiritto {
@@ -145,6 +149,8 @@ export interface Concessione {
   aventiDiritto?: AventeDiritto[];
   decorrenza: string;
   durataAnni: number;
+  /** concessione perpetua (i contratti più vecchi): non scade e non si rinnova; la scadenza resta al 31/12/9999 */
+  perpetua?: boolean;
   rinnovi: number;
   /** la regola con cui è nato il contratto: cambiare le durate non tocca i contratti esistenti */
   regola: string;
@@ -226,6 +232,27 @@ export interface AgenziaFunebre {
   email: string;
   /** un'agenzia non si cancella: si disattiva */
   attiva: boolean;
+  /** può entrare in CimiTera: vede solo le sue operazioni e manda richieste all'ufficio */
+  accesso?: boolean;
+  ultimoAccesso?: string;
+}
+
+/** Richiesta di un'operazione mandata da un'agenzia funebre: l'ufficio la accoglie aprendo la pratica, oppure la rifiuta. */
+export interface RichiestaAgenzia {
+  id: string;
+  numero: string;
+  agenziaId: string;
+  cimiteroId: string;
+  tipo: TipoOperazione;
+  defunto: Defunto;
+  richiedente: Richiedente;
+  /** giorno e ora proposti dall'agenzia */
+  dataOra: string;
+  note?: string;
+  stato: 'in_attesa' | 'accolta' | 'rifiutata';
+  inviataIl: string;
+  praticaId?: string;
+  motivoRifiuto?: string;
 }
 
 /** Il fascicolo di una sola operazione cimiteriale su un solo defunto. */
@@ -259,6 +286,10 @@ export interface Pratica {
   motivoAnnullamento?: string;
   /** la tariffa del suo tipo; l'attestazione di pagamento è lo stato del suo avviso di pagamento */
   tariffa?: number;
+  /** sepoltura provvisoria: il defunto va in un posto in attesa di quello definitivo */
+  provvisoria?: { fino?: string };
+  /** la richiesta dell'agenzia funebre da cui è nata */
+  richiestaId?: string;
   storico?: { data: string; azione: string; operatore: string }[];
   /** traslazione di un defunto con l'utenza votiva */
   utenzaVotiva?: 'sposta' | 'chiudi';
@@ -382,6 +413,23 @@ export interface PosizioneLoculo {
   faccia: number;
   fila: number; // 1 = fila più bassa
   colonna: number; // 1 = da sinistra
+  /** loculi doppi e tripli: quanti spazi della fila occupa il posto, verso destra (assente = 1) */
+  spazi?: number;
+}
+
+/** Un documento caricato nella scheda (certificati, autorizzazioni...). Il file resta nel browser, come le foto. */
+export interface DocumentoScheda {
+  id: string;
+  nome: string;
+  categoria: string;
+  /** il defunto a cui si riferisce, se la scheda ne ha più di uno */
+  defunto?: string;
+  /** chiave del file nell'archivio delle foto; 'demo' per i documenti dei dati dimostrativi */
+  fileId: string;
+  mime: string;
+  dimensione: number;
+  caricatoIl: string;
+  caricatoDa: string;
 }
 
 export type ValoreCampo = boolean | string | number | string[] | null | undefined;
@@ -419,6 +467,9 @@ export interface Scheda {
   /** "C'è una lampada accesa?": cosa ha visto l'operatore sul campo, e quando */
   lampadaAccesa?: boolean;
   lampadaVistaIl?: string;
+  /** la scritta sulla lapide, per esempio "I tuoi cari ti ricordano con affetto" */
+  epigrafe?: string;
+  documenti?: DocumentoScheda[];
 }
 
 export type Priorita = 'bassa' | 'media' | 'alta' | 'urgente';
@@ -426,7 +477,10 @@ export type StatoManutenzione = 'aperta' | 'programmata' | 'risolta' | 'annullat
 
 export interface Manutenzione {
   id: string;
+  /** vuoto quando la manutenzione riguarda una parte comune (vedi "luogo") */
   schedaId: string;
+  /** parte comune del cimitero: un viale, un'area, una struttura */
+  luogo?: string;
   cimiteroId: string;
   categoria: string;
   priorita: Priorita;
@@ -460,11 +514,15 @@ export interface Verifica {
   note?: string;
 }
 
+/** Le categorie con cui si filtrano gli alert della campanella. */
+export type CategoriaAlert = TipoOperazione | 'manutenzione' | 'verifica' | 'pagamenti' | 'agenzie' | 'altro';
+
 /** Alert della campanella: è personale, arriva solo a chi ha aperto la cosa o a chi è assegnata. */
 export interface AlertPersonale {
   id: string;
-  /** id dell'operatore oppure 'ufficio' (l'Amministratore) */
+  /** id dell'operatore, 'ufficio' (l'Amministratore) oppure 'agenzia:<id>' */
   destinatario: string;
+  categoria?: CategoriaAlert;
   data: string;
   livello: 'urgente' | 'attenzione' | 'info';
   titolo: string;
@@ -502,6 +560,7 @@ export interface Database {
   utenze: UtenzaVotiva[];
   pratiche: Pratica[];
   agenzie: AgenziaFunebre[];
+  richieste: RichiestaAgenzia[];
   defuntiAltrove: DefuntoAltrove[];
   avvisi: AvvisoPagamento[];
   lotti: LottoDat[];
@@ -621,10 +680,12 @@ export type StileMappa = 'satellite' | 'planimetria';
 // ---------------------------------------------------------------------------
 
 /** Il Cittadino non entra: ha la sua pagina pubblica (#/cittadino). */
-export type Ruolo = 'operatore' | 'amministratore';
+export type Ruolo = 'operatore' | 'amministratore' | 'agenzia';
 
 /** Chi è entrato: l'Operatore sceglie il proprio nome, l'Amministratore entra come "Ufficio Cimiteri". */
 export interface Sessione {
   ruolo: Ruolo;
   operatoreId?: string;
+  /** l'agenzia funebre entrata: vede solo le sue operazioni */
+  agenziaId?: string;
 }

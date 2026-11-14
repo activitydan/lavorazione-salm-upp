@@ -51,6 +51,11 @@ export function EditorConcessionari({ valore, onChange }: { valore: Concessionar
       {valore.map((c, i) => (
         <div key={i} className="soggetto">
           <SoggettoForm valore={c} onChange={(v) => set(i, v)} />
+          {c.tipo === 'persona' && (
+            <div className="grid-form mt-8">
+              <Field label="Legame con il defunto" hint="Per esempio: figlio, moglie, erede"><input className="input" value={c.legameDefunto ?? ''} onChange={(e) => set(i, { ...c, legameDefunto: e.target.value || undefined })} /></Field>
+            </div>
+          )}
           {valore.length > 1 && (
             <div className="row row--between mt-8">
               <label className="row small" style={{ cursor: 'pointer' }}>

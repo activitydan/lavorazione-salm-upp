@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { ArrowRight, CalendarDays, ClipboardList, Maximize2, Wrench } from 'lucide-react';
+import { Calendario } from '../components/Calendario';
 import { CemeteryMap } from '../components/map/CemeteryMap';
 import { SceltaStileMappa } from '../components/Topbar';
 import { Avatar, Ciambella, Dot, StatoBadge } from '../components/ui';
@@ -99,6 +100,9 @@ export function Dashboard() {
             ))}
           </div>
         </Widget>
+
+        {/* il calendario grande, sotto tutta la mappa: tutto ciò che è in programma */}
+        <div className="bento__cal"><Calendario /></div>
 
         <Widget titolo="Censimento" icona={<ClipboardList size={16} />} link="/censimento" className="bento__censite">
           <div className="row gap-16">

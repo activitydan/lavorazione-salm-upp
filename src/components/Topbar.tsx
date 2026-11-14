@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Check, ChevronDown, Layers, Menu, MapPin, Plus, Satellite, Search, Route as RouteIcon } from 'lucide-react';
 import { segnaLetti, seleziona, setCimitero, setFiltri, setUi, resetFiltri, useStore, volaA } from '../data/store';
-import { descrizioneScheda, testoRicerca, useAlert, useCimitero, useDatiCimitero, useSchedeCimitero, type AlertItem } from '../data/selectors';
-import type { StileMappa } from '../data/types';
+import { descrizioneScheda, NOMI_CATEGORIA_ALERT, testoRicerca, useAlert, useCimitero, useDatiCimitero, useSchedeCimitero, type AlertItem } from '../data/selectors';
+import type { CategoriaAlert, StileMappa } from '../data/types';
 import { dataBreve, normalizza, numero } from '../lib/format';
 import { centroide } from '../lib/geo';
 import { useTelefono } from '../lib/schermo';
@@ -186,6 +186,11 @@ export function CampanellaAlert({ nelMenu }: { nelMenu?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useFuori(ref, () => setAperto(false));
   const nonLetti = alert.filter((a) => !letti.includes(a.id));
+  // filtro per categoria: "Inumazioni", "Tumulazioni", "Manutenzioni"... solo quelle che hanno almeno un alert
+  const [categoria, setCategoria] = useState<CategoriaAlert | ''>('');
+  const categorie = (Object.keys(NOMI_CATEGORIA_ALERT) as CategoriaAlert[]).filter((c) => alert.some((a) => a.categoria === c));
+  const scelta = categoria && categorie.includes(categoria) ? categoria : '';
+  const lista = scelta ? alert.filter((a) => a.categoria === scelta) : alert;
   const apri = (a: AlertItem) => {
     segnaLetti([a.id]);
     setAperto(false);
@@ -205,9 +210,19 @@ export function CampanellaAlert({ nelMenu }: { nelMenu?: boolean }) {
               Segna tutti come letti
             </button>
           </div>
+          {categorie.length > 1 && (
+            <div className="alert-filtri">
+              <button className={`chip chip--sm ${!scelta ? 'is-on' : ''}`} onClick={() => setCategoria('')}>Tutti<span className="chip__n">{alert.length}</span></button>
+              {categorie.map((c) => (
+                <button key={c} className={`chip chip--sm ${scelta === c ? 'is-on' : ''}`} onClick={() => setCategoria(c)}>
+                  {NOMI_CATEGORIA_ALERT[c]}<span className="chip__n">{alert.filter((a) => a.categoria === c).length}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{ maxHeight: 420, overflow: 'auto' }}>
             {alert.length === 0 && <div className="small muted" style={{ padding: 16 }}>Nessun alert per te.</div>}
-            {alert.map((a) => (
+            {lista.map((a) => (
               <button key={a.id} className="popover__item alert-row" onClick={() => apri(a)} style={{ alignItems: 'flex-start', opacity: letti.includes(a.id) ? 0.6 : 1 }}>
                 <span className={`alert-dot alert-dot--${a.livello}`} />
                 <span className="grow">
@@ -215,6 +230,7 @@ export function CampanellaAlert({ nelMenu }: { nelMenu?: boolean }) {
                   <br />
                   <span className="small muted">{a.messaggio}</span>
                 </span>
+                <span className="tiny muted nowrap">{NOMI_CATEGORIA_ALERT[a.categoria]}</span>
               </button>
             ))}
           </div>
@@ -233,6 +249,21 @@ const STILI: { id: StileMappa; label: string; icon: React.ReactNode }[] = [
 export function SceltaStileMappa() {
   const stile = useStore((s) => s.ui.stileMappa);
   return <Seg options={STILI.map((s) => ({ ...s, label: <span className="seg-label">{s.label}</span> }))} value={stile} onChange={(v) => setUi({ stileMappa: v })} />;
+}
+
+/** La barra dell'agenzia funebre: solo il cimitero e, sul telefono, la campanella. */
+export function TopbarAgenzia() {
+  const telefono = useTelefono();
+  return (
+    <header className="topbar">
+      <button className="icon-btn hamburger" onClick={() => setUi({ menuMobile: true })} aria-label="Apri il menu">
+        <Menu size={22} />
+      </button>
+      <SelettoreCimitero />
+      <div className="grow" />
+      {telefono && <CampanellaAlert />}
+    </header>
+  );
 }
 
 export function Topbar() {

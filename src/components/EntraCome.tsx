@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronRight, ClipboardList, Search, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Building2, ChevronRight, ClipboardList, Search, ShieldCheck } from 'lucide-react';
 import { UFFICIO } from '../config/defaults';
 import { entra, useStore } from '../data/store';
 import { useTelefono } from '../lib/schermo';
@@ -10,7 +10,11 @@ import { FIRMA, Mark, Wordmark } from './Logo';
 export function EntraCome() {
   const operatori = useStore((s) => s.db.operatori);
   const telefono = useTelefono();
-  const [scegliOperatore, setScegliOperatore] = useState(false);
+  const agenzie = useStore((s) => s.db.agenzie).filter((a) => a.attiva && a.accesso);
+  // null = scelta del ruolo; poi si sceglie chi si è
+  const [scegli, setScegli] = useState<'operatore' | 'agenzia' | null>(null);
+  const scegliOperatore = scegli === 'operatore';
+  const setScegliOperatore = (v: boolean) => setScegli(v ? 'operatore' : null);
   const attivi = operatori.filter((o) => o.attivo);
   const dopo = () => vai(telefono ? '/mappa' : '/');
 
@@ -21,7 +25,24 @@ export function EntraCome() {
           <Mark size={64} />
           <Wordmark firma />
         </div>
-        {!scegliOperatore ? (
+        {scegli === 'agenzia' ? (
+          <>
+            <h1 className="entra__titolo">Quale agenzia?</h1>
+            <div className="entra__lista">
+              {agenzie.map((a) => (
+                <button key={a.id} className="entra__voce" onClick={() => { entra({ ruolo: 'agenzia', agenziaId: a.id }); vai('/'); }}>
+                  <span className="entra__ico" style={{ background: '#EEF6E8', color: '#4A822B' }}><Building2 size={20} /></span>
+                  <span className="grow">
+                    <b>{a.nome}</b>
+                    <span>Agenzia funebre</span>
+                  </span>
+                  <ChevronRight size={18} />
+                </button>
+              ))}
+            </div>
+            <button className="btn btn--ghost btn--sm" onClick={() => setScegli(null)}><ArrowLeft size={15} />Indietro</button>
+          </>
+        ) : !scegliOperatore ? (
           <>
             <h1 className="entra__titolo">Entra come</h1>
             <div className="entra__lista">
@@ -41,6 +62,16 @@ export function EntraCome() {
                 </span>
                 <ChevronRight size={18} />
               </button>
+              {agenzie.length > 0 && (
+                <button className="entra__voce" onClick={() => setScegli('agenzia')}>
+                  <span className="entra__ico" style={{ background: '#F3EEF8', color: '#7B4FA8' }}><Building2 size={20} /></span>
+                  <span className="grow">
+                    <b>Agenzia funebre</b>
+                    <span>Le tue operazioni e le richieste all'ufficio</span>
+                  </span>
+                  <ChevronRight size={18} />
+                </button>
+              )}
               <button className="entra__voce" onClick={() => { entra({ ruolo: 'amministratore' }); dopo(); }}>
                 <span className="entra__ico" style={{ background: '#E9EDF3', color: '#0A2F55' }}><ShieldCheck size={20} /></span>
                 <span className="grow">

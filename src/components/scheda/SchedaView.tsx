@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ClipboardCheck, Crosshair, FileText, Grid3x3, History, Lightbulb, MapPinned, Navigation, Pencil, Wrench } from 'lucide-react';
 import { NOMI_STRUTTURA, STATI_MANUTENZIONE } from '../../config/defaults';
 import {
-  aggiornaCampo, aggiornaScheda, apriParete, apriModale, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
+  aggiornaCampo, aggiornaScheda, apriParete, apriModale, impostaSpazi, indiceSchede, loculiPerStruttura, seleziona, toast, useStore,
 } from '../../data/store';
 import {
   campiPer, concessioneScheda, descrizioneScheda, labelLista, occupazioneStruttura, prioritaDef, statoConcessione, statoDef, valoreLeggibile,
@@ -20,6 +20,7 @@ import { nomeSoggetto } from '../../data/concessioni';
 import { STATI_PRATICA, nomeOperazione, praticheDi } from '../../data/pratiche';
 import { CLASSE_STATO_UTENZA, NOMI_STATO_UTENZA, statoUtenza, utenzeDi } from '../../data/utenze';
 import { InputCampo, ValoreOpzione } from './Campi';
+import { Documenti, Provvisoria } from './Documenti';
 import { FotoScheda } from './Media';
 import { SchedaForm } from './SchedaForm';
 
@@ -127,9 +128,11 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
                 </div>
                 {decedutoDa(d) && <span className="badge badge--blu badge--sm">{decedutoDa(d)}</span>}
                 {!d.dataMorte && <span className="badge badge--giallo badge--sm">Data di morte da recuperare</span>}
+                <Provvisoria s={s} indice={i} />
               </div>
             ))}
           </div>
+          {s.epigrafe && <p className="epigrafe">{s.epigrafe}</p>}
         </section>
       )}
 
@@ -148,7 +151,11 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
               <dt>Struttura</dt>
               <dd>
                 {contenitore ? <a href={href(`/scheda/${contenitore.id}`)}>{struttura.nome}</a> : struttura.nome}
-                <div className="small muted">{struttura.facce[s.posizione.faccia]?.nome} · fila {s.posizione.fila} · colonna {s.posizione.colonna}</div>
+                <div className="small muted">{struttura.facce[s.posizione.faccia]?.nome} · fila {s.posizione.fila} · colonna {s.posizione.colonna}{(s.posizione.spazi ?? 1) > 1 ? ` · ${s.posizione.spazi} spazi` : ''}</div>
+                <div className="row row--wrap gap-8 mt-8">
+                  <span className="small strong">Spazi occupati</span>
+                  <Seg small light value={String(s.posizione.spazi ?? 1)} onChange={(v) => impostaSpazi(s.id, Number(v))} options={[{ id: '1', label: '1' }, { id: '2', label: '2' }, { id: '3', label: '3' }]} />
+                </div>
                 <button className="btn btn--xs mt-8" onClick={() => apriParete(struttura.id, s.id)}><Grid3x3 size={12} />Vedi nella griglia a parete</button>
               </dd>
             </>
@@ -166,14 +173,15 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
             {!concVista.inDecadenza && conc.stato === 'scaduta' && <span className="badge badge--rosso badge--sm">Scaduta da {Math.abs(conc.giorni)} giorni</span>}
             {!concVista.inDecadenza && conc.stato === 'in_scadenza' && <span className="badge badge--arancio badge--sm">Scade tra {conc.giorni} giorni</span>}
             {!concVista.inDecadenza && conc.stato === 'valida' && <span className="badge badge--verde badge--sm">Attiva</span>}
+            {!s.defunti.length && !s.strutturaId && <span className="badge badge--blu badge--sm" title="In concessione, ancora vuota">Prenotata</span>}
           </h4>
           <dl className="kv">
             <dt>Numero</dt>
             <dd>{concVista.numero}</dd>
             <dt>Concessionario</dt>
-            <dd>{concVista.concessionario} <Moroso codiceFiscale={concVista.codiceFiscale} /></dd>
+            <dd>{concVista.concessionario}{concVista.legame ? <span className="muted"> · {concVista.legame}</span> : null} <Moroso codiceFiscale={concVista.codiceFiscale} /></dd>
             <dt>Scadenza</dt>
-            <dd>{data(concVista.scadenza)}</dd>
+            <dd>{concVista.perpetua ? 'Perpetua' : data(concVista.scadenza)}</dd>
           </dl>
           {!telefono && <a className="btn btn--xs mt-8" href={href(`/concessioni?id=${concVista.id}`)}>Apri in Concessioni</a>}
         </section>
@@ -228,6 +236,8 @@ export function SchedaView({ s, estesa }: { s: Scheda; estesa?: boolean }) {
           </div>
         </section>
       )}
+
+      {s.tipologia !== 'struttura' && <Documenti s={s} />}
 
       {(manutenzioni.length > 0 || verifiche.length > 0) && (
         <section className="sez">

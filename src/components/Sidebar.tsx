@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  CalendarClock, ClipboardCheck, ClipboardList, CloudOff, FileText, LayoutDashboard, Lightbulb, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Settings, ShieldCheck, Wrench,
+  CalendarClock, CalendarDays, ClipboardCheck, ClipboardList, CloudOff, FileText, LayoutDashboard, Lightbulb, Map as MapIcon, MapPinPlus, Repeat, ScrollText, Search, Send, Settings, ShieldCheck, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { esci, setRete, setUi, useStore } from '../data/store';
@@ -47,6 +47,13 @@ export const VOCI_TELEFONO: VoceMenu[] = [
   { path: '/censimento?tab=verifiche', label: 'Verifiche', icon: ClipboardCheck },
 ];
 
+// L'agenzia funebre vede solo le sue cose, uguale sul telefono e sul computer.
+export const VOCI_AGENZIA: VoceMenu[] = [
+  { path: '/', label: 'Calendario', icon: CalendarDays },
+  { path: '/pratiche', label: 'Pratiche', icon: FileText },
+  { path: '/richieste', label: 'Richieste', icon: Send },
+];
+
 function vocePer(path: string): VoceMenu | undefined {
   return VOCI_COMPUTER.find((x) => x.path !== '/' && path.startsWith(x.path));
 }
@@ -87,11 +94,13 @@ function RiquadroUtente({ chiudiMenu }: { chiudiMenu: () => void }) {
             <b>{utente.nome}</b>
             <span className="small muted">{utente.etichettaRuolo}</span>
           </div>
-          <label className="popover__item" style={{ cursor: 'pointer' }}>
-            <CloudOff size={16} />
-            <span className="grow">Simula senza rete</span>
-            <Switch small on={simula} onChange={(v) => setRete({ simulaSenzaRete: v })} label="Simula senza rete" />
-          </label>
+          {utente.ruolo !== 'agenzia' && (
+            <label className="popover__item" style={{ cursor: 'pointer' }}>
+              <CloudOff size={16} />
+              <span className="grow">Simula senza rete</span>
+              <Switch small on={simula} onChange={(v) => setRete({ simulaSenzaRete: v })} label="Simula senza rete" />
+            </label>
+          )}
           <button className="popover__item" role="menuitem" onClick={() => { setAperto(false); chiudiMenu(); esci(); }}>
             <Repeat size={16} />
             <span className="grow">Cambia ruolo</span>
@@ -112,11 +121,12 @@ export function Sidebar() {
   const aperte = utente.operatoreId ? manutenzioni.filter((m) => m.stato === 'programmata' && m.operatoriIds?.includes(utente.operatoreId!)).length : 0;
   const chiudi = () => setUi({ menuMobile: false });
 
-  const voci = (telefono ? VOCI_TELEFONO : VOCI_COMPUTER).filter((v) => !v.ruoli || v.ruoli.includes(utente.ruolo));
+  const agenzia = utente.ruolo === 'agenzia';
+  const voci = agenzia ? VOCI_AGENZIA : (telefono ? VOCI_TELEFONO : VOCI_COMPUTER).filter((v) => !v.ruoli || v.ruoli.includes(utente.ruolo));
   const attivo = (v: VoceMenu) => {
     const p = v.path.split('?')[0];
     // la Mappa si apre dalla Dashboard: mentre si è lì resta accesa la voce Dashboard
-    return p === '/' ? rotta.path === '/' || (!telefono && rotta.path === '/mappa') : rotta.path.startsWith(p);
+    return p === '/' ? rotta.path === '/' || (!telefono && !agenzia && rotta.path === '/mappa') : rotta.path.startsWith(p);
   };
   let gruppo: string | undefined;
 
@@ -124,7 +134,7 @@ export function Sidebar() {
     <>
       <div className={`sidebar-backdrop ${aperta ? 'is-open' : ''}`} onClick={chiudi} />
       <aside className={`sidebar ${aperta ? 'is-open' : ''}`} aria-label="Menu principale">
-        <a className="sidebar__brand" href={href(telefono ? '/mappa' : '/')} onClick={chiudi}>
+        <a className="sidebar__brand" href={href(telefono && !agenzia ? '/mappa' : '/')} onClick={chiudi}>
           <Logo dark size={36} />
         </a>
         <nav className="sidebar__nav">

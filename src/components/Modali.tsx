@@ -4,7 +4,7 @@ import { PRIORITA } from '../config/defaults';
 import {
   aggiornaScheda, aggiungiFoto, apriModale, creaManutenzione, creaVerifica, firmaCorrente, indiceSchede, seleziona, toast, useStore,
 } from '../data/store';
-import { descrizioneScheda, useCimitero } from '../data/selectors';
+import { descrizioneScheda, useCimitero, useDatiCimitero } from '../data/selectors';
 import type { LatLng, Priorita, Scheda } from '../data/types';
 import { aggiungiGiorni, normalizza, oggiISO } from '../lib/format';
 import { distanzaM, quadranteDi, vialePiuVicino } from '../lib/geo';
@@ -12,7 +12,7 @@ import { href, vai } from '../router';
 import { LocationPicker } from './map/LocationPicker';
 import { ScegliFoto } from './scheda/Media';
 import { SchedaView } from './scheda/SchedaView';
-import { Field, Modal, StatoBadge } from './ui';
+import { Field, Modal, Seg, StatoBadge } from './ui';
 
 /** Pannello laterale della scheda selezionata (mappa, ricerca, anagrafe...). */
 export function PannelloScheda() {
@@ -84,13 +84,20 @@ function ModaleManutenzione({ schedaId, categoriaIniziale }: { schedaId?: string
   const [priorita, setPriorita] = useState<Priorita>('media');
   const [descrizione, setDescrizione] = useState('');
   const [foto, setFoto] = useState<string | null>(null);
+  // una postazione, oppure una parte comune del cimitero: un viale, un'area, una struttura
+  const cim = useCimitero();
+  const { viali, aree, strutture } = useDatiCimitero();
+  const [comune, setComune] = useState(false);
+  const [luogo, setLuogo] = useState('');
+  const [altro, setAltro] = useState('');
   const chiudi = () => apriModale(null);
   const invia = () => {
-    if (!scheda) return toast('Scegli la scheda', 'errore');
+    const dove = luogo === '__altro' ? altro.trim() : luogo;
+    if (comune ? !dove : !scheda) return toast(comune ? 'Scegli la parte del cimitero' : 'Scegli la scheda', 'errore');
     if (!descrizione.trim()) return toast('Descrivi il problema', 'errore');
     const fotoId = foto ? aggiungiFoto(foto) : undefined;
     const m = creaManutenzione({
-      schedaId: scheda.id, cimiteroId: scheda.cimiteroId, categoria, priorita, descrizione: descrizione.trim(),
+      schedaId: comune ? '' : scheda!.id, luogo: comune ? dove : undefined, cimiteroId: comune ? cim.id : scheda!.cimiteroId, categoria, priorita, descrizione: descrizione.trim(),
       segnalataDa: firmaCorrente(), fotoProblemaId: fotoId,
     });
     toast(`Segnalazione ${m.id} registrata`);
@@ -99,13 +106,33 @@ function ModaleManutenzione({ schedaId, categoriaIniziale }: { schedaId?: string
   return (
     <Modal
       titolo="Segnala manutenzione"
-      sottotitolo="La segnalazione compare in Manutenzioni e la scheda passa a “Da manutenzionare”."
+      sottotitolo={comune ? 'La segnalazione compare in Manutenzioni e nel calendario.' : 'La segnalazione compare in Manutenzioni e la scheda passa a “Da manutenzionare”.'}
       icona={<span className="list-item__icon" style={{ background: '#fdeeed', color: '#D9473F' }}><Wrench size={18} /></span>}
       onClose={chiudi}
       footer={<><button className="btn" onClick={chiudi}>Annulla</button><button className="btn btn--primary" onClick={invia}>Registra segnalazione</button></>}
     >
       <div className="col gap-16">
-        <Field label="Scheda"><CercaScheda valore={scheda} onScegli={setScheda} /></Field>
+        {!schedaId && (
+          <Field label="Dove">
+            <Seg light value={comune ? 'comune' : 'postazione'} onChange={(v) => setComune(v === 'comune')} options={[{ id: 'postazione', label: 'Una postazione' }, { id: 'comune', label: 'Una parte comune' }]} />
+          </Field>
+        )}
+        {comune ? (
+          <div className="grid-form">
+            <Field label="Parte del cimitero">
+              <select className="select" value={luogo} onChange={(e) => setLuogo(e.target.value)}>
+                <option value="">Scegli…</option>
+                <optgroup label="Viali">{viali.map((v) => <option key={v.id} value={v.nome}>{v.nome}</option>)}</optgroup>
+                <optgroup label="Aree">{aree.map((a) => <option key={a.id} value={a.nome}>{a.nome}</option>)}</optgroup>
+                <optgroup label="Strutture">{strutture.map((x) => <option key={x.id} value={x.nome}>{x.nome}</option>)}</optgroup>
+                <option value="__altro">Altro…</option>
+              </select>
+            </Field>
+            {luogo === '__altro' && <Field label="Quale"><input className="input" value={altro} onChange={(e) => setAltro(e.target.value)} placeholder="Es. ingresso, parcheggio, muro di cinta" autoFocus /></Field>}
+          </div>
+        ) : (
+          <Field label="Scheda"><CercaScheda valore={scheda} onScegli={setScheda} /></Field>
+        )}
         <div className="grid-form">
           <Field label="Categoria">
             <select className="select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>

@@ -4,7 +4,7 @@ import { EntraCome } from './components/EntraCome';
 import { Modali, PannelloScheda } from './components/Modali';
 import { paginaPermessa, paginaSoloComputer, Sidebar } from './components/Sidebar';
 import { StrisciaRete } from './components/StrisciaRete';
-import { Topbar } from './components/Topbar';
+import { Topbar, TopbarAgenzia } from './components/Topbar';
 import { Empty, Toasts } from './components/ui';
 import { Mark, Wordmark } from './components/Logo';
 import { GrigliaParete } from './components/parete/GrigliaParete';
@@ -27,6 +27,7 @@ const ManutenzioniPage = lazy(() => import('./pages/ManutenzioniPage').then((m) 
 const ScadenzePage = lazy(() => import('./pages/ScadenzePage').then((m) => ({ default: m.ScadenzePage })));
 const AmministrazionePage = lazy(() => import('./pages/AmministrazionePage').then((m) => ({ default: m.AmministrazionePage })));
 const ImpostazioniPage = lazy(() => import('./pages/ImpostazioniPage').then((m) => ({ default: m.ImpostazioniPage })));
+const AgenziaPage = lazy(() => import('./pages/AgenziaPage').then((m) => ({ default: m.AgenziaPage })));
 
 function Pagina() {
   const r = useRotta();
@@ -111,7 +112,7 @@ export function App() {
 
   // sul telefono la pagina iniziale è la Mappa: la Dashboard ha le statistiche, che restano sul computer
   useEffect(() => {
-    if (sessione && telefono && r.path === '/') vai('/mappa');
+    if (sessione && sessione.ruolo !== 'agenzia' && telefono && r.path === '/') vai('/mappa');
   }, [sessione, telefono, r.path]);
 
   if (!pronto || errore) return <Caricamento errore={errore} />;
@@ -125,6 +126,25 @@ export function App() {
     );
 
   if (!sessione) return <EntraCome />;
+
+  // l'agenzia funebre: solo il suo calendario, le sue pratiche e le sue richieste
+  if (sessione.ruolo === 'agenzia')
+    return (
+      <div className="app">
+        <Sidebar />
+        <div className="main">
+          <TopbarAgenzia />
+          <div className="content-wrap">
+            <main className="content">
+              <Suspense fallback={<div className="page"><div className="spinner" /></div>}>
+                <AgenziaPage />
+              </Suspense>
+            </main>
+          </div>
+        </div>
+        <Toasts />
+      </div>
+    );
 
   const piena = r.parti[0] === 'mappa';
   return (

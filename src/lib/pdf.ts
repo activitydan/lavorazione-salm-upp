@@ -192,6 +192,8 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
     }
   }
 
+  if (s.epigrafe) pag.coppie([['Scritta sulla lapide', s.epigrafe]]);
+
   pag.titolo('Ubicazione');
   const q = db.quadranti.find((x) => x.id === s.quadranteId);
   const str = s.posizione ? db.strutture.find((x) => x.id === s.posizione!.strutturaId) : s.strutturaId ? db.strutture.find((x) => x.id === s.strutturaId) : undefined;
@@ -214,8 +216,8 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
       ['Numero', c.numero],
       ['Concessionario', c.concessionario],
       ['Decorrenza', data(c.decorrenza)],
-      ['Scadenza', `${data(c.scadenza)}${sc?.stato === 'scaduta' ? ' (SCADUTA)' : sc?.stato === 'in_scadenza' ? ` (tra ${sc.giorni} giorni)` : ''}`],
-      ['Durata', `${c.durataAnni} anni`],
+      ['Scadenza', c.perpetua ? 'Perpetua' : `${data(c.scadenza)}${sc?.stato === 'scaduta' ? ' (SCADUTA)' : sc?.stato === 'in_scadenza' ? ` (tra ${sc.giorni} giorni)` : ''}`],
+      ['Durata', c.perpetua ? 'Perpetua' : `${c.durataAnni} anni`],
       ['Rinnovi', String(c.rinnovi)],
     ]);
   }
@@ -483,7 +485,7 @@ class Documento {
     d.setTextColor(255, 255, 255);
     d.setFont('helvetica', 'bold');
     d.setFontSize(14);
-    d.text(`Comune di ${this.comune}`, 14, 11);
+    d.text(this.comune ? `Comune di ${this.comune}` : 'CimiTera', 14, 11);
     d.setFont('helvetica', 'normal');
     d.setFontSize(9);
     d.text('Ufficio Servizi Cimiteriali', 14, 17);
@@ -643,8 +645,8 @@ export async function pdfContrattoConcessione(c: Concessione, db: Database) {
   doc.pag.titolo('Durata');
   doc.righe([
     ['Decorrenza', data(c.decorrenza)],
-    ['Durata', `${c.durataAnni} anni`],
-    ['Scadenza', data(c.scadenza)],
+    ['Durata', c.perpetua ? 'Perpetua' : `${c.durataAnni} anni`],
+    ['Scadenza', c.perpetua ? 'Non scade' : data(c.scadenza)],
     ['Rinnovi concessi', String(c.rinnovi)],
     ['Regola applicata', c.regola],
   ]);
@@ -667,7 +669,7 @@ export async function pdfContrattoConcessione(c: Concessione, db: Database) {
       ? 'Nella tomba di famiglia possono essere sepolti i concessionari e gli aventi diritto indicati in questo contratto, fino al numero dei posti.'
       : `Nel ${tipo} può essere accolto solo il defunto per cui è stato concesso, o chi indica il concessionario secondo il regolamento comunale.`,
     'La manutenzione della sepoltura e della lapide è a carico del concessionario.',
-    `Alla scadenza la concessione si può rinnovare per ${regole.durataRinnovo} anni, su domanda del concessionario e con il pagamento della tariffa di rinnovo (oggi ${importo(regole.tariffe[c.tipo].rinnovo)}). Senza rinnovo la sepoltura torna al Comune.`,
+    c.perpetua ? 'La concessione è perpetua: non scade e non si rinnova.' : `Alla scadenza la concessione si può rinnovare per ${regole.durataRinnovo} anni, su domanda del concessionario e con il pagamento della tariffa di rinnovo (oggi ${importo(regole.tariffe[c.tipo].rinnovo)}). Senza rinnovo la sepoltura torna al Comune.`,
     'Il concessionario può rinunciare alla concessione. Il Comune può dichiararne la decadenza per abbandono della sepoltura o per mancato pagamento, dopo una diffida.',
     'Per tutto quello che questo contratto non dice valgono il regolamento comunale di polizia mortuaria e il DPR 285/1990.',
   ]);
@@ -718,6 +720,7 @@ export async function pdfPratica(p: Pratica, db: Database) {
   if (nomi.length) voci.push(['Operatori', nomi.join(', ')]);
   if (p.esitoResti) voci.push(['Destinazione dei resti', `${NOMI_DESTINAZIONE[p.esitoResti.destinazione]}${p.esitoResti.schedaId ? `: ${p.esitoResti.schedaId}` : ''}`]);
   if (p.tipo === 'traslazione' && p.utenzaVotiva) voci.push(['Utenza votiva', p.utenzaVotiva === 'sposta' ? 'Si sposta sulla nuova postazione' : 'Si chiude']);
+  if (p.provvisoria) voci.push(['Sepoltura', `Provvisoria${p.provvisoria.fino ? ` fino al ${data(p.provvisoria.fino)}` : ', senza scadenza'}`]);
   if (p.note) voci.push(['Note', p.note]);
   doc.righe(voci);
 
@@ -757,4 +760,58 @@ export async function pdfPratica(p: Pratica, db: Database) {
 
   doc.chiusura(`${comune}, ${data(oggiISO())}.`, [...(p.dUfficio ? [] : ['Il richiedente']), "L'Ufficio Servizi Cimiteriali"]);
   doc.salva(`CimiTera_pratica_${p.numero.replace(/\//g, '-')}.pdf`);
+}
+
+/** I documenti dei dati dimostrativi non hanno un file vero: questo foglio lo sostituisce. */
+export async function pdfDocumentoDemo(d: { nome: string; categoria: string; defunto?: string; caricatoIl: string; caricatoDa: string }, schedaId: string) {
+  const doc = new Documento('', `Scheda ${schedaId}`);
+  doc.intestazione(d.categoria, d.nome);
+  doc.righe([
+    ['Scheda', schedaId],
+    ['Defunto', d.defunto ?? '—'],
+    ['Caricato il', data(d.caricatoIl.slice(0, 10))],
+    ['Caricato da', d.caricatoDa],
+  ]);
+  doc.pag.y += 4;
+  doc.paragrafo('Documento di esempio. Nei dati dimostrativi il file manca: questo foglio lo sostituisce. I documenti che carichi tu si aprono così come sono.');
+  doc.salva(`CimiTera_${d.nome.replace(/[^\w.-]+/g, '_')}`.replace(/\.pdf$/i, '') + '.pdf');
+}
+
+/** Cartello A4 da appendere all'ingresso del cimitero: il QR porta alla pagina del cittadino. */
+export async function pdfCartelloQr(qr: string, cim: { nome: string; comune: string }, indirizzo: string) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, 210, 58, 'F');
+  doc.setFillColor(121, 170, 79);
+  doc.rect(0, 58, 210, 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(15);
+  doc.text(`Comune di ${cim.comune}`, 105, 22, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(26);
+  doc.text(cim.nome, 105, 38, { align: 'center' });
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(34);
+  doc.text('Cerca un defunto', 105, 86, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(15);
+  doc.setTextColor(...TESTO);
+  doc.text('Inquadra il codice con la fotocamera del telefono.', 105, 99, { align: 'center' });
+  doc.text('Scrivi il nome: vedi dove si trova e come arrivarci.', 105, 107, { align: 'center' });
+  doc.addImage(qr, 'PNG', 50, 120, 110, 110);
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(45, 115, 120, 120, 5, 5);
+  doc.setFontSize(10.5);
+  doc.setTextColor(...GRIGIO);
+  doc.text(doc.splitTextToSize(indirizzo, 170), 105, 246, { align: 'center' });
+  doc.setFontSize(12);
+  doc.setTextColor(...TESTO);
+  doc.text('Non serve scaricare niente. Il servizio è gratuito.', 105, 262, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setTextColor(...GRIGIO);
+  doc.line(20, 283, 190, 283);
+  doc.text('CimiTera · Una soluzione DAT | HYA Group', 105, 288, { align: 'center' });
+  doc.save(`CimiTera_cartello_QR_${cim.nome.replace(/[^A-Za-z0-9]+/g, '_')}.pdf`);
 }

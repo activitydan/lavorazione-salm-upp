@@ -1367,7 +1367,8 @@ def nuovo_alert(dest, titolo, messaggio, link, giorni_fa=0, livello="info"):
                       livello=livello, titolo=titolo, messaggio=messaggio, link=link))
 
 CAT_LABEL = {"lapide_danneggiata": "Lapide danneggiata", "infiltrazioni": "Infiltrazioni d'acqua", "lampada_guasta": "Lampada votiva guasta",
-             "vegetazione": "Vegetazione infestante", "cedimento": "Cedimento strutturale", "pulizia": "Pulizia straordinaria"}
+             "vegetazione": "Vegetazione infestante", "cedimento": "Cedimento strutturale", "pulizia": "Pulizia straordinaria",
+             "viali": "Viali e pavimentazione", "verde": "Cura del verde"}
 def data_it(iso):
     return f"{iso[8:10]}/{iso[5:7]}/{iso[0:4]}"
 for oid in OP_IDS:
@@ -1406,6 +1407,222 @@ for qid, nome, colore, rect in QUADRANTI:
 viali = [dict(id=f"v-{i + 1}", cimiteroId="ragusa-centro", nome=n, tracciato=[to_ll(p) for p in pts]) for i, (n, pts) in enumerate(VIALI_PX)]
 aree_out = [dict(id=f"a-{i + 1}", cimiteroId="ragusa-centro", nome=a["nome"], tipo=a["tipo"], poligono=[to_ll(p) for p in a["poly"]]) for i, a in enumerate(aree)]
 
+# ---------------------------------------------------------------------------
+# Dalla chiamata con il cliente: accessi e richieste delle agenzie, sepolture provvisorie, concessioni perpetue,
+# posti prenotati, loculi doppi e tripli, scritte sulle lapidi, documenti, manutenzioni sulle parti comuni.
+# Tutto in fondo: quello che c'è prima resta com'era.
+# ---------------------------------------------------------------------------
+
+# --- agenzie: le prime sei possono entrare in CimiTera ---
+for i, a in enumerate(agenzie):
+    if a["attiva"] and i < 6:
+        a["accesso"] = True
+        a["ultimoAccesso"] = f"{(OGGI - dt.timedelta(days=rng.randint(0, 6))).isoformat()}T{rng.randint(8, 18):02d}:{rng.choice([5, 20, 35, 50]):02d}"
+CON_ACCESSO = [a["id"] for a in agenzie if a.get("accesso")]
+
+richieste = []
+
+
+def nuova_richiesta(ag, tipo, defunto, richiedente, quando, stato, inviata, **extra):
+    r = dict(id=f"ra-{len(richieste) + 1:04d}", numero=f"RA-{inviata.year}/{len(richieste) + 1:04d}", agenziaId=ag, cimiteroId="ragusa-centro", tipo=tipo,
+             defunto=defunto, richiedente=richiedente, dataOra=quando, stato=stato, inviataIl=inviata.isoformat())
+    r.update(extra)
+    richieste.append(r)
+    return r
+
+
+# le operazioni in programma delle agenzie con l'accesso nascono da una loro richiesta, già accolta
+for pr in pratiche:
+    if pr["stato"] == "programmata" and pr.get("agenziaId") in CON_ACCESSO and not pr["dUfficio"]:
+        r = nuova_richiesta(pr["agenziaId"], pr["tipo"], dict(pr["defunto"]), dict(pr["richiedente"]), pr["dataOra"], "accolta", dt.date.fromisoformat(pr["apertaIl"]), praticaId=pr["id"])
+        pr["richiestaId"] = r["id"]
+
+
+def appena_morto():
+    d = persona(recente=True)
+    morte = OGGI - dt.timedelta(days=rng.randint(1, 3))
+    d["dataMorte"] = morte.isoformat()
+    d["dataNascita"] = (morte - dt.timedelta(days=rng.randint(62, 96) * 365 + rng.randint(0, 364))).isoformat()
+    return d
+
+
+# richieste che aspettano l'ufficio, e una rifiutata
+for ag, tipo, giorni, ora, nota in [
+    (CON_ACCESSO[0], "tumulazione", 2, "10:00", "La famiglia ha già un loculo in concessione"),
+    (CON_ACCESSO[1], "inumazione", 3, "09:30", None),
+    (CON_ACCESSO[0], "tumulazione", 4, "11:30", "Sepoltura provvisoria: il posto definitivo si libera a fine mese"),
+    (CON_ACCESSO[2], "tumulazione", 6, "15:00", None),
+]:
+    d = appena_morto()
+    nuova_richiesta(ag, tipo, d, {**richiedente_di(d), "indirizzo": indirizzo()}, f"{(OGGI + dt.timedelta(days=giorni)).isoformat()}T{ora}", "in_attesa", OGGI - dt.timedelta(days=rng.randint(0, 1)),
+                    **({"note": nota} if nota else {}))
+d = appena_morto()
+d["dataMorte"] = (OGGI - dt.timedelta(days=12)).isoformat()
+nuova_richiesta(CON_ACCESSO[1], "tumulazione", d, {**richiedente_di(d), "indirizzo": indirizzo()}, f"{(OGGI - dt.timedelta(days=8)).isoformat()}T16:00", "rifiutata", OGGI - dt.timedelta(days=10),
+                motivoRifiuto="Giorno e ora non disponibili: c'è già un funerale")
+
+# --- cosa non si può toccare: le schede già citate da qualche parte ---
+citate = set()
+for c in concessioni:
+    citate.update(c["schedeIds"])
+for u in utenze:
+    citate.add(u["schedaId"])
+for pr in pratiche:
+    citate.update(x for x in (pr["schedaId"], pr.get("schedaArrivoId"), (pr.get("esitoResti") or {}).get("schedaId")) if x)
+for mm in manutenzioni:
+    citate.add(mm["schedaId"])
+for v in verifiche:
+    citate.add(v["schedaId"])
+for i in invii:
+    if i.get("schedaId"):
+        citate.add(i["schedaId"])
+for x in defunti_altrove:
+    citate.add(x["daSchedaId"])
+COLOMBARI = {st["id"] for st in strutture if st["tipo"] == "colombaio"}
+per_cella = {}
+for s in schede:
+    p = s.get("posizione")
+    if p:
+        per_cella[(p["strutturaId"], p["faccia"], p["fila"], p["colonna"])] = s
+
+# --- loculi doppi e tripli: il posto prende anche lo spazio libero alla sua destra ---
+da_togliere = set()
+larghi = 0
+candidati = [s for s in schede if s.get("posizione") and s["posizione"]["strutturaId"] in COLOMBARI and s["tipologia"] == "loculo"]
+rng.shuffle(candidati)
+for s in candidati:
+    if larghi >= 16:
+        break
+    p = s["posizione"]
+    if s["id"] in da_togliere or p.get("spazi") or len(s["defunti"]) > 1 or s["stato"] not in ("occupato", "libero"):
+        continue
+    vuole = 3 if larghi % 5 == 4 else 2
+    vicini = [per_cella.get((p["strutturaId"], p["faccia"], p["fila"], p["colonna"] + k)) for k in range(1, vuole)]
+    if any(v is None or v["id"] in citate or v["id"] in da_togliere or v["defunti"] or v["stato"] != "libero" or v["posizione"].get("spazi") for v in vicini):
+        continue
+    # il posto a sinistra non deve già allargarsi su questo
+    sinistra = per_cella.get((p["strutturaId"], p["faccia"], p["fila"], p["colonna"] - 1))
+    if sinistra is not None and sinistra["posizione"].get("spazi"):
+        continue
+    p["spazi"] = vuole
+    da_togliere.update(v["id"] for v in vicini)
+    larghi += 1
+schede[:] = [s for s in schede if s["id"] not in da_togliere]
+
+# --- posti prenotati: in concessione da poco, ancora vuoti ---
+liberi = [s for s in schede if s.get("posizione") and s["posizione"]["strutturaId"] in COLOMBARI and s["tipologia"] == "loculo" and s["stato"] == "libero"
+          and not s["defunti"] and s["id"] not in citate and not s["posizione"].get("spazi")]
+prenotati = rng.sample(liberi, 6)
+for s in prenotati:
+    decorrenza = OGGI - dt.timedelta(days=rng.randint(20, 400))
+    cognome = rng.choice(COGNOMI)
+    c = dict(id=f"conc-{len(concessioni) + 1:05d}", numero=numero_concessione(decorrenza.year), cimiteroId="ragusa-centro", dataStipula=decorrenza.isoformat(),
+             provvedimento=f"Determina n. {rng.randint(100, 999)}/{decorrenza.year}", tipo="loculo", schedeIds=[s["id"]], postiTotali=1,
+             concessionari=[persona_concessionario(cognome)], decorrenza=decorrenza.isoformat(), durataAnni=60, rinnovi=0,
+             regola="Regolamento comunale: loculo 60 anni, rinnovo 10", scadenza=anni_dopo(decorrenza, 60).isoformat(), stato="attiva",
+             storico=[dict(data=decorrenza.isoformat(), azione="Nuova concessione", atto=f"Contratto rep. {rng.randint(100, 9999)}", operatore="Ufficio Cimiteri")])
+    concessioni.append(c)
+    citate.add(s["id"])
+    nuovo_avviso("concessione", c["id"], f"Concessione {c['numero']} · nuova concessione", intest_conc(c),
+                 [dict(descrizione="Tariffa di nuova concessione · loculo", importo=TARIFFE_CONC["loculo"][0])], decorrenza, "pagato")
+    s["note"] = "Posto prenotato: in concessione, ancora vuoto"
+
+# --- concessioni perpetue: le tombe di famiglia nate prima del 1976, lontane da ogni scadenza ---
+con_lettera = {i.get("concessioneId") for i in invii} | {a["riferimentoId"] for a in avvisi if a["motivo"] == "concessione"}
+limite = (OGGI + dt.timedelta(days=365 * 5)).isoformat()
+for c in concessioni:
+    if c["tipo"] == "tomba_famiglia" and c["stato"] == "attiva" and c["decorrenza"] < "1976-02-10" and c["scadenza"] > limite and c["id"] not in con_lettera and not c["rinnovi"]:
+        c.update(perpetua=True, durataAnni=0, scadenza="9999-12-31", regola="Concessione perpetua: contratto anteriore al 1976")
+
+# --- chi è il concessionario per il defunto: figlio, moglie, erede... ---
+LEGAMI_CONC = ["figlio", "figlia", "moglie", "marito", "nipote", "erede", "fratello", "sorella"]
+con_defunti = {s["id"] for s in schede if s["defunti"]}
+for c in concessioni:
+    if any(x in con_defunti for x in c["schedeIds"]):
+        for x in c["concessionari"]:
+            if x["tipo"] == "persona":
+                x["legameDefunto"] = "erede" if len(c["concessionari"]) > 1 else rng.choice(LEGAMI_CONC)
+
+# --- sepolture provvisorie: in attesa del posto definitivo ---
+recenti = [s for s in schede if s["tipologia"] == "loculo" and s["stato"] == "occupato" and len(s["defunti"]) == 1 and (s["defunti"][0].get("dataMorte") or "") >= "2025-06-01"
+           and not any(pr["schedaId"] == s["id"] and pr["stato"] in ("aperta", "programmata") for pr in pratiche)]
+provv = rng.sample(recenti, 4)
+arrivi = [s for s in schede if s.get("posizione") and s["tipologia"] == "loculo" and s["stato"] == "libero" and not s["defunti"] and s["id"] not in citate and not s["posizione"].get("spazi")]
+for k, s in enumerate(provv):
+    d = s["defunti"][0]
+    dal = dt.date.fromisoformat(d["dataMorte"]) + dt.timedelta(days=3)
+    fino = [OGGI + dt.timedelta(days=3), OGGI + dt.timedelta(days=5), None, OGGI + dt.timedelta(days=45)][k]
+    d["provvisorio"] = dict(dal=dal.isoformat(), **({"fino": fino.isoformat()} if fino else {}))
+# "giorno 3 bisogna spostare Tizio": la traslazione nel posto definitivo è già programmata
+s = provv[0]
+arrivo = arrivi[0]
+citate.add(arrivo["id"])
+nuova_pratica("traslazione", s, s["defunti"][0], OGGI - dt.timedelta(days=4), "programmata", d_ufficio=True, giorno=OGGI + dt.timedelta(days=3), ora=(9, 30),
+              schedaArrivoId=arrivo["id"], note="Dal posto provvisorio a quello definitivo")
+
+# --- scritte sulle lapidi ---
+EPIGRAFI = ["I tuoi cari ti ricordano con affetto", "Riposa in pace", "Il tuo ricordo vive nei nostri cuori", "La moglie e i figli posero", "Visse per la famiglia e per il lavoro",
+            "Sempre nei nostri cuori", "I figli e i nipoti con affetto", "Una vita dedicata alla famiglia", "Il Signore ti accolga nella sua pace", "Con infinito amore, i tuoi cari",
+            "Sposo e padre esemplare", "Madre amorevole, la ricordano i figli"]
+for s in schede:
+    if s["defunti"] and s["tipologia"] != "struttura" and rng.random() < 0.22:
+        s["epigrafe"] = rng.choice(EPIGRAFI)
+
+# --- documenti caricati nelle schede (nei dati demo il file non c'è: lo sostituisce un foglio d'esempio) ---
+per_id = {s["id"]: s for s in schede}
+
+
+def documento(s, categoria, defunto, giorno, n):
+    nome = f"{categoria.replace(' ', '_').replace(chr(39), '')}_{defunto['cognome'].replace(' ', '_')}.pdf"
+    s.setdefault("documenti", []).append(dict(id=f"DOC-{s['id'][-6:]}-{n}", nome=nome, categoria=categoria, defunto=f"{defunto['nome']} {defunto['cognome']}", fileId="demo",
+                                              mime="application/pdf", dimensione=rng.randint(120, 480) * 1024, caricatoIl=f"{giorno}T{rng.randint(9, 12):02d}:{rng.choice([10, 25, 40]):02d}",
+                                              caricatoDa="Ufficio Cimiteri"))
+
+
+for pr in pratiche:
+    if pr["stato"] == "eseguita" and pr["tipo"] in ("inumazione", "tumulazione") and pr["schedaId"] in per_id:
+        s = per_id[pr["schedaId"]]
+        documento(s, "Certificato di morte", pr["defunto"], pr["apertaIl"], 1)
+        documento(s, "Autorizzazione alla sepoltura", pr["defunto"], pr["apertaIl"], 2)
+
+# --- manutenzioni sulle parti comuni: viali, aree, strutture ---
+NOMI_VIALI = [n for n, _ in VIALI_PX]
+NOMI_AREE = [a["nome"] for a in aree]
+COMUNI = [
+    ("viali", NOMI_VIALI[0], "Buche nella pavimentazione: sistemare il viale", "alta", "programmata", 2),
+    ("verde", NOMI_AREE[1 % len(NOMI_AREE)], "Sfalcio dell'erba e potatura delle siepi", "media", "programmata", 1),
+    ("pulizia", NOMI_VIALI[1 % len(NOMI_VIALI)], "Pulizia dopo la commemorazione dei defunti", "media", "programmata", 0),
+    ("viali", NOMI_VIALI[2 % len(NOMI_VIALI)], "Cordolo staccato vicino alla fontana", "media", "aperta", None),
+    ("verde", NOMI_AREE[0], "Albero pericolante da controllare", "urgente", "aperta", None),
+    ("infiltrazioni", "Colombario Ovest", "Grondaia otturata sul lato nord", "alta", "programmata", 6),
+    ("pulizia", "Ingresso", "Cestini da svuotare e ingresso da pulire", "bassa", "risolta", -5),
+]
+for cat, luogo, descr, prio, stato, giorni in COMUNI:
+    man_seq += 1
+    segn = OGGI - dt.timedelta(days=rng.randint(2, 12))
+    mm = dict(id=f"MAN-2026-{man_seq:04d}", schedaId="", luogo=luogo, cimiteroId="ragusa-centro", categoria=cat, priorita=prio, stato=stato, descrizione=descr,
+              segnalataDa="ufficio", segnalataIl=segn.isoformat())
+    if stato in ("programmata", "risolta"):
+        mm["operatoriIds"] = rng.sample(OP_IDS, 2)
+        mm["dataProgrammata"] = (OGGI + dt.timedelta(days=giorni)).isoformat()
+    if stato == "risolta":
+        mm.update(risoltaIl=mm["dataProgrammata"], noteRisoluzione="Lavoro fatto", fotoRisoluzione="demo")
+    manutenzioni.append(mm)
+manutenzioni.sort(key=lambda x: x["segnalataIl"])
+
+# --- alert: le categorie per i filtri della campanella, e quelli delle agenzie ---
+for a in alert:
+    a["categoria"] = "manutenzione"
+for r in richieste:
+    if r["stato"] == "accolta":
+        pr = next(x for x in pratiche if x["id"] == r["praticaId"])
+        nuovo_alert(f"agenzia:{r['agenziaId']}", "Operazione programmata", f"{r['tipo'].capitalize()} · {r['defunto']['nome']} {r['defunto']['cognome']}: l'ufficio ha confermato giorno e ora",
+                    f"/pratiche?id={pr['id']}", giorni_fa=1)
+        alert[-1]["categoria"] = r["tipo"]
+    elif r["stato"] == "rifiutata":
+        nuovo_alert(f"agenzia:{r['agenziaId']}", "Richiesta rifiutata", f"{r['tipo'].capitalize()} · {r['defunto']['nome']} {r['defunto']['cognome']} · {r['motivoRifiuto']}", "/richieste", giorni_fa=9, livello="attenzione")
+        alert[-1]["categoria"] = r["tipo"]
+
 # i lotti si numerano in ordine di data
 for n, l in enumerate(sorted(lotti, key=lambda x: x["data"]), 1):
     l["numero"] = n
@@ -1413,7 +1630,7 @@ for n, l in enumerate(sorted(lotti, key=lambda x: x["data"]), 1):
 dataset = dict(
     versione=1, generatoIl=OGGI.isoformat(), avviso="Dati dimostrativi: nominativi, date e stati sono inventati.",
     cimiteri=cimiteri, quadranti=quadranti, viali=viali, aree=aree_out, strutture=strutture, operatori=OPERATORI,
-    schede=schede, concessioni=concessioni, utenze=utenze, pratiche=pratiche, agenzie=agenzie, defuntiAltrove=defunti_altrove, avvisi=avvisi, lotti=lotti, invii=invii, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
+    schede=schede, concessioni=concessioni, utenze=utenze, pratiche=pratiche, agenzie=agenzie, richieste=richieste, defuntiAltrove=defunti_altrove, avvisi=avvisi, lotti=lotti, invii=invii, manutenzioni=manutenzioni, verifiche=verifiche, alert=alert,
 )
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -1434,3 +1651,7 @@ print("pratiche:", len(pratiche), dict(Counter(x["stato"] for x in pratiche)), d
 print("utenze votive:", len(utenze), dict(Counter(u["stato"] for u in utenze)), "| lampade da controllare:", sum(1 for s in schede if s.get("lampadaAccesa")))
 print("manutenzioni:", dict(Counter(mm["stato"] for mm in manutenzioni)), "| verifiche:", dict(Counter(v["stato"] for v in verifiche)))
 print("ultima scheda:", schede[-1]["id"], schede[-1]["rilevatoIl"])
+print("richieste delle agenzie:", len(richieste), dict(Counter(r["stato"] for r in richieste)), "| agenzie con accesso:", len(CON_ACCESSO))
+print("loculi larghi:", larghi, "| schede tolte:", len(da_togliere), "| prenotati:", len(prenotati), "| perpetue:", sum(1 for c in concessioni if c.get("perpetua")),
+      "| provvisori:", sum(1 for s in schede for d in s["defunti"] if d.get("provvisorio")), "| epigrafi:", sum(1 for s in schede if s.get("epigrafe")),
+      "| documenti:", sum(len(s.get("documenti", [])) for s in schede), "| manutenzioni sulle parti comuni:", sum(1 for m in manutenzioni if m.get("luogo")))

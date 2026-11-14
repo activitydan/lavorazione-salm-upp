@@ -2,7 +2,7 @@
 // (o dall'avvio d'ufficio) fino all'esecuzione. Quando è eseguita, CimiTera aggiorna da sola le schede.
 import { adessoISO, data, nomeCompleto, oggiISO } from '../lib/format';
 import { aggiornaDb, aggiornaScheda, avvisa, firmaCorrente, leggiStato, registra, schedaPerId, toast } from './store';
-import type { AgenziaFunebre, Defunto, DestinazioneResti, Pratica, RegoleComune, Richiedente, Scheda, TipoOperazione } from './types';
+import type { AgenziaFunebre, Defunto, DestinazioneResti, Pratica, RegoleComune, Richiedente, RichiestaAgenzia, Scheda, TipoOperazione } from './types';
 import { annullaAvvisiDellaPratica, emettiAvviso } from './scadenze';
 import { chiudiUtenzePerDefunto, spostaUtenza } from './utenze';
 
@@ -96,6 +96,8 @@ export interface NuovaPratica {
   schedaArrivoId?: string;
   agenziaId?: string;
   utenzaVotiva?: Pratica['utenzaVotiva'];
+  provvisoria?: Pratica['provvisoria'];
+  richiestaId?: string;
   note?: string;
 }
 
@@ -115,6 +117,11 @@ export function apriPratica(d: NuovaPratica, silenzioso = false): Pratica {
       intestatario: { nome: d.richiedente.nome, codiceFiscale: d.richiedente.codiceFiscale, indirizzo: d.richiedente.indirizzo ?? '' },
       voci: [{ descrizione: `Tariffa · ${NOMI_OPERAZIONE[p.tipo].toLowerCase()}`, importo: tariffa }],
     });
+  if (d.richiestaId) {
+    // nata dalla richiesta di un'agenzia: la richiesta è accolta e l'agenzia lo sa
+    aggiornaDb((db) => ({ richieste: db.richieste.map((r) => (r.id === d.richiestaId ? { ...r, stato: 'accolta' as const, praticaId: p.id } : r)) }));
+    if (d.agenziaId) avvisa([`agenzia:${d.agenziaId}`], { categoria: p.tipo, titolo: 'Richiesta accolta', messaggio: `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)}: pratica ${p.numero}`, link: `/pratiche?id=${p.id}` });
+  }
   if (!silenzioso) toast(`Pratica ${p.numero} aperta`);
   return p;
 }
@@ -127,10 +134,13 @@ export function programmaPratica(id: string, dataOra: string, operatoriIds: stri
   const link = `/operazioni?id=${id}`;
   const cosa = `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)}`;
   cambia(id, { stato: 'programmata', dataOra, operatoriIds });
-  avvisa(operatoriIds.filter((o) => !prima.includes(o)), { titolo: 'Operazione assegnata a te', messaggio: `${cosa}, il ${data(dataOra.slice(0, 10))} alle ${dataOra.slice(11, 16)}`, link });
-  avvisa(prima.filter((o) => !operatoriIds.includes(o)), { titolo: 'Assegnazione tolta', messaggio: cosa, link });
+  const quando = `il ${data(dataOra.slice(0, 10))} alle ${dataOra.slice(11, 16)}`;
+  if (p.agenziaId && p.dataOra !== dataOra)
+    avvisa([`agenzia:${p.agenziaId}`], { categoria: p.tipo, livello: p.dataOra ? 'attenzione' : 'info', titolo: p.dataOra ? 'Operazione spostata' : 'Operazione programmata', messaggio: `${cosa}: ${quando}`, link: `/pratiche?id=${id}` });
+  avvisa(operatoriIds.filter((o) => !prima.includes(o)), { categoria: p.tipo, titolo: 'Operazione assegnata a te', messaggio: `${cosa}, il ${data(dataOra.slice(0, 10))} alle ${dataOra.slice(11, 16)}`, link });
+  avvisa(prima.filter((o) => !operatoriIds.includes(o)), { categoria: p.tipo, titolo: 'Assegnazione tolta', messaggio: cosa, link });
   if (p.dataOra && p.dataOra !== dataOra)
-    avvisa(operatoriIds.filter((o) => prima.includes(o)), { livello: 'attenzione', titolo: 'Operazione spostata', messaggio: `${cosa}: ora il ${data(dataOra.slice(0, 10))} alle ${dataOra.slice(11, 16)}`, link });
+    avvisa(operatoriIds.filter((o) => prima.includes(o)), { categoria: p.tipo, livello: 'attenzione', titolo: 'Operazione spostata', messaggio: `${cosa}: ora il ${data(dataOra.slice(0, 10))} alle ${dataOra.slice(11, 16)}`, link });
 }
 
 export function annullaPratica(id: string, motivo: string) {
@@ -138,7 +148,8 @@ export function annullaPratica(id: string, motivo: string) {
   if (!p) return;
   cambia(id, { stato: 'annullata', annullataIl: oggiISO(), motivoAnnullamento: motivo });
   annullaAvvisiDellaPratica(id);
-  avvisa(p.operatoriIds ?? [], { livello: 'attenzione', titolo: 'Operazione annullata', messaggio: `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)} · ${motivo}`, link: `/operazioni?id=${id}` });
+  avvisa(p.operatoriIds ?? [], { categoria: p.tipo, livello: 'attenzione', titolo: 'Operazione annullata', messaggio: `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)} · ${motivo}`, link: `/operazioni?id=${id}` });
+  if (p.agenziaId) avvisa([`agenzia:${p.agenziaId}`], { categoria: p.tipo, livello: 'attenzione', titolo: 'Operazione annullata', messaggio: `${NOMI_OPERAZIONE[p.tipo]} · ${nomeCompleto(p.defunto)} · ${motivo}`, link: `/pratiche?id=${id}` });
   toast('Pratica annullata');
 }
 
@@ -165,12 +176,14 @@ export function eseguiPratica(id: string, esito?: Pratica['esitoResti']) {
   const p = leggiStato().db.pratiche.find((x) => x.id === id);
   if (!p) return;
   const oggi = oggiISO();
-  const titolo = `${NOMI_OPERAZIONE[p.tipo]} eseguita (pratica ${p.numero})`;
+  const titolo = `${NOMI_OPERAZIONE[p.tipo]} eseguita (pratica ${p.numero})${p.provvisoria ? ' · sepoltura provvisoria' : ''}`;
+  // nel posto nuovo il defunto è provvisorio solo se lo dice la pratica: una traslazione senza "provvisoria" lo rende definitivo
+  const arriva: Defunto = { ...p.defunto, provvisorio: p.provvisoria ? { dal: oggi, fino: p.provvisoria.fino } : undefined };
   if (sepoltura(p.tipo)) {
-    mettiDefunto(p.schedaId, p.defunto, titolo);
+    mettiDefunto(p.schedaId, arriva, titolo);
   } else if (p.tipo === 'traslazione') {
     togliDefunto(p.schedaId, p.defunto, titolo);
-    if (p.schedaArrivoId) mettiDefunto(p.schedaArrivoId, p.defunto, titolo);
+    if (p.schedaArrivoId) mettiDefunto(p.schedaArrivoId, arriva, titolo);
     const utenze = leggiStato().db.utenze.filter((u) => u.stato !== 'cessata' && u.schedaId === p.schedaId && u.defunto && u.defunto.nome === p.defunto.nome && u.defunto.cognome === p.defunto.cognome);
     if (p.utenzaVotiva === 'sposta' && p.schedaArrivoId) for (const u of utenze) spostaUtenza(u.id, p.schedaArrivoId);
     else chiudiUtenzePerDefunto(p.schedaId, p.defunto);
@@ -190,8 +203,34 @@ export function eseguiPratica(id: string, esito?: Pratica['esitoResti']) {
 }
 
 // ---------------------------------------------------------------------------
-// Agenzie funebri e regole
+// Agenzie funebri: richieste, accessi e regole
 // ---------------------------------------------------------------------------
+
+export const NOMI_STATO_RICHIESTA: Record<RichiestaAgenzia['stato'], string> = { in_attesa: 'In attesa', accolta: 'Accolta', rifiutata: 'Rifiutata' };
+
+/** L'agenzia chiede un'operazione per un giorno e un'ora: decide l'ufficio, che assegna la postazione aprendo la pratica. */
+export function inviaRichiesta(d: Omit<RichiestaAgenzia, 'id' | 'numero' | 'stato' | 'inviataIl'>): RichiestaAgenzia {
+  const db = leggiStato().db;
+  const anno = oggiISO().slice(0, 4);
+  const n = db.richieste.filter((r) => r.numero.startsWith(`RA-${anno}/`)).length + 1;
+  const r: RichiestaAgenzia = { ...d, id: `ra-${Date.now().toString(36)}`, numero: `RA-${anno}/${String(n).padStart(4, '0')}`, stato: 'in_attesa', inviataIl: oggiISO() };
+  aggiornaDb((x) => ({ richieste: [...x.richieste, r] }));
+  const agenzia = db.agenzie.find((a) => a.id === d.agenziaId)?.nome ?? 'Agenzia funebre';
+  avvisa(['ufficio'], {
+    categoria: d.tipo, livello: 'attenzione', titolo: `Richiesta di ${NOMI_OPERAZIONE[d.tipo].toLowerCase()} da un'agenzia`,
+    messaggio: `${agenzia} · ${nomeCompleto(d.defunto)} · proposta per il ${data(d.dataOra.slice(0, 10))} alle ${d.dataOra.slice(11, 16)}`, link: '/operazioni',
+  });
+  toast(`Richiesta ${r.numero} inviata all'ufficio`);
+  return r;
+}
+
+export function rifiutaRichiesta(id: string, motivo: string) {
+  const r = leggiStato().db.richieste.find((x) => x.id === id);
+  if (!r) return;
+  aggiornaDb((db) => ({ richieste: db.richieste.map((x) => (x.id === id ? { ...x, stato: 'rifiutata' as const, motivoRifiuto: motivo } : x)) }));
+  avvisa([`agenzia:${r.agenziaId}`], { categoria: r.tipo, livello: 'attenzione', titolo: 'Richiesta rifiutata', messaggio: `${NOMI_OPERAZIONE[r.tipo]} · ${nomeCompleto(r.defunto)} · ${motivo}`, link: '/richieste' });
+  toast('Richiesta rifiutata: l\'agenzia è stata avvisata');
+}
 
 export function salvaAgenzia(a: AgenziaFunebre) {
   const prima = leggiStato().db.agenzie.find((x) => x.id === a.id);

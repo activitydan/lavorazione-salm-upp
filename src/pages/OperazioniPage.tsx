@@ -9,11 +9,11 @@ import { Avatar, Field, Modal, Seg, StatoBadge, Tabs } from '../components/ui';
 import { UFFICIO } from '../config/defaults';
 import {
   COLORI_OPERAZIONE, NOMI_DESTINAZIONE, NOMI_OGGETTO, NOMI_OPERAZIONE, STATI_PRATICA, TIPI_OPERAZIONE, annullaPratica, apriPratica, avvisoStagione, eseguiPratica,
-  nomeOperazione, programmaPratica, sepoltura, sovrapposizioni,
+  nomeOperazione, programmaPratica, rifiutaRichiesta, sepoltura, sovrapposizioni,
 } from '../data/pratiche';
 import { indiceSchede, seleziona, toast, useStore } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
-import type { Defunto, DestinazioneResti, Pratica, Richiedente, Scheda, TipoOperazione } from '../data/types';
+import type { Defunto, DestinazioneResti, Pratica, Richiedente, RichiestaAgenzia, Scheda, TipoOperazione } from '../data/types';
 import { utenzeDi } from '../data/utenze';
 import { aggiungiGiorni, data, dataBreve, euro, GIORNI_BREVI, nomeCompleto, normalizza, numero, oggiISO } from '../lib/format';
 import { pdfPratica, pdfRegistro } from '../lib/pdf';
@@ -40,7 +40,8 @@ export function OperazioniPage() {
   const tab: Tab = t === 'agenda' || t === 'registro' ? t : 'pratiche';
   const selId = rotta.query.get('id');
   const pratiche = useStore((s) => s.db.pratiche);
-  const [nuova, setNuova] = useState(false);
+  // false = chiusa, true = vuota, oppure la richiesta dell'agenzia da cui parte
+  const [nuova, setNuova] = useState<boolean | RichiestaAgenzia>(false);
   const sel = selId ? pratiche.find((p) => p.id === selId) : undefined;
   return (
     <div className="page">
@@ -57,12 +58,54 @@ export function OperazioniPage() {
         { id: 'agenda', label: 'Agenda', icon: <CalendarDays size={16} /> },
         { id: 'registro', label: 'Registro', icon: <BookOpenCheck size={16} /> },
       ]} />
+      {tab === 'pratiche' && <RichiesteAgenzie onApri={setNuova} />}
       {tab === 'pratiche' && <Pratiche selId={selId} />}
       {tab === 'agenda' && <Agenda />}
       {tab === 'registro' && <Registro />}
       {sel && <Dettaglio p={sel} onChiudi={() => setQuery('id', null)} />}
-      {nuova && <ModaleNuova onChiudi={() => setNuova(false)} onCreata={(id) => { setNuova(false); setQuery('id', id); }} />}
+      {nuova && <ModaleNuova richiesta={nuova === true ? undefined : nuova} onChiudi={() => setNuova(false)} onCreata={(id) => { setNuova(false); setQuery('id', id); }} />}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Richieste delle agenzie funebri: l'ufficio le accoglie aprendo la pratica, oppure le rifiuta
+// ---------------------------------------------------------------------------
+
+function RichiesteAgenzie({ onApri }: { onApri: (r: RichiestaAgenzia) => void }) {
+  const cim = useCimitero();
+  const db = useStore((s) => s.db);
+  const attesa = db.richieste.filter((r) => r.stato === 'in_attesa' && r.cimiteroId === cim.id).sort((a, b) => a.dataOra.localeCompare(b.dataOra));
+  if (!attesa.length) return null;
+  const rifiuta = (r: RichiestaAgenzia) => {
+    const motivo = window.prompt(`Perché rifiuti la richiesta ${r.numero}? L'agenzia lo legge.`, 'Giorno e ora non disponibili');
+    if (motivo?.trim()) rifiutaRichiesta(r.id, motivo.trim());
+  };
+  return (
+    <section className="card">
+      <div className="card__head"><h3>Richieste delle agenzie funebri <span className="badge badge--arancio badge--sm">{attesa.length} da valutare</span></h3></div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Richiesta</th><th>Agenzia</th><th>Operazione</th><th>Defunto</th><th>Proposta per</th><th>Note</th><th /></tr></thead>
+          <tbody>
+            {attesa.map((r) => (
+              <tr key={r.id}>
+                <td className="id">{r.numero}</td>
+                <td><b>{db.agenzie.find((a) => a.id === r.agenziaId)?.nome ?? '—'}</b></td>
+                <td><span className="badge badge--sm" style={{ background: `${COLORI_OPERAZIONE[r.tipo]}18`, color: COLORI_OPERAZIONE[r.tipo] }}>{NOMI_OPERAZIONE[r.tipo]}</span></td>
+                <td>{nomeCompleto(r.defunto)}<div className="tiny muted">Famiglia: {r.richiedente.nome}</div></td>
+                <td className="nowrap">{dataBreve(r.dataOra.slice(0, 10))} · {r.dataOra.slice(11, 16)}</td>
+                <td className="small">{r.note ?? ''}</td>
+                <td className="nowrap">
+                  <button className="btn btn--xs btn--primary" onClick={() => onApri(r)}>Apri la pratica</button>{' '}
+                  <button className="btn btn--xs" onClick={() => rifiuta(r)}>Rifiuta</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -178,6 +221,7 @@ function Dettaglio({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) {
             {!!p.operatoriIds?.length && (<><dt>Operatori</dt><dd>{p.operatoriIds.map(nome).join(', ')}</dd></>)}
             {p.esitoResti && (<><dt>Resti</dt><dd>{NOMI_DESTINAZIONE[p.esitoResti.destinazione]}{p.esitoResti.schedaId ? `: ${p.esitoResti.schedaId}` : ''}</dd></>)}
             {p.tipo === 'traslazione' && p.utenzaVotiva && (<><dt>Utenza votiva</dt><dd>{p.utenzaVotiva === 'sposta' ? 'Si sposta sulla nuova postazione' : 'Si chiude'}</dd></>)}
+            {p.provvisoria && (<><dt>Sepoltura</dt><dd><span className="badge badge--arancio badge--sm">Provvisoria {p.provvisoria.fino ? `fino al ${data(p.provvisoria.fino)}` : 'senza scadenza'}</span></dd></>)}
             {p.stato === 'annullata' && (<><dt>Annullata il</dt><dd>{data(p.annullataIl)} · {p.motivoAnnullamento}</dd></>)}
             {p.note && (<><dt>Note</dt><dd>{p.note}</dd></>)}
           </dl>
@@ -208,8 +252,10 @@ function Dettaglio({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) {
 
 function ModaleProgramma({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) {
   const operatori = useStore((s) => s.db.operatori).filter((o) => o.attivo || p.operatoriIds?.includes(o.id));
-  const [giorno, setGiorno] = useState(p.dataOra?.slice(0, 10) ?? aggiungiGiorni(oggiISO(), 1));
-  const [orario, setOrario] = useState(p.dataOra?.slice(11, 16) ?? '09:30');
+  // se la pratica nasce dalla richiesta di un'agenzia si parte dal giorno e dall'ora che ha proposto
+  const proposta = useStore((s) => s.db.richieste).find((r) => r.id === p.richiestaId)?.dataOra;
+  const [giorno, setGiorno] = useState((p.dataOra ?? proposta)?.slice(0, 10) ?? aggiungiGiorni(oggiISO(), 1));
+  const [orario, setOrario] = useState((p.dataOra ?? proposta)?.slice(11, 16) ?? '09:30');
   const [scelti, setScelti] = useState<string[]>(p.operatoriIds ?? []);
   const stagione = avvisoStagione({ tipo: p.tipo, straordinaria: p.straordinaria, dataOra: `${giorno}T${orario}` });
   const salva = () => {
@@ -222,6 +268,7 @@ function ModaleProgramma({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) 
       footer={<><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--primary" disabled={!scelti.length || !giorno || !orario} onClick={salva}>Salva</button></>}>
       <div className="col gap-16">
         {stagione && <div className="callout callout--warn"><AlertTriangle size={16} />{stagione}</div>}
+        {proposta && !p.dataOra && <div className="callout">L'agenzia ha proposto il {data(proposta.slice(0, 10))} alle {proposta.slice(11, 16)}.</div>}
         <div className="grid-form">
           <Field label="Data"><input className="input" type="date" value={giorno} onChange={(e) => setGiorno(e.target.value)} /></Field>
           <Field label="Ora"><input className="input" type="time" step={900} value={orario} onChange={(e) => setOrario(e.target.value)} /></Field>
@@ -326,22 +373,25 @@ const POSTAZIONI_PER: Record<TipoOperazione, string[] | null> = {
 };
 const DEFUNTO_VUOTO: Defunto = { nome: '', cognome: '', dataNascita: null, dataMorte: null };
 
-function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (id: string) => void }) {
+function ModaleNuova({ richiesta, onChiudi, onCreata }: { richiesta?: RichiestaAgenzia; onChiudi: () => void; onCreata: (id: string) => void }) {
   const cim = useCimitero();
   const agenzie = useStore((s) => s.db.agenzie).filter((a) => a.attiva);
   const tariffe = useStore((s) => s.db.regole.operazioni.tariffe);
-  const [tipo, setTipo] = useState<TipoOperazione>('tumulazione');
+  const [tipo, setTipo] = useState<TipoOperazione>(richiesta?.tipo ?? 'tumulazione');
   const [straordinaria, setStraordinaria] = useState(false);
   const [dUfficio, setDUfficio] = useState(false);
-  const [oggetto, setOggetto] = useState<Pratica['oggetto']>('salma');
+  const [oggetto, setOggetto] = useState<Pratica['oggetto']>(!richiesta || sepoltura(richiesta.tipo) ? 'salma' : 'resti');
   const [scheda, setScheda] = useState<Scheda | null>(null);
   const [arrivo, setArrivo] = useState<Scheda | null>(null);
-  const [nuovo, setNuovo] = useState<Defunto>(DEFUNTO_VUOTO);
+  const [nuovo, setNuovo] = useState<Defunto>(richiesta?.defunto ?? DEFUNTO_VUOTO);
   const [indice, setIndice] = useState(0);
-  const [richiedente, setRichiedente] = useState<Richiedente>({ nome: '', codiceFiscale: '' });
-  const [agenzia, setAgenzia] = useState('');
+  const [richiedente, setRichiedente] = useState<Richiedente>(richiesta?.richiedente ?? { nome: '', codiceFiscale: '' });
+  const [agenzia, setAgenzia] = useState(richiesta?.agenziaId ?? '');
+  // sepoltura provvisoria: il defunto va in un posto in attesa di quello definitivo
+  const [provvisoria, setProvvisoria] = useState(false);
+  const [fino, setFino] = useState('');
   const [utenza, setUtenza] = useState<'sposta' | 'chiudi'>('sposta');
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(richiesta?.note ?? '');
   const mette = sepoltura(tipo);
   const tipi = POSTAZIONI_PER[tipo];
   const cambiaTipo = (t: TipoOperazione) => {
@@ -362,11 +412,13 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
       cimiteroId: cim.id, tipo, straordinaria: tipo === 'esumazione' || tipo === 'estumulazione' ? straordinaria : undefined, oggetto, dUfficio,
       richiedente: dUfficio ? undefined : richiedente, defunto, schedaId: scheda.id, schedaArrivoId: arrivo?.id, agenziaId: agenzia || undefined,
       utenzaVotiva: tipo === 'traslazione' && haUtenza ? utenza : undefined, note: note.trim() || undefined,
+      provvisoria: provvisoria && (mette || tipo === 'traslazione') ? { fino: fino || undefined } : undefined, richiestaId: richiesta?.id,
     });
+    // l'operazione nasce già programmata per il giorno e l'ora chiesti dall'agenzia? No: decide l'ufficio, con "Programma"
     onCreata(p.id);
   };
   return (
-    <Modal titolo="Nuova pratica" sottotitolo="Una pratica per una sola operazione su un solo defunto." size="lg" onClose={onChiudi}
+    <Modal titolo={richiesta ? `Nuova pratica · richiesta ${richiesta.numero}` : 'Nuova pratica'} sottotitolo={richiesta ? `L'agenzia propone il ${data(richiesta.dataOra.slice(0, 10))} alle ${richiesta.dataOra.slice(11, 16)}. Scegli la postazione: la richiesta risulta accolta.` : 'Una pratica per una sola operazione su un solo defunto.'} size="lg" onClose={onChiudi}
       icona={<span className="list-item__icon" style={{ background: '#EAF2F9', color: '#1B5A8F' }}><FileText size={18} /></span>}
       footer={<><span className="small muted grow">{dUfficio ? 'D\'ufficio: nessuna tariffa' : `Tariffa: ${euro(tariffe[tipo])}`}</span><button className="btn" onClick={onChiudi}>Annulla</button><button className="btn btn--primary" onClick={salva}>Apri la pratica</button></>}>
       <div className="col gap-16">
@@ -400,6 +452,14 @@ function ModaleNuova({ onChiudi, onCreata }: { onChiudi: () => void; onCreata: (
               {scheda.defunti.map((d, i) => <option key={i} value={i}>{nomeCompleto(d)}{d.dataMorte ? ` · † ${data(d.dataMorte)}` : ''}</option>)}
             </select>
           </Field>
+        )}
+        {(mette || tipo === 'traslazione') && (
+          <div className="grid-form">
+            <Field label="Sepoltura" hint={provvisoria ? 'Il defunto resta qui finché non si libera il posto definitivo' : undefined}>
+              <Seg light value={provvisoria ? 'p' : 'd'} onChange={(v) => setProvvisoria(v === 'p')} options={[{ id: 'd', label: 'Definitiva' }, { id: 'p', label: 'Provvisoria' }]} />
+            </Field>
+            {provvisoria && <Field label="Fino al (facoltativo)" hint="Senza data: provvisoria senza scadenza"><input className="input" type="date" min={oggiISO()} value={fino} onChange={(e) => setFino(e.target.value)} /></Field>}
+          </div>
         )}
         {tipo === 'traslazione' && haUtenza && (
           <Field label="Utenza votiva del defunto">

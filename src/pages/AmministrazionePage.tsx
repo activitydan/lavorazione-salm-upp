@@ -1,15 +1,17 @@
-import { useState } from 'react';
-import { Bell, Building2, ClipboardCheck, FileClock, Pencil, Plus, Scale, Users, Wrench, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, Building2, CalendarDays, ClipboardCheck, ExternalLink, FileClock, Pencil, Plus, Printer, QrCode, Scale, Users, Wrench, X } from 'lucide-react';
+import { Calendario } from '../components/Calendario';
 import { RegoleDelComune } from '../components/RegoleComune';
 import { Avatar, Field, Modal, Seg, Switch, Tabs } from '../components/ui';
 import { salvaOperatore, toast, useStore } from '../data/store';
-import { alertPersonali, labelLista } from '../data/selectors';
+import { alertPersonali, labelLista, useCimitero } from '../data/selectors';
 import { NOMI_OPERAZIONE, salvaAgenzia } from '../data/pratiche';
 import type { AgenziaFunebre, Operatore } from '../data/types';
 import { data, dataOra, nomeCompleto } from '../lib/format';
+import { pdfCartelloQr } from '../lib/pdf';
 import { href, setQuery, useRotta } from '../router';
 
-type Tab = 'operatori' | 'agenzie' | 'regole' | 'registro';
+type Tab = 'operatori' | 'agenzie' | 'cittadini' | 'regole' | 'registro';
 const COLORI = ['#2F6FB3', '#8E5BB5', '#1E8C8C', '#C0487A', '#5E9A3A', '#E07B22', '#4F5FB8', '#B8860B', '#D9473F', '#0A2F55'];
 
 /** Amministrazione: le persone e le regole del Comune. Solo per l'Amministratore, solo sul computer. */
@@ -29,11 +31,13 @@ export function AmministrazionePage() {
       <Tabs value={tab} onChange={(t) => setQuery('tab', t === 'operatori' ? null : t)} tabs={[
         { id: 'operatori', label: 'Operatori', icon: <Users size={16} />, count: operatori.filter((o) => o.attivo).length },
         { id: 'agenzie', label: 'Agenzie funebri', icon: <Building2 size={16} />, count: agenzie.filter((a) => a.attiva).length },
+        { id: 'cittadini', label: 'Pagina del cittadino', icon: <QrCode size={16} /> },
         { id: 'regole', label: 'Regole del Comune', icon: <Scale size={16} /> },
         { id: 'registro', label: 'Registro modifiche', icon: <FileClock size={16} />, count: registro.length },
       ]} />
       {tab === 'operatori' && <Operatori />}
       {tab === 'agenzie' && <Agenzie />}
+      {tab === 'cittadini' && <PaginaCittadino />}
       {tab === 'regole' && <RegoleDelComune />}
       {tab === 'registro' && <Registro />}
     </div>
@@ -124,7 +128,7 @@ function PannelloOperatore({ o, onChiudi }: { o: Operatore; onChiudi: () => void
           <div className="col">
             {manutenzioni.map((m) => (
               <a key={m.id} className="mini-row" href={href(`/manutenzioni?id=${m.id}`)}>
-                <span className="grow"><b>{labelLista(config.categorieManutenzione, m.categoria)}</b><span className="small muted"> · {m.schedaId}</span></span>
+                <span className="grow"><b>{labelLista(config.categorieManutenzione, m.categoria)}</b><span className="small muted"> · {m.schedaId || m.luogo}</span></span>
                 <span className="badge badge--sm badge--blu">{data(m.dataProgrammata)}</span>
               </a>
             ))}
@@ -221,6 +225,7 @@ function ModaleAgenzia({ a, onChiudi }: { a?: AgenziaFunebre; onChiudi: () => vo
         <Field label="Nome" className="span-2"><input className="input" value={b.nome} onChange={(e) => set({ nome: e.target.value })} autoFocus /></Field>
         <Field label="Partita IVA"><input className="input mono" value={b.partitaIva} onChange={(e) => set({ partitaIva: e.target.value })} /></Field>
         <Field label="Attiva" hint={b.attiva ? undefined : 'Non si può più scegliere nelle pratiche nuove.'}><Switch on={b.attiva} onChange={(v) => set({ attiva: v })} label="Agenzia attiva" /></Field>
+        <Field label="Accesso a CimiTera" hint="Vede solo le sue operazioni e manda richieste all'ufficio." className="span-2"><Switch on={!!b.accesso} onChange={(v) => set({ accesso: v })} label="Accesso a CimiTera" /></Field>
         <Field label="Telefono"><input className="input" value={b.telefono} onChange={(e) => set({ telefono: e.target.value })} /></Field>
         <Field label="Email"><input className="input" type="email" value={b.email} onChange={(e) => set({ email: e.target.value })} /></Field>
       </div>
@@ -231,7 +236,9 @@ function ModaleAgenzia({ a, onChiudi }: { a?: AgenziaFunebre; onChiudi: () => vo
 function Agenzie() {
   const agenzie = useStore((s) => s.db.agenzie);
   const pratiche = useStore((s) => s.db.pratiche);
+  const richieste = useStore((s) => s.db.richieste);
   const [modale, setModale] = useState<{ a?: AgenziaFunebre } | null>(null);
+  const [calendario, setCalendario] = useState<AgenziaFunebre | null>(null);
   return (
     <section className="card">
       <div className="card__head">
@@ -240,24 +247,72 @@ function Agenzie() {
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Nome</th><th>Partita IVA</th><th>Telefono</th><th>Email</th><th className="num">Pratiche</th><th>Stato</th><th /></tr></thead>
+          <thead><tr><th>Agenzia</th><th>Contatti</th><th>Accesso a CimiTera</th><th className="num">In programma</th><th className="num">In attesa</th><th className="num">Pratiche</th><th /></tr></thead>
           <tbody>
-            {agenzie.map((a) => (
-              <tr key={a.id}>
-                <td><b>{a.nome}</b></td>
-                <td className="mono small">{a.partitaIva}</td>
-                <td className="nowrap">{a.telefono}</td>
-                <td className="small">{a.email}</td>
-                <td className="num">{pratiche.filter((p) => p.agenziaId === a.id).length}</td>
-                <td>{a.attiva ? <span className="badge badge--verde badge--sm">Attiva</span> : <span className="badge badge--sm">Non attiva</span>}</td>
-                <td><button className="btn btn--xs" onClick={() => setModale({ a })}><Pencil size={12} />Modifica</button></td>
-              </tr>
-            ))}
+            {agenzie.map((a) => {
+              const sue = pratiche.filter((p) => p.agenziaId === a.id);
+              return (
+                <tr key={a.id}>
+                  <td><b className="nowrap">{a.nome}</b> {!a.attiva && <span className="badge badge--sm">Non attiva</span>}<div className="tiny muted mono">P. IVA {a.partitaIva}</div></td>
+                  <td className="small nowrap">{a.telefono}<div className="tiny muted">{a.email}</div></td>
+                  <td>
+                    {a.accesso ? <span className="badge badge--verde badge--sm">Può entrare</span> : <span className="badge badge--sm">Nessun accesso</span>}
+                    {a.accesso && <div className="tiny muted nowrap">{a.ultimoAccesso ? `Ultimo accesso ${dataOra(a.ultimoAccesso)}` : 'Mai entrata'}</div>}
+                  </td>
+                  <td className="num">{sue.filter((p) => p.stato === 'programmata').length}</td>
+                  <td className="num">{richieste.filter((r) => r.agenziaId === a.id && r.stato === 'in_attesa').length}</td>
+                  <td className="num">{sue.length}</td>
+                  <td className="nowrap">
+                    <button className="btn btn--xs" onClick={() => setCalendario(a)}><CalendarDays size={12} />Calendario</button>{' '}
+                    <button className="btn btn--xs" onClick={() => setModale({ a })}><Pencil size={12} />Modifica</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {!agenzie.length && <div className="empty"><h3>Nessuna agenzia funebre</h3></div>}
       </div>
       {modale && <ModaleAgenzia a={modale.a} onChiudi={() => setModale(null)} />}
+      {calendario && (
+        <Modal titolo={`Calendario · ${calendario.nome}`} sottotitolo="Le operazioni dell'agenzia e le richieste che aspettano la risposta dell'ufficio." size="xl" onClose={() => setCalendario(null)}>
+          <Calendario agenziaId={calendario.id} />
+        </Modal>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pagina del cittadino: l'indirizzo pubblico e il cartello con il QR da appendere all'ingresso
+// ---------------------------------------------------------------------------
+
+function PaginaCittadino() {
+  const cim = useCimitero();
+  const indirizzo = `${window.location.origin}${window.location.pathname}#/cittadino`;
+  const [qr, setQr] = useState('');
+  useEffect(() => {
+    let vivo = true;
+    void import('qrcode').then((m) => m.toDataURL(indirizzo, { margin: 1, width: 360, color: { dark: '#0A2F55', light: '#FFFFFF' } })).then((u) => vivo && setQr(u));
+    return () => { vivo = false; };
+  }, [indirizzo]);
+  return (
+    <section className="card">
+      <div className="card__head"><h3>Pagina del cittadino</h3></div>
+      <div className="cittadino-qr">
+        <div className="cittadino-qr__img">{qr ? <img src={qr} alt="QR della pagina del cittadino" /> : <div className="spinner" />}</div>
+        <div className="col gap-12">
+          <p>Chi entra al cimitero inquadra il QR con il telefono e cerca un defunto: vede dove si trova e come arrivarci. Non serve scaricare niente e non si entra con un account.</p>
+          <dl className="kv">
+            <dt>Indirizzo</dt><dd className="mono small">{indirizzo}</dd>
+            <dt>Cosa vede</dt><dd>Solo la ricerca, il punto sulla mappa e le indicazioni. Le schede con "Visibile al pubblico" spento non si trovano.</dd>
+          </dl>
+          <div className="row row--wrap gap-8">
+            <button className="btn btn--primary" disabled={!qr} onClick={() => void pdfCartelloQr(qr, cim, indirizzo)}><Printer size={15} />Stampa il cartello per l'ingresso</button>
+            <a className="btn" href={href('/cittadino')} target="_blank" rel="noreferrer"><ExternalLink size={15} />Apri la pagina</a>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
