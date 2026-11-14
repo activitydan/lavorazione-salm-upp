@@ -187,3 +187,12 @@
 .canale { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
 .canale.is-on { border-color: var(--blu); background: var(--blu-50); }
 .canale .grow { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---------- Menu laterale: ogni voce su una riga sola, tutte allineate ---------- */
+@media (min-width: 1181px) {
+  :root { --sidebar-w: 236px; }
+  .sidebar .nav-item { padding: 0 12px 0 14px; gap: 12px; }
+}
+.sidebar .nav-item { font-size: 14px; }
+.sidebar .nav-item > span { letter-spacing: 0.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sidebar .nav-sep { margin: 14px 14px 6px; }
