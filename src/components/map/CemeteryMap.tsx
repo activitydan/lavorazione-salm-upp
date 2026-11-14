@@ -218,13 +218,21 @@ export function CemeteryMap(props: CemeteryMapProps) {
     const cerchi: L.CircleMarker[] = [];
     const sat = stile === 'satellite';
 
+    // bordo bianco dei pallini sul satellite: 2,1 px (prima 1,4)
+    const BORDO_PIN = 2.1;
+    const ALLARGA = (BORDO_PIN - 1.4) / 2;
+    const bianco = (libero: boolean) => sat && !libero;
+    const conBordoBianco = new Set<L.CircleMarker>();
+
     const pin = (s: Scheda, extra?: number) => {
       const c = colore(s);
       const libero = c.toUpperCase() === '#FFFFFF';
       const cm = L.circleMarker([s.lat, s.lng], {
-        renderer, radius: r0, fillColor: c, fillOpacity: 1, color: libero ? '#5f6f82' : sat ? '#ffffff' : '#1d2b3d',
-        weight: libero ? 2 : sat ? 1.4 : 1, opacity: libero ? 1 : sat ? 0.95 : 0.55,
+        // sul satellite il bordo bianco è spesso: il raggio cresce di poco, così la parte colorata resta grande uguale
+        renderer, radius: r0 + (bianco(libero) ? ALLARGA : 0), fillColor: c, fillOpacity: 1, color: libero ? '#5f6f82' : sat ? '#ffffff' : '#1d2b3d',
+        weight: libero ? 2 : sat ? BORDO_PIN : 1, opacity: libero ? 1 : sat ? 1 : 0.55,
       });
+      if (bianco(libero)) conBordoBianco.add(cm);
       if (!compatta) {
         cm.bindTooltip(`<b>${s.id}</b><br>${descrizioneScheda(s)}${extra ? `<br><span class="tt-extra">${extra} risultati all'interno</span>` : ''}`, {
           direction: 'top', offset: [0, -6], className: 'tt', opacity: 1,
@@ -244,7 +252,8 @@ export function CemeteryMap(props: CemeteryMapProps) {
       const cont = indice.get(st.schedaId);
       const c = cont ? colore(cont) : '#9AA6B2';
       const poly = L.polygon(st.impronta, {
-        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: st.tipo !== 'cappella' ? 1.5 : 1, opacity: 0.9,
+        // sul satellite il bordo bianco delle strutture è più spesso di prima (era 1,5 e 1)
+        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: (st.tipo !== 'cappella' ? 1.5 : 1) * (sat ? 1.5 : 1), opacity: sat ? 1 : 0.9,
         fillColor: c.toUpperCase() === '#FFFFFF' ? '#E7ECF1' : c, fillOpacity: st.tipo !== 'cappella' ? 0.62 : 0.5,
       });
       if (!compatta)
@@ -276,7 +285,7 @@ export function CemeteryMap(props: CemeteryMapProps) {
     }
     const suZoom = () => {
       const r = raggioPin(mappa.getZoom());
-      for (const c of cerchi) c.setRadius(r);
+      for (const c of cerchi) c.setRadius(r + (conBordoBianco.has(c) ? ALLARGA : 0));
     };
     mappa.on('zoomend', suZoom);
     return () => {
