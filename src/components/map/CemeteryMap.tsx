@@ -218,8 +218,8 @@ export function CemeteryMap(props: CemeteryMapProps) {
     const cerchi: L.CircleMarker[] = [];
     const sat = stile === 'satellite';
 
-    // bordo bianco dei pallini sul satellite: sottile, 0,8 px (in origine 1,4)
-    const BORDO_PIN = 0.8;
+    // bordo bianco dei pallini sul satellite: 1 px, come strutture ed etichette (in origine 1,4)
+    const BORDO_PIN = 1;
     const ALLARGA = (BORDO_PIN - 1.4) / 2;
     const bianco = (libero: boolean) => sat && !libero;
     const conBordoBianco = new Set<L.CircleMarker>();
@@ -252,8 +252,8 @@ export function CemeteryMap(props: CemeteryMapProps) {
       const cont = indice.get(st.schedaId);
       const c = cont ? colore(cont) : '#9AA6B2';
       const poly = L.polygon(st.impronta, {
-        // sul satellite il bordo bianco delle strutture è più sottile di prima (era 1,5 e 1)
-        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: (st.tipo !== 'cappella' ? 1.5 : 1) * (sat ? 0.6 : 1), opacity: sat ? 1 : 0.9,
+        // sul satellite il bordo bianco di tutte le strutture è di 1 px (era 1,5 per i colombari e 1 per le cappelle)
+        pane: 'strutture', color: sat ? '#ffffff' : '#334155', weight: sat ? 1 : st.tipo !== 'cappella' ? 1.5 : 1, opacity: sat ? 1 : 0.9,
         fillColor: c.toUpperCase() === '#FFFFFF' ? '#E7ECF1' : c, fillOpacity: st.tipo !== 'cappella' ? 0.62 : 0.5,
       });
       if (!compatta)
