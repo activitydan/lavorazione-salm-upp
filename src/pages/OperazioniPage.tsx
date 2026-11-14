@@ -16,7 +16,7 @@ import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { Defunto, DestinazioneResti, Pratica, Richiedente, Scheda, TipoOperazione } from '../data/types';
 import { utenzeDi } from '../data/utenze';
 import { aggiungiGiorni, data, dataBreve, euro, GIORNI_BREVI, nomeCompleto, normalizza, numero, oggiISO } from '../lib/format';
-import { pdfRegistro } from '../lib/pdf';
+import { pdfPratica, pdfRegistro } from '../lib/pdf';
 import { setQuery, useRotta } from '../router';
 
 type Tab = 'pratiche' | 'agenda' | 'registro';
@@ -192,6 +192,7 @@ function Dettaglio({ p, onChiudi }: { p: Pratica; onChiudi: () => void }) {
           )}
         </div>
         <div className="modal__foot">
+          <button className="btn" onClick={() => void pdfPratica(p, db)}><Printer size={15} />Stampa la pratica</button>
           {s && <button className="btn" onClick={() => { onChiudi(); seleziona(s.id); }}><ExternalLink size={15} />Apri scheda</button>}
           {inCorso && <button className="btn" onClick={() => setModale('programma')}><CalendarClock size={15} />{p.stato === 'programmata' ? 'Sposta' : 'Programma'}</button>}
           {inCorso && <button className="btn" onClick={() => setModale('annulla')}><Ban size={15} />Annulla</button>}

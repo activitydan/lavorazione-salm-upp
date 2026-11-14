@@ -245,7 +245,11 @@ def persona(cognome=None, era=(1950, 2026), sesso=None, recente=False):
     sesso = sesso or rng.choice("MF")
     nome = rng.choice(NOMI_M if sesso == "M" else NOMI_F)
     if rng.random() < 0.08:
-        nome = nome + " " + rng.choice(NOMI_M if sesso == "M" else NOMI_F)
+        lista = NOMI_M if sesso == "M" else NOMI_F
+        secondo = rng.choice(lista)
+        if secondo == nome:  # mai "Marco Marco": si prende il nome dopo nell'elenco
+            secondo = lista[(lista.index(secondo) + 1) % len(lista)]
+        nome = nome + " " + secondo
     cognome = cognome or rng.choice(COGNOMI)
     a, b = era
     if recente:

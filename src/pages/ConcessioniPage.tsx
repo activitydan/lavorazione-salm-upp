@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Ban, Download, FileSignature, History, Plus, RefreshCw, ScrollText, Search, ShieldAlert, Trash2, UserRoundPlus, Users, X } from 'lucide-react';
+import { Ban, Download, FileSignature, History, Plus, Printer, RefreshCw, ScrollText, Search, ShieldAlert, Trash2, UserRoundPlus, Users, X } from 'lucide-react';
 import { AvvisiDi, Moroso } from '../components/Avvisi';
 import { BarraPagine, paginaDi } from '../components/Esporta';
 import { EditorConcessionari, SOGGETTO_VUOTO, soggettoIncompleto } from '../components/Soggetti';
@@ -14,6 +14,7 @@ import { indiceSchede, seleziona, toast, useStore } from '../data/store';
 import { descrizioneScheda, useCimitero } from '../data/selectors';
 import type { AventeDiritto, Concessionario, Concessione, Scheda } from '../data/types';
 import { scaricaExcel } from '../lib/excel';
+import { pdfContrattoConcessione } from '../lib/pdf';
 import { data, normalizza, numero, oggiISO } from '../lib/format';
 import { setQuery, useRotta } from '../router';
 
@@ -285,6 +286,7 @@ function Dettaglio({ c, onChiudi }: { c: Concessione; onChiudi: () => void }) {
           </div>
         </div>
         <div className="modal__foot">
+          <button className="btn" onClick={() => void pdfContrattoConcessione(c, db)}><Printer size={15} />Stampa il contratto</button>
           <button className="btn" onClick={() => setAzione('rinnovo')}><RefreshCw size={15} />Rinnova</button>
           {!chiusa && <button className="btn" onClick={() => setAzione('subentro')}><UserRoundPlus size={15} />Subentro</button>}
           {!chiusa && <button className="btn" onClick={() => setAzione('rinuncia')}><Ban size={15} />Rinuncia</button>}

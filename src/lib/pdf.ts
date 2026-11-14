@@ -1,8 +1,12 @@
 import { jsPDF } from 'jspdf';
 import { campiPer, concessioneScheda, descrizioneScheda, labelLista, statoConcessione, statoDef, tipologiaDef, valoreLeggibile } from '../data/selectors';
-import type { ConfigScheda, Database, Scheda } from '../data/types';
+import { NOMI_MOTIVO, NOMI_TIPO_CONCESSIONE, nomeSoggetto, statoEffettivo } from '../data/concessioni';
+import { NOMI_DESTINAZIONE, NOMI_OGGETTO, NOMI_OPERAZIONE, STATI_PRATICA, nomeOperazione } from '../data/pratiche';
+import { statoAvviso } from '../data/scadenze';
+import { indiceSchede } from '../data/store';
+import type { AvvisoPagamento, Concessione, ConfigScheda, Database, Pratica, Scheda } from '../data/types';
 import { markDataUrl } from './brand';
-import { data, decedutoDa, eta, nomeCompleto, oggiISO, dataOra } from './format';
+import { adessoISO, data, decedutoDa, eta, nomeCompleto, oggiISO, dataOra } from './format';
 import { fotoUrl, rasterizza } from './photo';
 
 export interface ContestoPdf {
@@ -60,14 +64,14 @@ function chip(doc: jsPDF, x: number, y: number, testo: string, colore: string): 
 
 class Impaginatore {
   y: number;
-  constructor(public doc: jsPDF, y: number, private onNuovaPagina: () => void) {
+  constructor(public doc: jsPDF, y: number, private onNuovaPagina: () => void, private alto = 34) {
     this.y = y;
   }
   spazio(h: number) {
     if (this.y + h > 280) {
       this.doc.addPage();
+      this.y = this.alto;
       this.onNuovaPagina();
-      this.y = 20;
     }
   }
   titolo(t: string) {
@@ -234,7 +238,7 @@ async function paginaScheda(doc: jsPDF, s: Scheda, ctx: ContestoPdf) {
   }
 }
 
-function piedi(doc: jsPDF) {
+function piedi(doc: jsPDF, nota?: string) {
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++) {
     doc.setPage(i);
@@ -243,7 +247,7 @@ function piedi(doc: jsPDF) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...GRIGIO);
-    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group · ${dataOra(new Date().toISOString().slice(0, 16))}`, 14, 291.5);
+    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group${nota ? ` · ${nota}` : ''} · ${dataOra(adessoISO())}`, 14, 291.5);
     doc.text(`${i} / ${n}`, 196, 291.5, { align: 'right' });
   }
 }
@@ -311,7 +315,7 @@ export async function pdfRegistro(titolo: string, righe: string[][], anno: strin
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(...GRIGIO);
-    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group · ${dataOra(new Date().toISOString().slice(0, 16))}`, 14, 203);
+    doc.text(`Generato con CimiTera · Una soluzione DAT | HYA Group · ${dataOra(adessoISO())}`, 14, 203);
     doc.text(`${i} / ${n}`, 283, 203, { align: 'right' });
   }
   doc.save(`CimiTera_registro_operazioni_${anno}.pdf`);
@@ -446,4 +450,311 @@ export async function pdfAvvisoPagamento(a: { numero: string; causale: string; i
   doc.setFontSize(7.5);
   doc.text(`Emesso il ${data(a.emessoIl)} · Una soluzione DAT | HYA Group · FAC-SIMILE: pagoPA simulato, nessun pagamento reale`, 14, 288);
   doc.save(`CimiTera_avviso_${a.numero}.pdf`);
+}
+
+// ---------------------------------------------------------------------------
+// Stampe dell'ufficio: contratto di concessione e fascicolo della pratica.
+// Fac-simile: il testo vero sarà quello del contratto-tipo del Comune.
+// ---------------------------------------------------------------------------
+
+const importo = (n: number) => {
+  const [intero, decimali] = n.toFixed(2).split('.');
+  return `${intero.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${decimali} euro`;
+};
+
+/** Pagina di un documento del Comune: fascia con il Comune, filigrana "Fac-simile", piè di pagina CimiTera. */
+class Documento {
+  doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  pag: Impaginatore;
+  constructor(private comune: string, private destra: string) {
+    this.testata();
+    this.pag = new Impaginatore(this.doc, 36, () => {
+      this.testata();
+      this.pag.y = 36;
+    });
+  }
+  private testata() {
+    const d = this.doc;
+    filigrana(d, 'Fac-simile');
+    d.setFillColor(...NAVY);
+    d.rect(0, 0, 210, 24, 'F');
+    d.setFillColor(121, 170, 79);
+    d.rect(0, 24, 210, 1, 'F');
+    d.setTextColor(255, 255, 255);
+    d.setFont('helvetica', 'bold');
+    d.setFontSize(14);
+    d.text(`Comune di ${this.comune}`, 14, 11);
+    d.setFont('helvetica', 'normal');
+    d.setFontSize(9);
+    d.text('Ufficio Servizi Cimiteriali', 14, 17);
+    d.setFontSize(9);
+    d.text(this.destra, 196, 14, { align: 'right' });
+  }
+  /** Titolo grande, sottotitolo e la riga che ricorda che è un fac-simile. */
+  intestazione(titolo: string, sotto: string, avviso?: string) {
+    const d = this.doc;
+    const p = this.pag;
+    d.setFont('helvetica', 'bold');
+    d.setFontSize(15);
+    d.setTextColor(...NAVY);
+    d.text(titolo, 14, p.y + 2);
+    d.setFont('helvetica', 'normal');
+    d.setFontSize(9.5);
+    d.setTextColor(...TESTO);
+    d.text(sotto, 14, p.y + 9);
+    d.setFontSize(8);
+    d.setTextColor(...GRIGIO);
+    d.text('Fac-simile: testo di esempio. Il testo vero sarà quello dei modelli del Comune.', 14, p.y + 14.5);
+    p.y += 23;
+    if (avviso) {
+      d.setFillColor(253, 236, 234);
+      d.roundedRect(14, p.y - 1, 182, 9, 1.5, 1.5, 'F');
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(9);
+      d.setTextColor(170, 45, 38);
+      d.text(avviso, 18, p.y + 4.6);
+      p.y += 12;
+    }
+  }
+  /** Una riga per voce: etichetta a sinistra, valore a tutta larghezza. */
+  righe(voci: [string, string][]) {
+    const d = this.doc;
+    for (const [k, v] of voci) {
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(9.5);
+      const testo = d.splitTextToSize(v || '—', 136) as string[];
+      const h = testo.length * 4.4 + 1.8;
+      this.pag.spazio(h);
+      d.setFont('helvetica', 'normal');
+      d.setFontSize(8.5);
+      d.setTextColor(...GRIGIO);
+      d.text(k, 14, this.pag.y);
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(9.5);
+      d.setTextColor(...TESTO);
+      d.text(testo, 60, this.pag.y);
+      this.pag.y += h;
+    }
+  }
+  paragrafo(testo: string, rientro = 0) {
+    const d = this.doc;
+    d.setFont('helvetica', 'normal');
+    d.setFontSize(9.5);
+    const righe = d.splitTextToSize(testo, 182 - rientro) as string[];
+    for (const r of righe) {
+      this.pag.spazio(5);
+      d.setFont('helvetica', 'normal');
+      d.setFontSize(9.5);
+      d.setTextColor(...TESTO);
+      d.text(r, 14 + rientro, this.pag.y);
+      this.pag.y += 4.7;
+    }
+    this.pag.y += 1.6;
+  }
+  clausole(testi: string[]) {
+    testi.forEach((t, i) => {
+      this.pag.spazio(5);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setFontSize(9.5);
+      this.doc.setTextColor(...NAVY);
+      this.doc.text(`${i + 1}.`, 14, this.pag.y);
+      this.paragrafo(t, 6);
+    });
+  }
+  /** Spazi per le firme, due per riga. */
+  firme(chi: string[]) {
+    const d = this.doc;
+    this.pag.y += 4;
+    for (let i = 0; i < chi.length; i += 2) {
+      this.pag.spazio(22);
+      chi.slice(i, i + 2).forEach((nome, j) => {
+        const x = 14 + j * 96;
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(8.5);
+        d.setTextColor(...GRIGIO);
+        d.text(d.splitTextToSize(nome, 84) as string[], x, this.pag.y);
+        d.setDrawColor(150, 160, 175);
+        d.line(x, this.pag.y + 13, x + 84, this.pag.y + 13);
+      });
+      this.pag.y += 22;
+    }
+  }
+  /** Luogo, data e firme: sempre insieme, sulla stessa pagina. */
+  chiusura(testo: string, chi: string[]) {
+    this.pag.spazio(16 + Math.ceil(chi.length / 2) * 22);
+    this.pag.y += 4;
+    this.paragrafo(testo);
+    this.firme(chi);
+  }
+  salva(nome: string) {
+    piedi(this.doc, 'Fac-simile');
+    this.doc.save(nome);
+  }
+}
+
+function postazione(s: Scheda | undefined, db: Database): string {
+  if (!s) return '—';
+  const str = s.posizione ? db.strutture.find((x) => x.id === s.posizione!.strutturaId) : undefined;
+  const dove = str && s.posizione ? ` · ${str.nome}, ${str.facce[s.posizione.faccia]?.nome ?? ''} fila ${s.posizione.fila} colonna ${s.posizione.colonna}` : '';
+  return `${s.id} · ${descrizioneScheda(s)} · ${s.viale || '—'}${dove}`;
+}
+
+function righeAvviso(a: AvvisoPagamento | undefined): [string, string][] {
+  if (!a) return [['Avviso di pagamento', 'Nessuno']];
+  const st = statoAvviso(a);
+  const stato =
+    st === 'pagato' ? `Pagato il ${data(a.pagatoIl)}${a.ricevuta ? ` · ricevuta ${a.ricevuta}` : ''}` :
+    st === 'annullato' ? `Annullato il ${data(a.annullatoIl)}` :
+    st === 'scaduto' ? `Scaduto il ${data(a.scadenza)}: non ancora pagato` :
+    `Da pagare entro il ${data(a.scadenza)}`;
+  return [['Avviso di pagamento', `${a.numero} · ${importo(a.importo)}`], ['Stato del pagamento', `${stato} (pagoPA simulato)`]];
+}
+
+/** Contratto di concessione cimiteriale, con i dati del contratto e le condizioni di esempio. */
+export async function pdfContrattoConcessione(c: Concessione, db: Database) {
+  const cim = db.cimiteri.find((x) => x.id === c.cimiteroId);
+  const comune = cim?.comune ?? '';
+  const regole = db.regole.concessioni;
+  const e = statoEffettivo(c, db.regole);
+  const doc = new Documento(comune, `Concessione ${c.numero}`);
+  const tipo = NOMI_TIPO_CONCESSIONE[c.tipo].toLowerCase();
+  const avviso =
+    e.stato === 'chiusa' ? `Contratto chiuso${c.chiusaIl ? ` il ${data(c.chiusaIl)}` : ''}${e.motivo ? ` · ${NOMI_MOTIVO[e.motivo]}` : ''}` :
+    e.stato === 'in_decadenza' ? 'Decadenza avviata: il contratto è in corso finché non viene dichiarata' : undefined;
+  doc.intestazione('Contratto di concessione cimiteriale', `N. ${c.numero} · stipulato il ${data(c.dataStipula)}${c.provvedimento ? ` · ${c.provvedimento}` : ''}`, avviso);
+
+  doc.paragrafo(`Il Comune di ${comune}, rappresentato dal Responsabile dell'Ufficio Servizi Cimiteriali, concede l'uso della sepoltura descritta qui sotto a:`);
+  doc.righe(c.concessionari.map((x, i) => [
+    c.concessionari.length > 1 ? `Concessionario ${i + 1}` : 'Concessionario',
+    [`${nomeSoggetto(x)}${x.rappresentante ? ' (rappresentante)' : ''}`, `${x.tipo === 'ente' ? 'C.F./P.IVA' : 'C.F.'} ${x.codiceFiscale}`, x.indirizzo, x.legaleRappresentante ? `legale rappresentante ${x.legaleRappresentante}` : ''].filter(Boolean).join(' · '),
+  ] as [string, string]));
+
+  doc.pag.titolo('Oggetto della concessione');
+  const schede = indiceSchede(db.schede);
+  const elenco = c.schedeIds.slice(0, 12).map((id) => postazione(schede.get(id), db));
+  if (c.schedeIds.length > 12) elenco.push(`e altre ${c.schedeIds.length - 12} postazioni`);
+  doc.righe([
+    ['Tipo di sepoltura', NOMI_TIPO_CONCESSIONE[c.tipo]],
+    ['Cimitero', cim?.nome ?? '—'],
+    ...elenco.map((x, i) => [i ? '' : c.schedeIds.length > 1 ? 'Postazioni' : 'Postazione', x] as [string, string]),
+    ['Posti', String(c.postiTotali)],
+  ]);
+
+  doc.pag.titolo('Durata');
+  doc.righe([
+    ['Decorrenza', data(c.decorrenza)],
+    ['Durata', `${c.durataAnni} anni`],
+    ['Scadenza', data(c.scadenza)],
+    ['Rinnovi concessi', String(c.rinnovi)],
+    ['Regola applicata', c.regola],
+  ]);
+
+  doc.pag.titolo('Tariffa');
+  const avvisi = db.avvisi.filter((a) => a.motivo === 'concessione' && a.riferimentoId === c.id && a.stato !== 'annullato');
+  const nuova = avvisi.find((a) => a.causale.includes('nuova concessione'));
+  doc.righe([['Tariffa di concessione', importo(nuova?.importo ?? regole.tariffe[c.tipo].nuova)], ...righeAvviso(nuova)]);
+
+  if (c.tipo === 'tomba_famiglia') {
+    doc.pag.titolo('Aventi diritto alla sepoltura');
+    if (c.aventiDiritto?.length) doc.righe(c.aventiDiritto.map((a) => [a.parentela, a.nome] as [string, string]));
+    else doc.paragrafo('Nessuno indicato.');
+  }
+
+  doc.pag.titolo('Condizioni');
+  doc.clausole([
+    `La concessione dà il diritto d'uso della sepoltura per la durata indicata. La sepoltura resta del Comune e non si può vendere né cedere ad altri.`,
+    c.tipo === 'tomba_famiglia'
+      ? 'Nella tomba di famiglia possono essere sepolti i concessionari e gli aventi diritto indicati in questo contratto, fino al numero dei posti.'
+      : `Nel ${tipo} può essere accolto solo il defunto per cui è stato concesso, o chi indica il concessionario secondo il regolamento comunale.`,
+    'La manutenzione della sepoltura e della lapide è a carico del concessionario.',
+    `Alla scadenza la concessione si può rinnovare per ${regole.durataRinnovo} anni, su domanda del concessionario e con il pagamento della tariffa di rinnovo (oggi ${importo(regole.tariffe[c.tipo].rinnovo)}). Senza rinnovo la sepoltura torna al Comune.`,
+    'Il concessionario può rinunciare alla concessione. Il Comune può dichiararne la decadenza per abbandono della sepoltura o per mancato pagamento, dopo una diffida.',
+    'Per tutto quello che questo contratto non dice valgono il regolamento comunale di polizia mortuaria e il DPR 285/1990.',
+  ]);
+
+  const variazioni = c.storico.slice(1);
+  if (variazioni.length) {
+    doc.pag.titolo('Rinnovi e variazioni');
+    doc.righe(variazioni.map((ev) => [data(ev.data), `${ev.azione}${ev.atto ? ` · ${ev.atto}` : ''}`] as [string, string]));
+  }
+
+  doc.chiusura(`Letto, confermato e sottoscritto. ${comune}, ${data(c.dataStipula)}.`, [
+    "Il Responsabile dell'Ufficio Servizi Cimiteriali",
+    ...c.concessionari.map((x) => (x.tipo === 'ente' ? `Per ${nomeSoggetto(x)}, il legale rappresentante` : `Il concessionario ${nomeSoggetto(x)}`)),
+  ]);
+  doc.salva(`CimiTera_contratto_${c.numero.replace(/\//g, '-')}.pdf`);
+}
+
+/** Fascicolo della pratica: operazione, defunto, postazioni, richiedente, agenzia, pagamento e storico. */
+export async function pdfPratica(p: Pratica, db: Database) {
+  const cim = db.cimiteri.find((x) => x.id === p.cimiteroId);
+  const comune = cim?.comune ?? '';
+  const schede = indiceSchede(db.schede);
+  const stato = STATI_PRATICA.find((s) => s.id === p.stato)?.label ?? p.stato;
+  const doc = new Documento(comune, `Pratica ${p.numero}`);
+  doc.intestazione(
+    `Pratica di ${NOMI_OPERAZIONE[p.tipo].toLowerCase()}`,
+    `N. ${p.numero} · aperta il ${data(p.apertaIl)} · ${p.dUfficio ? "d'ufficio" : 'su richiesta'} · ${stato.toLowerCase()}`,
+    p.stato === 'annullata' ? `Pratica annullata il ${data(p.annullataIl)}${p.motivoAnnullamento ? `: ${p.motivoAnnullamento}` : ''}` : undefined,
+  );
+
+  doc.pag.titolo('Defunto');
+  doc.righe([
+    ['Nominativo', nomeCompleto(p.defunto)],
+    ['Data di nascita', data(p.defunto.dataNascita)],
+    ['Data di morte', data(p.defunto.dataMorte)],
+  ]);
+
+  doc.pag.titolo('Operazione');
+  const nomi = (p.operatoriIds ?? []).map((id) => db.operatori.find((o) => o.id === id)?.nome ?? id);
+  const voci: [string, string][] = [
+    ['Operazione', nomeOperazione(p)],
+    ['Cosa', NOMI_OGGETTO[p.oggetto]],
+    ['Cimitero', cim?.nome ?? '—'],
+    [p.tipo === 'traslazione' ? 'Da' : 'Postazione', postazione(schede.get(p.schedaId), db)],
+  ];
+  if (p.tipo === 'traslazione') voci.push(['A', postazione(p.schedaArrivoId ? schede.get(p.schedaArrivoId) : undefined, db)]);
+  if (p.dataOra) voci.push([p.stato === 'eseguita' ? 'Eseguita il' : 'Programmata il', `${data(p.dataOra.slice(0, 10))} alle ${p.dataOra.slice(11, 16)}`]);
+  if (nomi.length) voci.push(['Operatori', nomi.join(', ')]);
+  if (p.esitoResti) voci.push(['Destinazione dei resti', `${NOMI_DESTINAZIONE[p.esitoResti.destinazione]}${p.esitoResti.schedaId ? `: ${p.esitoResti.schedaId}` : ''}`]);
+  if (p.tipo === 'traslazione' && p.utenzaVotiva) voci.push(['Utenza votiva', p.utenzaVotiva === 'sposta' ? 'Si sposta sulla nuova postazione' : 'Si chiude']);
+  if (p.note) voci.push(['Note', p.note]);
+  doc.righe(voci);
+
+  if (!p.dUfficio && p.richiedente) {
+    const r = p.richiedente;
+    doc.pag.titolo('Richiedente');
+    doc.righe([
+      ['Nominativo', r.nome],
+      ['Codice fiscale', r.codiceFiscale],
+      ['Legame con il defunto', r.legameDefunto ?? '—'],
+      ['Indirizzo', r.indirizzo ?? '—'],
+      ['Recapiti', [r.telefono, r.email].filter(Boolean).join(' · ') || '—'],
+    ]);
+  }
+
+  const agenzia = db.agenzie.find((a) => a.id === p.agenziaId);
+  if (agenzia) {
+    doc.pag.titolo('Agenzia funebre');
+    doc.righe([
+      ['Agenzia', agenzia.nome],
+      ['Partita IVA', agenzia.partitaIva],
+      ['Recapiti', [agenzia.telefono, agenzia.email].filter(Boolean).join(' · ')],
+    ]);
+  }
+
+  doc.pag.titolo('Attestazione di pagamento');
+  if (p.dUfficio) doc.paragrafo("Pratica avviata d'ufficio: nessuna tariffa.");
+  else {
+    const a = db.avvisi.find((x) => x.motivo === 'pratica' && x.riferimentoId === p.id && x.stato !== 'annullato') ?? db.avvisi.find((x) => x.motivo === 'pratica' && x.riferimentoId === p.id);
+    doc.righe([['Tariffa', p.tariffa ? importo(p.tariffa) : '—'], ...righeAvviso(a)]);
+  }
+
+  if (p.storico?.length) {
+    doc.pag.titolo('Storico');
+    doc.righe(p.storico.map((ev) => [data(ev.data), `${ev.azione} · ${ev.operatore}`] as [string, string]));
+  }
+
+  doc.chiusura(`${comune}, ${data(oggiISO())}.`, [...(p.dUfficio ? [] : ['Il richiedente']), "L'Ufficio Servizi Cimiteriali"]);
+  doc.salva(`CimiTera_pratica_${p.numero.replace(/\//g, '-')}.pdf`);
 }
