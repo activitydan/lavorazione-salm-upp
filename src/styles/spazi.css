@@ -261,3 +261,14 @@
 @media (max-width: 760px) {
   .topbar .campanella .popover { position: fixed; left: 8px !important; right: 8px !important; top: calc(var(--topbar-h) + 4px); width: auto !important; }
 }
+
+/* ---------- Schermata di caricamento: simbolo, nome e firma centrati sullo stesso asse ---------- */
+.splash { gap: 0; }
+.splash .mark { width: 104px; height: auto; }
+.splash .wordmark { align-items: center; margin-top: 22px; }
+.splash .wordmark__name { font-size: 40px; }
+/* la spaziatura tra le lettere aggiunge spazio dopo l'ultima: il rientro a sinistra rimette la riga al centro */
+.splash .wordmark__sub { font-size: 11px; letter-spacing: 0.22em; padding-left: 0.22em; margin-top: 12px; }
+.splash .spinner { width: 30px; height: 30px; border-width: 3px; margin-top: 40px; }
+.splash .callout { margin-top: 28px; max-width: min(520px, calc(100vw - 32px)); }
+.entra__logo .wordmark__sub { padding-left: 0.19em; }
